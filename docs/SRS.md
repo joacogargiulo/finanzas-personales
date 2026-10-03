@@ -1,7 +1,7 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.1.0
+**Versión:** 3.2.0
 **Fecha:** 2026-10-03
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
@@ -9,6 +9,12 @@
 ---
 
 ## 0. CAMBIOS
+
+### 0.0 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+| Tema | v3.1.0 | v3.2.0 | ADR |
+|---|---|---|---|
+| Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
+| Login | Popup en escritorio, redirect en modo instalado | Popup en todos lados, redirect si el popup está bloqueado | 0017 |
 
 ### 0.1 Cambios de la versión 3.1.0 (Fase M: modelo de datos)
 Se incorporan las decisiones de los ADRs 0002 a 0012 (`docs/decisiones/`). Ante cualquier diferencia, mandan los ADRs.
@@ -116,8 +122,11 @@ El código se organiza en tres capas con dependencias en una sola dirección (`u
 2. **`src/data/`** — Acceso a Firestore y Auth: inicialización, listeners (`onSnapshot`), escrituras, batches, exportaciones/importaciones, cliente de Bluelytics, cliente de Sheets.
 3. **`src/ui/`** — Componentes React, pantallas, modales, hooks de presentación.
 
-### 3.2 Flujo de datos (sincronización incremental, ADR 0003)
-- Al abrir la app, cada colección del usuario se carga desde la caché local (`getDocsFromCache`), que es gratis e instantáneo. Después se abre un listener `onSnapshot` con `where('updatedAt', '>', cursor)`. El cursor es el `updatedAt` más alto ya confirmado por el servidor que hay en la caché, menos un margen de solapamiento de algunos minutos. Sin caché, no hay cursor y se descarga todo una vez.
+### 3.2 Flujo de datos (sincronización incremental, ADR 0003 y 0016)
+- Cada colección del usuario tiene **dos listeners**:
+  - **A la caché** (`onSnapshot(colección, { source: 'cache', includeMetadataChanges: true })`): escucha la colección completa en la caché local, sin costo de lecturas. Recibe al instante las escrituras propias, aunque estén pendientes, y lo que trae el otro listener. **Es la única fuente del store.**
+  - **Al servidor** (`where('updatedAt', '>', cursor)`): solo trae a la caché lo que cambió en otros dispositivos. El cursor es el `updatedAt` más alto de los documentos ya confirmados en la caché, menos un margen de 10 minutos. Sin caché, no hay cursor y se descarga todo una vez.
+- No alcanza con un solo listener filtrado: un documento con `serverTimestamp()` pendiente no cumple `updatedAt > cursor` hasta que el servidor confirma la escritura (ADR 0016).
 - El perfil (`users/{uid}`) se escucha con un listener directo sobre el documento.
 - Los datos de los listeners alimentan el store. Todos los valores derivados (saldos, totales, estadísticas, progreso de presupuestos) se calculan con funciones de `domain/` a partir del store.
 - Las escrituras se aplican localmente al instante; Firestore las encola y las sube cuando hay conexión.
@@ -431,7 +440,7 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 ### 7.1 Firebase Authentication
 - Proveedor Google únicamente.
 - `authDomain` configurado con el dominio de Firebase Hosting donde se publica la app (ej. `<proyecto>.web.app`), para que el handler de autenticación esté en el mismo dominio que la app.
-- En escritorio usar `signInWithPopup`. En modo standalone (PWA instalada o APK) usar `signInWithRedirect` si el popup no funciona correctamente. **Verificar explícitamente el login dentro del APK** (fase 8).
+- Usar `signInWithPopup` y, si el navegador bloquea el popup, `signInWithRedirect` (ADR 0017). **Verificar explícitamente el login dentro del APK** (fase 8).
 - Persistencia de sesión local (IndexedDB, la predeterminada del SDK web).
 
 ### 7.2 Cerrar sesión
