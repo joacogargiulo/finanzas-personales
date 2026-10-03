@@ -688,4 +688,4 @@ Claude Code no puede hacer estas tareas porque requieren cuentas y consolas web:
 
 ## 14. REFERENCIA
 
-La carpeta `referencia/` contiene el código de la app actual generada con Google AI Studio. Se usa para replicar el aspecto visual, los textos y el flujo de pantallas. **Ante cualquier diferencia entre la referencia y este SRS, manda este SRS.**
+La carpeta `../finanzas-personales-referencia/` (fuera del repo, al lado del proyecto) contiene el código de la app actual generada con Google AI Studio. Se usa para replicar el aspecto visual, los textos y el flujo de pantallas. **Ante cualquier diferencia entre la referencia y este SRS, manda este SRS.**

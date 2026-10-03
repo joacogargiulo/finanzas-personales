@@ -16,7 +16,8 @@ test-results/
 # Solo activa los emuladores locales, no tiene secretos
 !.env.emulators
 
-# Código de la app vieja: contiene una API key real (CLAUDE.md, regla 9)
+# Código de la app vieja: contiene una API key. Ahora vive fuera del repo, en
+# ../finanzas-personales-referencia/; esto queda por si alguien la vuelve a copiar adentro.
 referencia/
 
 # APK: clave de firma y su configuración con contraseñas (SRS 9.3)

@@ -3,7 +3,6 @@ dist-e2e
 coverage
 playwright-report
 test-results
-referencia
 package-lock.json
 docs
 CLAUDE.md
