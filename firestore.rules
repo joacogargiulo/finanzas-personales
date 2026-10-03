@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Fase 0: nadie puede leer ni escribir nada.
+// Las reglas reales, con validación completa del esquema (SRS 7.3, ADR 0010), llegan en la Fase 2.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
