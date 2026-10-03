@@ -1,0 +1,39 @@
+# Dependencias (se reinstalan con `npm ci`)
+node_modules/
+
+# Salidas de build y de tests (se regeneran)
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Variables de entorno: nunca se suben. Solo .env.example (sin valores).
+.env
+.env.*
+!.env.example
+
+# Código de la app vieja: contiene una API key real (CLAUDE.md, regla 9)
+referencia/
+
+# APK: clave de firma y su configuración con contraseñas (SRS 9.3)
+*.keystore
+*.jks
+twa-manifest.json
+
+# Firebase: caché local y logs de los emuladores
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+database-debug.log*
+pubsub-debug.log*
+
+# Logs y archivos del sistema o del editor
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
