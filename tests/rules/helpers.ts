@@ -1,11 +1,9 @@
-import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import {
-  doc,
-  serverTimestamp,
-  setDoc,
-  type DocumentData,
-  type Firestore,
-} from 'firebase/firestore';
+  initializeTestEnvironment,
+  type RulesTestContext,
+  type RulesTestEnvironment,
+} from '@firebase/rules-unit-testing';
+import { doc, serverTimestamp, setDoc, type DocumentData } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 
@@ -20,13 +18,16 @@ export const OTHER = 'beto';
 /** Un instante fijo para `createdAt`, `archivedAt` y `deletedAt` (milisegundos epoch). */
 export const NOW = 1_759_500_000_000;
 
+/** La base de datos que da el paquete de testing (se usa con las funciones de firebase/firestore). */
+type TestFirestore = ReturnType<RulesTestContext['firestore']>;
+
 export interface RulesClients {
   /** Base de datos vista por el dueño (con sesión de `OWNER`). */
-  owner: () => Firestore;
+  owner: () => TestFirestore;
   /** Base de datos vista por otro usuario con sesión. */
-  other: () => Firestore;
+  other: () => TestFirestore;
   /** Base de datos vista por alguien sin sesión. */
-  anonymous: () => Firestore;
+  anonymous: () => TestFirestore;
   /** Escribe un documento salteando las reglas, para preparar el escenario de un test. */
   seed: (path: string, data: DocumentData) => Promise<void>;
 }
