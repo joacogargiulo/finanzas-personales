@@ -18,13 +18,16 @@
     "test:watch": "vitest",
     "test:rules": "firebase emulators:exec --only firestore \"vitest run -c vitest.rules.config.ts\"",
     "emulators": "firebase emulators:start",
-    "test:e2e": "playwright test",
-    "test:coverage": "vitest run --coverage"
+    "test:e2e": "firebase emulators:exec --only auth,firestore \"playwright test\"",
+    "test:coverage": "vitest run --coverage",
+    "test:data": "firebase emulators:exec --only firestore \"vitest run -c vitest.data.config.ts\"",
+    "dev:emu": "firebase emulators:exec --only auth,firestore --ui \"vite --mode emulators\""
   },
   "dependencies": {
     "firebase": "^12.19.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

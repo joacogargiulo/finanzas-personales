@@ -3,6 +3,7 @@ node_modules/
 
 # Salidas de build y de tests (se regeneran)
 dist/
+dist-e2e/
 coverage/
 playwright-report/
 test-results/
@@ -12,6 +13,8 @@ test-results/
 .env
 .env.*
 !.env.example
+# Solo activa los emuladores locales, no tiene secretos
+!.env.emulators
 
 # Código de la app vieja: contiene una API key real (CLAUDE.md, regla 9)
 referencia/

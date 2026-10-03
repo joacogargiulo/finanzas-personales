@@ -6,7 +6,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'referencia'] },
+  { ignores: ['dist', 'dist-e2e', 'coverage', 'playwright-report', 'test-results', 'referencia'] },
 
   // Reglas generales: JS recomendado + TypeScript con información de tipos.
   {
