@@ -6,5 +6,8 @@ export default defineConfig({
   test: {
     include: ['tests/rules/**/*.test.ts'],
     testTimeout: 15_000,
+    // Todos los archivos usan la misma base del emulador y la vacían antes de cada test:
+    // si corrieran en paralelo, uno borraría los datos que está usando otro.
+    fileParallelism: false,
   },
 });
