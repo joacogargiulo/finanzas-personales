@@ -1,6 +1,6 @@
 // Categorías iniciales con IDs fijos (SRS 4.7, ADR 0004).
 // Solo los datos: la escritura, dentro de una runTransaction, va en src/data/ (Fase 2).
-// Las claves de ícono y color son provisorias hasta que la Fase 3 defina las listas fijas.
+// Las claves de ícono y color salen de las listas fijas de categoryStyle.ts (ADR 0020).
 
 import type { Category } from './model';
 
