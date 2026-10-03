@@ -1,0 +1,102 @@
+/* Tokens del diseño "Sereno" (ADR 0001 y 0020). Todos los colores salen de acá.
+   Tema: `data-theme` en <html> vale "light", "dark" o no está (automático, según el sistema). */
+
+:root {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+
+  --radius-card: 20px;
+  --radius-control: 12px;
+  --tap: 44px;
+  --sidebar-width: 248px;
+  --tabbar-height: 76px;
+
+  color-scheme: light;
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --surface2: #edf1ee;
+  --text: #16201c;
+  --muted: #56625c;
+  --line: #e0e5e1;
+  --accent: #0f6b5f;
+  --on-accent: #ffffff;
+  --inc: #1b7a3a;
+  --exp: #b42318;
+  --trf: #1d5fb8;
+  --exc: #6e3fc2;
+  --warn: #a15600;
+  --scrim: rgba(10, 20, 16, 0.45);
+  --shadow: 0 6px 16px rgba(15, 107, 95, 0.3);
+
+  /* Paleta de categorías (claves de src/domain/categoryStyle.ts). */
+  --cat-gray: #66716b;
+  --cat-red: #b42318;
+  --cat-orange: #b54708;
+  --cat-yellow: #8a6a00;
+  --cat-green: #1b7a3a;
+  --cat-teal: #0e7480;
+  --cat-blue: #1d5fb8;
+  --cat-purple: #6e3fc2;
+  --cat-pink: #b4236b;
+}
+
+/* Oscuro: elegido a mano, o automático con el sistema en modo oscuro. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0f1412;
+    --surface: #18201d;
+    --surface2: #232c28;
+    --text: #e9eeeb;
+    --muted: #9da9a3;
+    --line: #2b3531;
+    --accent: #4fc3ae;
+    --on-accent: #06201b;
+    --inc: #64d48e;
+    --exp: #ff8a80;
+    --trf: #86b4ff;
+    --exc: #bda2ff;
+    --warn: #f2b35b;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+
+    --cat-gray: #a3afa9;
+    --cat-red: #ff8a80;
+    --cat-orange: #ffb27a;
+    --cat-yellow: #f2d06b;
+    --cat-green: #64d48e;
+    --cat-teal: #5fd3dd;
+    --cat-blue: #86b4ff;
+    --cat-purple: #bda2ff;
+    --cat-pink: #ff8fc4;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0f1412;
+  --surface: #18201d;
+  --surface2: #232c28;
+  --text: #e9eeeb;
+  --muted: #9da9a3;
+  --line: #2b3531;
+  --accent: #4fc3ae;
+  --on-accent: #06201b;
+  --inc: #64d48e;
+  --exp: #ff8a80;
+  --trf: #86b4ff;
+  --exc: #bda2ff;
+  --warn: #f2b35b;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+
+  --cat-gray: #a3afa9;
+  --cat-red: #ff8a80;
+  --cat-orange: #ffb27a;
+  --cat-yellow: #f2d06b;
+  --cat-green: #64d48e;
+  --cat-teal: #5fd3dd;
+  --cat-blue: #86b4ff;
+  --cat-purple: #bda2ff;
+  --cat-pink: #ff8fc4;
+}
