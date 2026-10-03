@@ -12,6 +12,7 @@ export type DomainError =
   | { code: 'amount.tooLarge' }
   // Fechas
   | { code: 'date.invalid' }
+  | { code: 'date.endBeforeStart' }
   // Textos
   | { code: 'name.required' }
   | { code: 'name.tooLong'; max: number }
@@ -54,6 +55,8 @@ export function errorMessage(error: DomainError): string {
       return 'El monto máximo es 999.999.999.999,99.';
     case 'date.invalid':
       return 'Ingresá una fecha válida.';
+    case 'date.endBeforeStart':
+      return 'La fecha de fin tiene que ser igual o posterior a la de inicio.';
     case 'name.required':
       return 'Ingresá un nombre.';
     case 'name.tooLong':
