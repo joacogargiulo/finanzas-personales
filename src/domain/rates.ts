@@ -12,7 +12,9 @@ function isRate(value: unknown): value is number {
 }
 
 function field(value: unknown, key: string): unknown {
-  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[key] : null;
+  return typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)[key]
+    : null;
 }
 
 /**
