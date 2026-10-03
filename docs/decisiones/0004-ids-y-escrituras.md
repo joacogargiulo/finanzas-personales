@@ -28,3 +28,6 @@ La app escribe sin conexión desde varios dispositivos. Cuando dos dispositivos 
 - En un conflicto sobre el mismo campo (por ejemplo, el mismo presupuesto con límites distintos), gana el último. Se acepta: es raro y no rompe ningún saldo.
 - Caso borde aceptado: si un dispositivo confirma una ocurrencia, el usuario elimina ese movimiento y otro dispositivo sin conexión confirma la misma ocurrencia más tarde, el movimiento reaparece. Es poco probable y se arregla eliminándolo otra vez.
 - El documento de perfil (dónde vive `seededAt`) se define en el bloque 3.
+
+## Nota de implementación (Fase 2)
+Con dos dispositivos sembrando a la vez, el emulador evalúa las reglas de la transacción perdedora **antes** de detectar el conflicto. Para ese momento las categorías ya existen con otro `createdAt`, que es inmutable, así que responde `permission-denied` en vez de pedir un reintento. Como la transacción es atómica, no se escribe nada a medias. `ensureSeeded` (`src/data/seed.ts`) maneja ese caso: si recibe `permission-denied`, lee el perfil del servidor y, si ya tiene `seededAt`, da la siembra por hecha. Hay un test que lo cubre (`tests/data/seed.test.ts`).

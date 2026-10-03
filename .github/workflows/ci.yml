@@ -47,6 +47,9 @@ jobs:
       - name: Tests de reglas (emulador)
         run: npm run test:rules
 
+      - name: Tests de la capa data (emulador)
+        run: npm run test:data
+
       - name: Build
         run: npm run build
 

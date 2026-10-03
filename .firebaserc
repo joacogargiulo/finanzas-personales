@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "demo-finanzas"
+    "default": "demo-finanzas",
+    "prod": "finanzas-personales-jtg"
   }
 }

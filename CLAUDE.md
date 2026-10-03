@@ -23,7 +23,6 @@ src/
   data/     # Firestore, Auth, Bluelytics, Sheets, export/import
   ui/       # componentes, pantallas, modales
 docs/SRS.md
-referencia/ # código de la app vieja (AI Studio). SOLO LECTURA.
 ```
 Las dependencias van en una sola dirección: `ui → data → domain`.
 
@@ -46,7 +45,7 @@ Las dependencias van en una sola dirección: `ui → data → domain`.
 6. **Fechas locales**: nunca usar `toISOString()` para obtener "hoy".
 7. **IDs determinísticos** donde el SRS lo indica (categorías iniciales, presupuestos, transacciones de recurrentes) para evitar duplicados entre dispositivos.
 8. Toda regla de negocio vive en `src/domain/` y tiene tests.
-9. No subir secretos: `.env.local`, keystore del APK y sus contraseñas, y `referencia/` (contiene una API key) van en `.gitignore`.
+9. No subir secretos: `.env.local`, keystore del APK y sus contraseñas, van en `.gitignore`. La app vieja vive fuera del repo (ver "Uso de la app vieja").
 10. **Las reglas de Firestore validan el esquema completo**: es multiusuario, así que son la barrera de seguridad real.
 
 ## Cómo trabajar
@@ -59,7 +58,8 @@ Las dependencias van en una sola dirección: `ui → data → domain`.
 - **Flujo de GitHub profesional, explicado al dueño mientras se usa**: un issue por fase, una rama `fase-N-nombre`, un PR que cierra el issue, CI en verde, revisión y aprobación del dueño en GitHub, merge squash. `main` está protegida.
 - Al cerrar cada fase: una explicación didáctica de los conceptos nuevos y los ADRs de las decisiones tomadas.
 
-## Uso de `referencia/`
+## Uso de la app vieja (referencia)
+- Está **fuera del repo**, en `../finanzas-personales-referencia/` (al lado de esta carpeta), porque contiene una API key y Vite escaneaba sus archivos. Es **solo lectura**.
 - Es **solo inspiración**: muestra en qué venía trabajando el dueño y qué funciones le interesan. Se arranca de cero y el diseño se rediseña (ver el ADR de diseño UX/UI).
 - **No copiar su lógica de datos**: usa IndexedDB, saldos guardados, montos float y borrado en cascada, todo eso fue reemplazado.
 - Ante cualquier diferencia entre la referencia y el SRS o los ADRs, mandan el SRS y los ADRs.

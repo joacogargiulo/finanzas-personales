@@ -12,8 +12,11 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    // Sirve el build (`npm run build` tiene que haber corrido antes).
-    command: 'npm run preview -- --port 4173 --strictPort',
+    // Compila la app en modo emulador (.env.emulators) y la sirve. `npm run test:e2e` levanta
+    // los emuladores de Auth y Firestore antes de correr los tests.
+    command:
+      'vite build --mode emulators --outDir dist-e2e && ' +
+      'vite preview --outDir dist-e2e --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
   },
