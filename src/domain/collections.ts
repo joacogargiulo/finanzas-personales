@@ -1,6 +1,6 @@
 // Utilidades sobre colecciones: lápidas, archivados y orden (ADR 0005, SRS 5.11).
 
-import type { EpochMs, LocalDate } from './model';
+import { CURRENCIES, type Currency, type EpochMs, type LocalDate } from './model';
 
 interface Tombstoned {
   deletedAt: EpochMs | null;
@@ -66,4 +66,23 @@ export function sortTransactions<T extends Sortable>(transactions: readonly T[])
     // Desempate final por ID, así el orden es estable en todos los dispositivos.
     return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
   });
+}
+
+/** Orden alfabético en español, sin distinguir mayúsculas ni acentos. */
+export function compareNames(a: string, b: string): number {
+  return a.localeCompare(b, 'es-AR', { sensitivity: 'base' });
+}
+
+/**
+ * Orden por defecto de las cuentas (SRS 4.8): por moneda (ARS, USD, EUR) y después por nombre.
+ * Devuelve una copia.
+ */
+export function sortAccounts<T extends { currency: Currency; name: string }>(
+  accounts: readonly T[],
+): T[] {
+  return [...accounts].sort(
+    (a, b) =>
+      CURRENCIES.indexOf(a.currency) - CURRENCIES.indexOf(b.currency) ||
+      compareNames(a.name, b.name),
+  );
 }

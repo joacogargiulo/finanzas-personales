@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { alive, indexById, referenceStatus, selectable, sortTransactions } from './collections';
+import {
+  alive,
+  compareNames,
+  indexById,
+  referenceStatus,
+  selectable,
+  sortAccounts,
+  sortTransactions,
+} from './collections';
 import { makeAccount, makeExpense } from './testing/factories';
 
 describe('lápidas y archivados (ADR 0005)', () => {
@@ -51,5 +59,36 @@ describe('sortTransactions (SRS 5.11)', () => {
     const input = [a, b, c];
     expect(sortTransactions(input).map((t) => t.id)).toEqual(['b', 'c', 'a']);
     expect(input.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('sortAccounts (SRS 4.8)', () => {
+  it('ordena por moneda (ARS, USD, EUR) y después por nombre', () => {
+    const input = [
+      makeAccount({ name: 'Euros', currency: 'EUR' }),
+      makeAccount({ name: 'Caja dólares', currency: 'USD' }),
+      makeAccount({ name: 'efectivo', currency: 'ARS' }),
+      makeAccount({ name: 'Banco', currency: 'ARS' }),
+    ];
+    expect(sortAccounts(input).map((a) => a.name)).toEqual([
+      'Banco',
+      'efectivo',
+      'Caja dólares',
+      'Euros',
+    ]);
+  });
+
+  it('no modifica la lista original', () => {
+    const input = [makeAccount({ currency: 'USD' }), makeAccount({ currency: 'ARS' })];
+    const copy = [...input];
+    sortAccounts(input);
+    expect(input).toEqual(copy);
+  });
+});
+
+describe('compareNames', () => {
+  it('no distingue mayúsculas ni acentos', () => {
+    expect(compareNames('Ómnibus', 'omnibus')).toBe(0);
+    expect(compareNames('árbol', 'Banco')).toBeLessThan(0);
   });
 });
