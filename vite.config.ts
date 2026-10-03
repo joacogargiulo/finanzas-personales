@@ -3,6 +3,10 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
+  // Vite busca dependencias en todos los .html del proyecto; referencia/ (la app vieja, solo
+  // lectura) tiene los suyos con imports que no están instalados. Solo nos interesa index.html.
+  optimizeDeps: { entries: ['index.html'] },
+  server: { watch: { ignored: ['**/referencia/**'] } },
   test: {
     // Tests unitarios: rápidos, sin emuladores ni navegador.
     include: ['src/**/*.test.{ts,tsx}'],
