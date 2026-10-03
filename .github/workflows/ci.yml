@@ -1,0 +1,57 @@
+# Integración continua: corre en cada pull request y en cada cambio que entra a main.
+# Si algún paso falla, el PR no se puede mergear (main está protegida, ADR 0013).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Si llega un push nuevo a la misma rama, cancela la corrida anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # El emulador de Firestore corre sobre Java.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Formato
+        run: npm run format:check
+
+      - name: Tests unitarios
+        run: npm test
+
+      - name: Tests de reglas (emulador)
+        run: npm run test:rules
+
+      - name: Build
+        run: npm run build
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests E2E
+        run: npm run test:e2e
