@@ -1,4 +1,9 @@
 {
   "indexes": [],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    { "collectionGroup": "accounts", "fieldPath": "name", "indexes": [] },
+    { "collectionGroup": "categories", "fieldPath": "name", "indexes": [] },
+    { "collectionGroup": "transactions", "fieldPath": "description", "indexes": [] },
+    { "collectionGroup": "recurring", "fieldPath": "description", "indexes": [] }
+  ]
 }
