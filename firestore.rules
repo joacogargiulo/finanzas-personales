@@ -1,10 +1,245 @@
 rules_version = '2';
 
-// Fase 0: nadie puede leer ni escribir nada.
-// Las reglas reales, con validación completa del esquema (SRS 7.3, ADR 0010), llegan en la Fase 2.
+// Reglas de seguridad multiusuario (SRS 7.3, ADR 0010).
+// Principio: rechazan solo lo que la app legítima nunca podría producir. Validan cada
+// documento por separado, sin get() (no gastan lecturas). La coherencia entre documentos
+// (que la cuenta exista, que la moneda coincida, etc.) la valida src/domain/ al escribir.
+// Todo lo que no está permitido explícitamente queda denegado.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
+
+    // ── Utilidades ─────────────────────────────────────────────────────────────
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function data() {
+      return request.resource.data;
+    }
+
+    // Exactamente estos campos: ni uno de más ni uno de menos.
+    function hasExactly(fields) {
+      return data().keys().hasAll(fields) && data().keys().hasOnly(fields);
+    }
+
+    // Todos los obligatorios y, como mucho, los opcionales.
+    function hasFields(required, optional) {
+      return data().keys().hasAll(required) && data().keys().hasOnly(required.concat(optional));
+    }
+
+    // Una edición no puede tocar estos campos.
+    function unchanged(fields) {
+      return !data().diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ── Tipos de campo ─────────────────────────────────────────────────────────
+
+    // Montos en centavos (ADR 0007): enteros entre 1 y 999.999.999.999,99.
+    function isCents(v) {
+      return v is int && v >= 1 && v <= 99999999999999;
+    }
+
+    function isCentsOrZero(v) {
+      return v is int && v >= 0 && v <= 99999999999999;
+    }
+
+    // Fecha calendario YYYY-MM-DD. Que el día exista (31 de febrero) lo valida el dominio.
+    function isDate(v) {
+      return v is string && v.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$');
+    }
+
+    function isDateOrNull(v) {
+      return v == null || isDate(v);
+    }
+
+    // Milisegundos epoch del dispositivo (createdAt, archivedAt, deletedAt).
+    function isMs(v) {
+      return v is int && v > 0;
+    }
+
+    function isMsOrNull(v) {
+      return v == null || isMs(v);
+    }
+
+    // ID de otro documento: los que genera Firestore (20 caracteres), seed_*, etc.
+    function isId(v) {
+      return v is string && v.matches('^[A-Za-z0-9_-]{1,100}$');
+    }
+
+    // Clave de ícono o color (ADR 0008): texto corto en minúsculas.
+    function isKey(v) {
+      return v is string && v.matches('^[a-z0-9-]{1,30}$');
+    }
+
+    // Nombre: requerido, con largo máximo y sin espacios al inicio ni al final.
+    function isName(v, max) {
+      return v is string && v.size() >= 1 && v.size() <= max && v.trim() == v;
+    }
+
+    function isDescription(v) {
+      return v is string && v.size() <= 200;
+    }
+
+    function isCurrency(v) {
+      return v in ['ARS', 'USD', 'EUR'];
+    }
+
+    // ── Campos comunes de las colecciones (ADR 0003, 0005, 0007) ───────────────
+
+    // updatedAt siempre con la hora del servidor: es el cursor de la sincronización.
+    function hasValidCommon() {
+      return isMs(data().createdAt)
+        && data().updatedAt == request.time
+        && isMsOrNull(data().deletedAt);
+    }
+
+    // ── Validación de cada colección ───────────────────────────────────────────
+
+    function isValidProfile() {
+      return hasExactly(['schemaVersion', 'seededAt', 'sheetsSpreadsheetId', 'createdAt', 'updatedAt'])
+        && data().schemaVersion is int && data().schemaVersion >= 1
+        && isMsOrNull(data().seededAt)
+        && (data().sheetsSpreadsheetId == null || isId(data().sheetsSpreadsheetId))
+        && isMs(data().createdAt)
+        && data().updatedAt == request.time;
+    }
+
+    function isValidAccount() {
+      return hasExactly(['name', 'currency', 'initialBalance', 'kind', 'archivedAt',
+                         'createdAt', 'updatedAt', 'deletedAt'])
+        && isName(data().name, 50)
+        && isCurrency(data().currency)
+        && isCentsOrZero(data().initialBalance)
+        && data().kind in ['cash', 'bank', 'wallet', 'investment', 'other']
+        && isMsOrNull(data().archivedAt)
+        && hasValidCommon();
+    }
+
+    function isValidCategory() {
+      return hasExactly(['name', 'type', 'icon', 'color', 'archivedAt',
+                         'createdAt', 'updatedAt', 'deletedAt'])
+        && isName(data().name, 40)
+        && data().type in ['income', 'expense']
+        && isKey(data().icon)
+        && isKey(data().color)
+        && isMsOrNull(data().archivedAt)
+        && hasValidCommon();
+    }
+
+    // Movimientos: unión discriminada por `type` (ADR 0007). Cada tipo tiene su lista
+    // exacta de campos; recurringId es opcional en todos.
+    function isValidTransaction() {
+      let common = ['type', 'amount', 'date', 'description', 'accountId', 'source',
+                    'createdAt', 'updatedAt', 'deletedAt'];
+      let t = data().type;
+      return (
+          (t in ['income', 'expense'] && hasFields(common.concat(['categoryId']), ['recurringId'])
+            && isId(data().categoryId))
+          || (t == 'transfer' && hasFields(common.concat(['toAccountId']), ['recurringId'])
+            && isId(data().toAccountId) && data().toAccountId != data().accountId)
+          || (t == 'exchange' && hasFields(common.concat(['toAccountId', 'toAmount']), ['recurringId'])
+            && isId(data().toAccountId) && data().toAccountId != data().accountId
+            && isCents(data().toAmount))
+        )
+        && isCents(data().amount)
+        && isDate(data().date)
+        && isDescription(data().description)
+        && isId(data().accountId)
+        && data().source in ['app', 'voice', 'whatsapp']
+        && (!('recurringId' in data()) || isId(data().recurringId))
+        && hasValidCommon();
+    }
+
+    // Presupuestos: el ID es {categoryId}_{currency} (ADR 0004).
+    function isValidBudget(id) {
+      return hasExactly(['categoryId', 'currency', 'amount', 'createdAt', 'updatedAt', 'deletedAt'])
+        && isId(data().categoryId)
+        && isCurrency(data().currency)
+        && id == data().categoryId + '_' + data().currency
+        && isCents(data().amount)
+        && hasValidCommon();
+    }
+
+    // Recurrentes: como los movimientos, pero sin cambio de moneda.
+    function isValidRecurring() {
+      let common = ['type', 'amount', 'accountId', 'description', 'frequency', 'startDate',
+                    'nextDate', 'endDate', 'createdAt', 'updatedAt', 'deletedAt'];
+      let t = data().type;
+      return (
+          (t in ['income', 'expense'] && hasExactly(common.concat(['categoryId']))
+            && isId(data().categoryId))
+          || (t == 'transfer' && hasExactly(common.concat(['toAccountId']))
+            && isId(data().toAccountId) && data().toAccountId != data().accountId)
+        )
+        && isCents(data().amount)
+        && isId(data().accountId)
+        && isDescription(data().description)
+        && data().frequency in ['weekly', 'monthly', 'yearly']
+        && isDate(data().startDate)
+        && isDate(data().nextDate)
+        && isDateOrNull(data().endDate)
+        // Las fechas YYYY-MM-DD se comparan bien como texto.
+        && data().nextDate >= data().startDate
+        && (data().endDate == null || data().endDate >= data().startDate)
+        && hasValidCommon();
+    }
+
+    // ── Rutas ──────────────────────────────────────────────────────────────────
+
+    // El delete físico solo lo usa "Borrar mi cuenta" (ADR 0006); en el uso normal
+    // se marca deletedAt (lápida, ADR 0003).
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidProfile();
+      // schemaVersion nunca baja (ADR 0011).
+      allow update: if isOwner(uid) && isValidProfile()
+        && unchanged(['createdAt'])
+        && data().schemaVersion >= resource.data.schemaVersion;
+      allow delete: if isOwner(uid);
+
+      match /accounts/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidAccount();
+        allow update: if isOwner(uid) && isValidAccount()
+          && unchanged(['createdAt', 'currency', 'initialBalance']);
+        allow delete: if isOwner(uid);
+      }
+
+      match /categories/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidCategory();
+        allow update: if isOwner(uid) && isValidCategory() && unchanged(['createdAt']);
+        allow delete: if isOwner(uid);
+      }
+
+      match /transactions/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidTransaction();
+        allow update: if isOwner(uid) && isValidTransaction()
+          && unchanged(['createdAt', 'source']);
+        allow delete: if isOwner(uid);
+      }
+
+      match /budgets/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidBudget(id);
+        allow update: if isOwner(uid) && isValidBudget(id)
+          && unchanged(['createdAt', 'categoryId', 'currency']);
+        allow delete: if isOwner(uid);
+      }
+
+      match /recurring/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isValidRecurring();
+        allow update: if isOwner(uid) && isValidRecurring() && unchanged(['createdAt']);
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // Vínculos de WhatsApp (Fase 11): solo los usa el servidor con su cuenta de servicio,
+    // que no pasa por estas reglas. Desde la app, nadie.
+    match /whatsappLinks/{phone} {
       allow read, write: if false;
     }
   }
