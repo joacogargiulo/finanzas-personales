@@ -14,3 +14,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+interface Window {
+  /** Solo en el build de emulador (tests E2E): inicia sesión sin el popup (ADR 0019). */
+  e2eSignIn?: (email: string, displayName: string) => Promise<void>;
+}

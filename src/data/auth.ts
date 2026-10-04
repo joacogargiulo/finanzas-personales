@@ -5,6 +5,7 @@ import {
   getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
@@ -97,4 +98,19 @@ export async function signOutAndClear(auth: Auth, db: Firestore): Promise<void> 
   await firebaseSignOut(auth);
   await terminate(db);
   await clearIndexedDbPersistence(db);
+}
+
+/**
+ * Solo para los tests E2E con el emulador de Auth (ADR 0019): inicia sesión con una cuenta de
+ * Google inventada, sin el popup. El emulador acepta un "token" que es un JSON sin firmar; el
+ * servicio real de Google lo rechazaría.
+ */
+export async function signInForTests(auth: Auth, email: string, displayName: string) {
+  const fakeIdToken = JSON.stringify({
+    sub: email,
+    email,
+    email_verified: true,
+    name: displayName,
+  });
+  await signInWithCredential(auth, GoogleAuthProvider.credential(fakeIdToken));
 }
