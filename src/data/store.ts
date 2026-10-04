@@ -4,7 +4,15 @@
 // El store guarda solo datos crudos. Saldos, totales y estadísticas se calculan con src/domain/.
 
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import type { Account, Budget, Category, Profile, Recurring, Transaction } from '../domain/model';
+import type {
+  Account,
+  Budget,
+  Category,
+  ExchangeRates,
+  Profile,
+  Recurring,
+  Transaction,
+} from '../domain/model';
 import type { SessionUser } from './auth';
 import type { UserCollection } from './paths';
 import type { SyncStatus } from './sync';
@@ -13,7 +21,8 @@ import type { WriteError } from './writes';
 export type SessionState =
   { status: 'loading' } | { status: 'signedOut' } | { status: 'signedIn'; user: SessionUser };
 
-export interface DataState {
+/** Lo que depende del usuario: se vacía al iniciar o cerrar sesión. */
+export interface UserState {
   session: SessionState;
   profile: Profile | null;
   accounts: Account[];
@@ -30,10 +39,15 @@ export interface DataState {
   writeErrors: WriteError[];
 }
 
+export interface DataState extends UserState {
+  /** Cotizaciones del dispositivo (SRS 4.8): no dependen del usuario y sobreviven al cambio de sesión. */
+  rates: ExchangeRates | null;
+}
+
 export type DataStore = StoreApi<DataState>;
 
-/** Estado con la sesión dada y sin datos. */
-export function emptyState(session: SessionState): DataState {
+/** Estado con la sesión dada y sin datos. No toca las cotizaciones. */
+export function emptyState(session: SessionState): UserState {
   return {
     session,
     profile: null,
@@ -56,5 +70,5 @@ export function emptyState(session: SessionState): DataState {
 }
 
 export function createDataStore(): DataStore {
-  return createStore<DataState>()(() => emptyState({ status: 'loading' }));
+  return createStore<DataState>()(() => ({ ...emptyState({ status: 'loading' }), rates: null }));
 }

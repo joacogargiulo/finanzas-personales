@@ -1,0 +1,317 @@
+/* Estructura de la app: barra inferior en el celular, barra lateral en la compu (ADR 0001),
+   paneles que suben desde abajo y pantallas. */
+
+.shell {
+  min-height: 100dvh;
+}
+
+.shell-main {
+  min-width: 0;
+  padding-bottom: calc(var(--tabbar-height) + 24px + env(safe-area-inset-bottom));
+}
+
+/* ── Barra superior ──────────────────────────────────────────────────────── */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 8px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.topbar-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.menu-anchor {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  min-width: 240px;
+  max-width: calc(100vw - 32px);
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu-name {
+  font-weight: 700;
+}
+
+.menu-email {
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* ── Contenido ───────────────────────────────────────────────────────────── */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 16px 0;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 8px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+/* ── Barra inferior (celular) ────────────────────────────────────────────── */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--tap);
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.tab[aria-current='page'] {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tab-add {
+  justify-self: center;
+  width: 56px;
+  height: 56px;
+  margin-top: -26px;
+  border: none;
+  border-radius: 18px;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Barra lateral (compu) ───────────────────────────────────────────────── */
+
+.sidebar {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  }
+
+  .shell-main {
+    padding-bottom: 32px;
+  }
+
+  .tabbar {
+    display: none;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    padding: 24px 16px;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sidebar-brand {
+    font-size: 18px;
+    font-weight: 700;
+    padding: 0 12px 16px;
+  }
+
+  .sidebar .btn-primary {
+    margin-bottom: 12px;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: var(--tap);
+    padding: 0 12px;
+    border-radius: var(--radius-control);
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .nav-link[aria-current='page'] {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .topbar {
+    padding: 28px 32px 12px;
+  }
+
+  .screen,
+  .notices {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+/* ── Paneles (<dialog>) ──────────────────────────────────────────────────── */
+
+.sheet {
+  border: none;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+  max-height: none;
+  width: 100%;
+  inset: auto 0 0 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.sheet::backdrop {
+  background: var(--scrim);
+}
+
+.sheet-body {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  align-self: center;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sheet-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+@media (min-width: 900px) {
+  .sheet {
+    inset: 0;
+    margin: auto;
+    width: min(480px, calc(100vw - 48px));
+    height: fit-content;
+  }
+
+  .sheet-body {
+    border-radius: 24px;
+    padding-bottom: 20px;
+  }
+
+  .sheet-handle {
+    display: none;
+  }
+}
+
+/* ── Teclado numérico ────────────────────────────────────────────────────── */
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.key {
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.key:active {
+  background: var(--line);
+}

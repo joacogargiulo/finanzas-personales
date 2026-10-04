@@ -1,0 +1,168 @@
+// Estado y reglas del formulario de movimiento (SRS 6.7). Funciones puras: el componente
+// TransactionSheet solo las llama, y los tests las prueban sin dibujar nada.
+// Las validaciones de negocio son las del dominio (`validateTransaction`); acá se decide qué
+// muestra el formulario y qué campos se limpian.
+
+import { parseAmountInput, amountToInput } from '../../domain/amountInput';
+import { compareNames, isActive, sortAccounts } from '../../domain/collections';
+import type {
+  Account,
+  Category,
+  LocalDate,
+  Transaction,
+  TransactionType,
+} from '../../domain/model';
+import { err, type Result } from '../../domain/result';
+import {
+  validateTransaction,
+  type FieldErrors,
+  type TransactionField,
+  type TransactionFields,
+  type ValidationContext,
+} from '../../domain/validation';
+
+export interface TransactionForm {
+  type: TransactionType;
+  /** Texto del teclado numérico (`"12500,5"`). */
+  amount: string;
+  /** Lo que entra en la cuenta destino de un cambio de moneda. */
+  toAmount: string;
+  date: LocalDate;
+  description: string;
+  accountId: string;
+  toAccountId: string;
+  categoryId: string;
+}
+
+export type TransactionFormErrors = FieldErrors<TransactionField>;
+
+/** Formulario vacío: gasto, fecha de hoy y la primera cuenta activa (o la última usada). */
+export function emptyForm(today: LocalDate, accountId: string): TransactionForm {
+  return {
+    type: 'expense',
+    amount: '',
+    toAmount: '',
+    date: today,
+    description: '',
+    accountId,
+    toAccountId: '',
+    categoryId: '',
+  };
+}
+
+/** Formulario precargado para editar un movimiento guardado. */
+export function formFromTransaction(tx: Transaction): TransactionForm {
+  return {
+    type: tx.type,
+    amount: amountToInput(tx.amount),
+    toAmount: tx.type === 'exchange' ? amountToInput(tx.toAmount) : '',
+    date: tx.date,
+    description: tx.description,
+    accountId: tx.accountId,
+    toAccountId: tx.type === 'transfer' || tx.type === 'exchange' ? tx.toAccountId : '',
+    categoryId: tx.type === 'income' || tx.type === 'expense' ? tx.categoryId : '',
+  };
+}
+
+/**
+ * Cambia el tipo y limpia los campos que dejan de aplicar (SRS 6.7): la categoría es de un tipo
+ * (ingreso o gasto), la cuenta destino depende de la regla de moneda (igual para transferir,
+ * distinta para cambiar) y el segundo monto existe solo en el cambio.
+ */
+export function changeType(form: TransactionForm, type: TransactionType): TransactionForm {
+  if (type === form.type) return form;
+  return {
+    ...form,
+    type,
+    categoryId: '',
+    toAccountId: '',
+    toAmount: type === 'exchange' ? form.toAmount : '',
+  };
+}
+
+/** Cambia la cuenta de origen; si la destino deja de ser válida, la limpia. */
+export function changeAccount(
+  form: TransactionForm,
+  accountId: string,
+  accounts: readonly Account[],
+): TransactionForm {
+  const next = { ...form, accountId };
+  if (
+    next.toAccountId &&
+    !destinationOptions(next, accounts).some((a) => a.id === next.toAccountId)
+  ) {
+    next.toAccountId = '';
+  }
+  return next;
+}
+
+/** Cuentas para elegir como origen: las activas, en el orden por defecto (SRS 4.8). */
+export function accountOptions(accounts: readonly Account[]): Account[] {
+  return sortAccounts(accounts.filter(isActive));
+}
+
+/**
+ * Cuentas destino (SRS 6.7): activas y distintas del origen; de la misma moneda para una
+ * transferencia (TC-03) y de otra moneda para un cambio.
+ */
+export function destinationOptions(form: TransactionForm, accounts: readonly Account[]): Account[] {
+  const origin = accounts.find((a) => a.id === form.accountId);
+  if (!origin || (form.type !== 'transfer' && form.type !== 'exchange')) return [];
+  const sameCurrency = form.type === 'transfer';
+  return accountOptions(accounts).filter(
+    (a) => a.id !== origin.id && (a.currency === origin.currency) === sameCurrency,
+  );
+}
+
+/**
+ * Categorías para elegir: las activas del tipo del movimiento, por nombre. Al editar, también la
+ * que ya tenía aunque esté archivada (SRS 5.3).
+ */
+export function categoryOptions(
+  form: TransactionForm,
+  categories: readonly Category[],
+  keepId?: string,
+): Category[] {
+  if (form.type !== 'income' && form.type !== 'expense') return [];
+  return categories
+    .filter(
+      (c) =>
+        c.type === form.type && c.deletedAt === null && (c.archivedAt === null || c.id === keepId),
+    )
+    .sort((a, b) => compareNames(a.name, b.name));
+}
+
+/**
+ * Convierte el formulario en un movimiento listo para guardar. Los montos se convierten con las
+ * reglas de SRS 5.1 y el resto lo valida el dominio. Devuelve un error por campo.
+ */
+export function buildTransaction(
+  form: TransactionForm,
+  ctx: ValidationContext,
+  original?: Transaction,
+): Result<TransactionFields, TransactionFormErrors> {
+  const amount = parseAmountInput(form.amount);
+  const toAmount = form.type === 'exchange' ? parseAmountInput(form.toAmount) : null;
+
+  const result = validateTransaction(
+    {
+      type: form.type,
+      amount: amount.ok ? amount.value : 0,
+      toAmount: toAmount?.ok ? toAmount.value : undefined,
+      date: form.date,
+      description: form.description,
+      accountId: form.accountId,
+      toAccountId: form.toAccountId || undefined,
+      categoryId: form.categoryId || undefined,
+    },
+    ctx,
+    original,
+  );
+
+  // El error de lectura del monto ("ingresá un monto") es más claro que el de la validación.
+  const parseErrors: TransactionFormErrors = {};
+  if (!amount.ok) parseErrors.amount = amount.error;
+  if (toAmount && !toAmount.ok) parseErrors.toAmount = toAmount.error;
+  if (result.ok && Object.keys(parseErrors).length === 0) return result;
+  return err({ ...(result.ok ? {} : result.error), ...parseErrors });
+}

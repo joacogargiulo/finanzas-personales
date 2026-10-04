@@ -1,0 +1,218 @@
+/* Estilos propios de cada pantalla y panel. */
+
+/* Con un panel abierto, la página de atrás no se desplaza. */
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
+.loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ── Inicio de sesión ────────────────────────────────────────────────────── */
+
+.login {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.login-card {
+  width: min(400px, 100%);
+  padding: 32px 24px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+  align-items: center;
+}
+
+.login-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ── Inicio ──────────────────────────────────────────────────────────────── */
+
+.home-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 20px;
+  }
+}
+
+.wealth {
+  padding: 20px;
+  gap: 4px;
+}
+
+.wealth-label {
+  font-weight: 400;
+}
+
+.wealth-total {
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.totals {
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.totals-row dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.totals-row dd {
+  margin: 0;
+}
+
+.month-summary {
+  margin: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.month-summary + .month-summary {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.month-currency {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Una fila de lista que es un botón (abre el movimiento). */
+.row-button {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  border-radius: 0;
+}
+
+.list > li:last-child > .row-button {
+  border-bottom: none;
+}
+
+/* ── Panel de movimiento ─────────────────────────────────────────────────── */
+
+.amount-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  text-align: center;
+}
+
+.amount-big {
+  font-size: 40px;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 360px) {
+  .amount-big {
+    font-size: 32px;
+  }
+}
+
+.exchange-amounts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.exchange-amounts > .field-error,
+.exchange-amounts > .exchange-rate {
+  grid-column: 1 / -1;
+}
+
+.exchange-rate {
+  text-align: center;
+}
+
+.amount-box {
+  min-height: 64px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.amount-box .num {
+  font-size: 18px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amount-box[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sheet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

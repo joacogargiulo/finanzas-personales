@@ -1,7 +1,7 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.2.0
+**Versión:** 3.3.0
 **Fecha:** 2026-10-03
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
@@ -10,7 +10,15 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+| Tema | v3.2.0 | v3.3.0 | ADR |
+|---|---|---|---|
+| Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
+| Tests de la interfaz | Sin especificar | Lógica pura con Vitest, componentes con Testing Library (jsdom) y flujos e2e con Playwright | 0019 |
+| Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
+| Cambio de moneda | Fase 5 | Fase 3 | 0020 |
+
+### 0.0.1 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -661,9 +669,9 @@ Cada fase termina con: typecheck sin errores, tests pasando y una verificación 
 1. **Fase 0 — Setup:** proyecto Vite + React + TS strict, lint, Vitest, Firebase SDK, emuladores, estructura de carpetas.
 2. **Fase 1 — Dominio:** tipos y toda la lógica de `src/domain/` con sus tests unitarios (sin UI).
 3. **Fase 2 — Datos y login:** Firebase Auth, Firestore con caché persistente, listeners, store, escrituras, categorías iniciales, reglas de seguridad y sus tests.
-4. **Fase 3 — Paridad con la app actual:** Dashboard, Historial, Ajustes de cuentas y categorías (con archivado), modales, indicador de sincronización.
+4. **Fase 3 — Paridad con la app actual:** Dashboard, Historial, Ajustes de cuentas y categorías (con archivado), modales (incluido el cambio de moneda, ADR 0020), indicador de sincronización.
 5. **Fase 4 — Estadísticas y búsqueda:** período elegible y buscador.
-6. **Fase 5 — Nuevas funciones:** cambio de moneda, presupuestos, recurrentes.
+6. **Fase 5 — Nuevas funciones:** presupuestos, recurrentes.
 7. **Fase 6 — Respaldo:** JSON (exportar/restaurar), CSV, Google Sheets.
 8. **Fase 7 — PWA y publicación:** service worker, manifiesto, Firebase Hosting.
 9. **Fase 8 — APK:** Bubblewrap, assetlinks, pruebas en el celular.
