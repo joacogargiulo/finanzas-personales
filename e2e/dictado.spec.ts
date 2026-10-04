@@ -39,9 +39,10 @@ test('dictar un gasto desde la dirección del atajo (dictar=1)', async ({ page }
   await signIn(page);
   await createAccount(page, 'Efectivo', '50000');
   // El usuario es nuevo: se espera a que lleguen las categorías iniciales (SRS 4.7), para que
-  // el dictado encuentre "súper" → Comida.
+  // el dictado encuentre "súper" → Comida. La siembra espera la respuesta del servidor y, con
+  // varios tests en paralelo contra el emulador, puede tardar más que los 5 s por defecto.
   await page.getByRole('link', { name: 'Ajustes' }).click();
-  await expect(page.getByText('Comida', { exact: true })).toBeVisible();
+  await expect(page.getByText('Comida', { exact: true })).toBeVisible({ timeout: 20_000 });
 
   // La dirección del atajo "Dictar movimiento" (Fase 7): el panel abre escuchando.
   await page.evaluate(() => {
