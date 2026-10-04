@@ -219,6 +219,41 @@ body:has(dialog[open]) {
 
 /* ── Movimientos ─────────────────────────────────────────────────────────── */
 
+/* Buscador: el campo ocupa toda la caja; la lupa y la X van adentro. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 4px 0 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+/* La X propia reemplaza a la del navegador, que cambia de un navegador a otro. */
+.search-input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
 .filter-bar {
   display: flex;
   gap: 8px;

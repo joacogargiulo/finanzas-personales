@@ -1,12 +1,17 @@
-// Movimientos (SRS 6.4, diseño "Sereno"): filtros combinables, lista agrupada por día con su
-// subtotal y carga de a 50. Tocar un movimiento lo abre; en el celular, arrastrarlo hacia la
-// izquierda muestra Editar y Eliminar. El buscador de texto llega en la Fase 4.
+// Movimientos (SRS 6.4, diseño "Sereno"): buscador, filtros combinables, lista agrupada por día
+// con su subtotal y carga de a 50. Tocar un movimiento lo abre; en el celular, arrastrarlo hacia
+// la izquierda muestra Editar y Eliminar.
 
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { alive, sortTransactions } from '../../domain/collections';
 import { groupByDay } from '../../domain/grouping';
 import type { Transaction, TransactionType } from '../../domain/model';
-import { EMPTY_FILTERS, filterTransactions, type TransactionFilters } from '../../domain/search';
+import {
+  EMPTY_FILTERS,
+  filterTransactions,
+  hasActiveFilters,
+  type TransactionFilters,
+} from '../../domain/search';
 import { canModifyTransaction } from '../../domain/validation';
 import { useData, useLedger, useToday } from '../app/hooks';
 import { openPanel } from '../app/navigation';
@@ -43,6 +48,10 @@ export function MovementsScreen() {
   const today = useToday();
 
   const [filters, setFilters] = useState<TransactionFilters>(EMPTY_FILTERS);
+  // El buscador se actualiza en cada tecla, pero la lista se filtra con una versión "diferida":
+  // React primero dibuja la letra en el campo y después recalcula la lista, sin trabar el
+  // teclado aunque haya miles de movimientos.
+  const deferredFilters = useDeferredValue(filters);
   const [showFilters, setShowFilters] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [openRow, setOpenRow] = useState<string | null>(null);
@@ -50,8 +59,8 @@ export function MovementsScreen() {
 
   const sorted = useMemo(() => sortTransactions(alive(transactions)), [transactions]);
   const filtered = useMemo(
-    () => filterTransactions(sorted, filters, accountsById, categoriesById),
-    [sorted, filters, accountsById, categoriesById],
+    () => filterTransactions(sorted, deferredFilters, accountsById, categoriesById),
+    [sorted, deferredFilters, accountsById, categoriesById],
   );
   const groups = useMemo(
     () => groupByDay(filtered.slice(0, visible), accountsById),
@@ -67,10 +76,44 @@ export function MovementsScreen() {
   if (!loaded) return <p className="muted">Cargando tus datos…</p>;
 
   const panelCount = panelFilterCount(filters);
-  const filtering = panelCount > 0 || filters.type !== null;
+  const filtering = hasActiveFilters(filters);
 
   return (
     <>
+      <div className="search">
+        <Icon name="search" size={18} />
+        <input
+          className="search-input"
+          type="search"
+          aria-label="Buscar movimientos"
+          placeholder="Buscar por descripción, categoría o cuenta"
+          enterKeyHint="search"
+          autoComplete="off"
+          value={filters.text}
+          onChange={(event) => {
+            applyFilters({ ...filters, text: event.target.value });
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && filters.text !== '') {
+              event.preventDefault();
+              applyFilters({ ...filters, text: '' });
+            }
+          }}
+        />
+        {filters.text !== '' && (
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Borrar búsqueda"
+            onClick={() => {
+              applyFilters({ ...filters, text: '' });
+            }}
+          >
+            <Icon name="close" size={18} />
+          </button>
+        )}
+      </div>
+
       <div className="filter-bar" role="group" aria-label="Filtrar por tipo">
         {TYPE_FILTERS.map(({ type, label }) => (
           <button
@@ -102,7 +145,11 @@ export function MovementsScreen() {
         <section className="card empty">
           {filtering ? (
             <>
-              <p>No hay movimientos con estos filtros.</p>
+              <p>
+                {filters.text.trim() !== ''
+                  ? `No hay movimientos que coincidan con “${filters.text.trim()}”.`
+                  : 'No hay movimientos con estos filtros.'}
+              </p>
               <button
                 type="button"
                 className="btn"

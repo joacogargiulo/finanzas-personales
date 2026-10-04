@@ -22,6 +22,7 @@ type UiIcon =
   | 'more'
   | 'chevron'
   | 'filter'
+  | 'search'
   | 'income'
   | 'expense'
   | 'transfer'
@@ -90,6 +91,12 @@ const PATHS: Record<IconName, ReactElement> = {
   more: <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />,
   chevron: <path d="m6 9 6 6 6-6" />,
   filter: <path d="M3 5h18l-7 8v6l-4-2v-4z" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </>
+  ),
 
   // Tipos de movimiento
   income: <path d="M7 17 17 7M9 7h8v8" />,
