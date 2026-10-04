@@ -7,6 +7,7 @@ import type { Account, Category, Transaction } from '../../domain/model';
 import { transactionView, type NamedRef } from '../transactionView';
 import { Icon } from './Icon';
 import { Money } from './Money';
+import { SwipeRow } from './SwipeRow';
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -15,6 +16,14 @@ interface TransactionRowProps {
   /** Muestra la fecha en el subtítulo (en las listas que no agrupan por día). */
   showDate?: boolean;
   onSelect?: (transaction: Transaction) => void;
+  /** Arrastrar la fila muestra Editar y Eliminar (Movimientos, en el celular). */
+  swipe?: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onDelete: (transaction: Transaction) => void;
+    /** El movimiento no se puede modificar: no se arrastra. */
+    locked: boolean;
+  };
 }
 
 function Ref({ value }: { value: NamedRef }) {
@@ -32,6 +41,7 @@ export function TransactionRow({
   categories,
   showDate = false,
   onSelect,
+  swipe,
 }: TransactionRowProps) {
   const view = transactionView(transaction, accounts, categories);
 
@@ -79,6 +89,39 @@ export function TransactionRow({
       </span>
     </>
   );
+
+  if (swipe && onSelect) {
+    return (
+      <SwipeRow
+        open={swipe.open}
+        onOpenChange={swipe.onOpenChange}
+        disabled={swipe.locked}
+        onSelect={() => {
+          onSelect(transaction);
+        }}
+        actions={[
+          {
+            label: 'Editar',
+            icon: 'edit',
+            tone: 'edit',
+            onClick: () => {
+              onSelect(transaction);
+            },
+          },
+          {
+            label: 'Eliminar',
+            icon: 'trash',
+            tone: 'danger',
+            onClick: () => {
+              swipe.onDelete(transaction);
+            },
+          },
+        ]}
+      >
+        {content}
+      </SwipeRow>
+    );
+  }
 
   return (
     <li>

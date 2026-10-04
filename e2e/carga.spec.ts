@@ -1,23 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { signIn } from './helpers';
 
 // Flujo completo contra los emuladores de Auth y Firestore (ADR 0019): una persona nueva entra,
-// crea su primera cuenta y carga un gasto (TC-01). Cada test usa un navegador limpio y un
-// usuario nuevo, así no dependen entre sí.
-
-/**
- * Inicia sesión con un usuario nuevo del emulador de Auth. No usa el popup de Google: con el
- * emulador, a veces queda colgado. La app expone `e2eSignIn` solo en el build de emulador.
- */
-async function signIn(page: Page) {
-  await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeVisible();
-  const email = `persona-${String(Date.now())}-${String(Math.random()).slice(2, 8)}@example.com`;
-  await page.evaluate(
-    ([e, name]) => window.e2eSignIn?.(e ?? '', name ?? ''),
-    [email, 'Persona Prueba'],
-  );
-  await expect(page.getByRole('heading', { name: 'Inicio' })).toBeVisible();
-}
+// crea su primera cuenta y carga un gasto (TC-01).
 
 test('crear la primera cuenta y cargar un gasto (TC-01)', async ({ page }) => {
   await signIn(page);

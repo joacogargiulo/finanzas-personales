@@ -26,9 +26,12 @@ import type {
 } from '../../domain/model';
 import { currencySymbol, MINUS } from '../../domain/money';
 import type { TransactionFields } from '../../domain/validation';
+import type { CategoryFields } from '../../data/writes';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
 import { Keypad } from '../components/Keypad';
 import { Sheet } from '../components/Sheet';
+import { CategorySheet } from './CategorySheet';
 import {
   accountOptions,
   buildTransaction,
@@ -60,6 +63,10 @@ export interface TransactionSheetProps {
   onSave: (fields: TransactionFields) => void;
   onClose: () => void;
   onCreateAccount: () => void;
+  /** Crea una categoría desde el chip "+ Nueva" y devuelve su ID, para dejarla elegida. */
+  onCreateCategory?: ((fields: CategoryFields) => string | null) | undefined;
+  /** Elimina el movimiento que se edita (solo en edición). */
+  onDelete?: (() => void) | undefined;
 }
 
 function FieldError({ error, id }: { error: DomainError | undefined; id: string }) {
@@ -90,6 +97,8 @@ export function TransactionSheet({
   onSave,
   onClose,
   onCreateAccount,
+  onCreateCategory,
+  onDelete,
 }: TransactionSheetProps) {
   const origins = useMemo(() => accountOptions(accounts), [accounts]);
   const accountsById = useMemo(() => indexById(accounts), [accounts]);
@@ -101,6 +110,9 @@ export function TransactionSheet({
   const [errors, setErrors] = useState<TransactionFormErrors>({});
   /** Qué monto escribe el teclado: en un cambio de moneda hay dos. */
   const [target, setTarget] = useState<'amount' | 'toAmount'>('amount');
+  /** Paneles que se abren encima de este, sin perder lo que ya se escribió. */
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const keepCategoryId =
     original && (original.type === 'income' || original.type === 'expense')
@@ -262,34 +274,44 @@ export function TransactionSheet({
           <span className="section-label" id="categories-label">
             Categoría
           </span>
-          {categoryChoices.length === 0 ? (
+          {categoryChoices.length === 0 && (
             <p className="field-hint">
               No tenés categorías de {form.type === 'income' ? 'ingreso' : 'gasto'} activas.
             </p>
-          ) : (
-            <div className="chips" role="group" aria-labelledby="categories-label">
-              {categoryChoices.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  className="chip"
-                  style={
-                    {
-                      '--tone': `var(--cat-${categoryColor(category.color)})`,
-                    } as React.CSSProperties
-                  }
-                  aria-pressed={form.categoryId === category.id}
-                  onClick={() => {
-                    update({ categoryId: category.id }, ['categoryId']);
-                  }}
-                >
-                  <Icon name={categoryIcon(category.icon)} size={16} />
-                  {category.name}
-                  {category.archivedAt !== null && <em className="tag">archivada</em>}
-                </button>
-              ))}
-            </div>
           )}
+          <div className="chips" role="group" aria-labelledby="categories-label">
+            {categoryChoices.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className="chip"
+                style={
+                  {
+                    '--tone': `var(--cat-${categoryColor(category.color)})`,
+                  } as React.CSSProperties
+                }
+                aria-pressed={form.categoryId === category.id}
+                onClick={() => {
+                  update({ categoryId: category.id }, ['categoryId']);
+                }}
+              >
+                <Icon name={categoryIcon(category.icon)} size={16} />
+                {category.name}
+                {category.archivedAt !== null && <em className="tag">archivada</em>}
+              </button>
+            ))}
+            {onCreateCategory && lockedReason === null && (
+              <button
+                type="button"
+                className="chip"
+                onClick={() => {
+                  setCreatingCategory(true);
+                }}
+              >
+                + Nueva
+              </button>
+            )}
+          </div>
           <FieldError error={errors.categoryId} id="error-categoryId" />
         </div>
       )}
@@ -386,6 +408,48 @@ export function TransactionSheet({
       >
         {typeInfo?.save}
       </button>
+
+      {original && onDelete && (
+        <button
+          type="button"
+          className="btn btn-danger-text btn-block"
+          disabled={lockedReason !== null}
+          onClick={() => {
+            setConfirmingDelete(true);
+          }}
+        >
+          Eliminar movimiento
+        </button>
+      )}
+
+      {creatingCategory && onCreateCategory && (
+        <CategorySheet
+          categories={categories}
+          defaultType={form.type === 'income' ? 'income' : 'expense'}
+          onClose={() => {
+            setCreatingCategory(false);
+          }}
+          onSave={(fields) => {
+            const id = onCreateCategory(fields);
+            setCreatingCategory(false);
+            if (id && fields.type === form.type) update({ categoryId: id }, ['categoryId']);
+          }}
+        />
+      )}
+
+      {confirmingDelete && onDelete && (
+        <ConfirmDialog
+          title="¿Eliminar este movimiento?"
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={onDelete}
+          onClose={() => {
+            setConfirmingDelete(false);
+          }}
+        >
+          Los saldos se recalculan enseguida.
+        </ConfirmDialog>
+      )}
     </Sheet>
   );
 }
