@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { axisLabel, barHeight, barLayout, donutSegments, MAX_BAR_WIDTH, niceScale } from './charts';
+import {
+  axisLabel,
+  barHeight,
+  barLayout,
+  donutSegments,
+  labelStep,
+  MAX_BAR_WIDTH,
+  niceScale,
+} from './charts';
 
 // La escala elige un tope "redondo" para que las marcas del eje se lean fácil.
 describe('niceScale', () => {
@@ -102,5 +110,17 @@ describe('donutSegments', () => {
   it('un segmento mínimo queda sin dibujar', () => {
     const segments = donutSegments([0.999, 0.001], geometry);
     expect(segments[1]?.d).toBe('');
+  });
+});
+
+// Etiquetas de los meses: si no entran todas, se escribe una cada tanto.
+describe('labelStep', () => {
+  it.each([
+    [6, 320, 1],
+    [12, 300, 2],
+    [24, 300, 4],
+    [3, 0, 3],
+  ])('%i meses en %i px → una cada %i', (count, width, step) => {
+    expect(labelStep(count, width)).toBe(step);
   });
 });

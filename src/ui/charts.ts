@@ -175,3 +175,12 @@ export function donutSegments(
     return { start, end, d: ringSector(radius, radius, inner, start, end) };
   });
 }
+
+/**
+ * Cada cuántos meses se escribe la etiqueta del mes para que no se encimen: con 12 meses en
+ * 300 px entra una cada dos. `minLabelWidth` es el espacio que necesita "sept.".
+ */
+export function labelStep(count: number, width: number, minLabelWidth = 40): number {
+  const fit = Math.max(1, Math.floor(width / minLabelWidth));
+  return Math.max(1, Math.ceil(count / fit));
+}
