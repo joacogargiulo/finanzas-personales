@@ -13,6 +13,7 @@ import type {
   TransactionType,
 } from '../../domain/model';
 import { err, type Result } from '../../domain/result';
+import type { ParsedField, ParsedPhrase } from '../../domain/voice/parsePhrase';
 import {
   validateTransaction,
   type FieldErrors,
@@ -77,6 +78,54 @@ export function formFromDraft(draft: TransactionDraft): TransactionForm {
     toAccountId: draft.toAccountId ?? '',
     categoryId: draft.categoryId ?? '',
   };
+}
+
+/** Formulario precargado por voz y los campos que conviene revisar. */
+export interface PhraseForm {
+  form: TransactionForm;
+  unclear: ParsedField[];
+}
+
+/**
+ * Formulario precargado con lo que se entendió de una frase dictada (ADR 0015 y 0023). Lo que no
+ * se entendió queda vacío y se marca para revisar. Como el selector de cuenta no tiene opción
+ * vacía, si no se entendió la cuenta queda la que estaba elegida (`current`), también marcada.
+ */
+export function formFromPhrase(
+  parsed: ParsedPhrase,
+  current: TransactionForm,
+  accounts: readonly Account[],
+): PhraseForm {
+  const type = parsed.type ?? current.type;
+  const accountId = parsed.accountId ?? current.accountId;
+  const form: TransactionForm = {
+    type,
+    amount: parsed.amount === null ? '' : amountToInput(parsed.amount),
+    toAmount: '',
+    date: parsed.date,
+    description: parsed.description,
+    accountId,
+    toAccountId: '',
+    categoryId: type === 'income' || type === 'expense' ? (parsed.categoryId ?? '') : '',
+  };
+  // La cuenta destino solo si cumple la regla de moneda (si no, el selector no la muestra).
+  if (destinationOptions(form, accounts).some((a) => a.id === parsed.toAccountId)) {
+    form.toAccountId = parsed.toAccountId ?? '';
+  }
+
+  // "50 dólares" en una cuenta en pesos: el monto se entendió, pero la cuenta no cuadra.
+  const account = accounts.find((a) => a.id === accountId);
+  const currencyMismatch = parsed.currency !== null && account?.currency !== parsed.currency;
+
+  const unclear: ParsedField[] = [];
+  if (parsed.type === null) unclear.push('type');
+  if (parsed.amount === null) unclear.push('amount');
+  if (parsed.accountId === null || currencyMismatch) unclear.push('account');
+  if ((type === 'transfer' || type === 'exchange') && form.toAccountId === '') {
+    unclear.push('toAccount');
+  }
+  if ((type === 'income' || type === 'expense') && form.categoryId === '') unclear.push('category');
+  return { form, unclear };
 }
 
 /**
