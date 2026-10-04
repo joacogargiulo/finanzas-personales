@@ -276,3 +276,29 @@ describe('parsePhrase: lo que no entiende', () => {
     expect(parse('').description).toBe('');
   });
 });
+
+// El dictado de Chrome escribe los miles con un espacio ("$50 000"): son un solo número.
+describe('parsePhrase: miles separados por espacios', () => {
+  it('"pagué $50 000 de gas con mercado pago" es un gasto de $ 50.000', () => {
+    expect(parse('pagué $50 000 de gas con mercado pago')).toMatchObject({
+      type: 'expense',
+      amount: 50_000_00,
+      currency: 'ARS',
+      accountId: 'mp',
+      categoryId: 'seed_servicios',
+      description: 'Gas',
+      missing: [],
+    });
+  });
+
+  it('junta varios grupos y acepta el espacio angosto (U+202F) y los centavos', () => {
+    expect(parse('cobré 1 500 000 con efectivo').amount).toBe(1_500_000_00);
+    expect(parse('gasté 12\u202f000 en el súper').amount).toBe(12_000_00);
+    expect(parse('gasté 2 500,50 en el súper').amount).toBe(2_500_50);
+  });
+
+  it('no junta números que no son grupos de miles', () => {
+    // "3000" tiene 4 cifras: no es un grupo; el monto es el número más grande.
+    expect(parse('gasté 2 3000 en cafés').amount).toBe(3_000_00);
+  });
+});
