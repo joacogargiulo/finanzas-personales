@@ -2,8 +2,8 @@
 //
 // - Suma a `expect` los "matchers" de jest-dom: `toBeInTheDocument()`, `toBeDisabled()`, etc.
 // - Desmonta lo dibujado después de cada test, así un test no ve lo que dejó el anterior.
-// - jsdom (el navegador simulado) no implementa `showModal()` de <dialog>: se reemplaza por
-//   una versión mínima que solo lo marca como abierto.
+// - jsdom (el navegador simulado) no implementa `showModal()` de <dialog> ni `PointerEvent`:
+//   se reemplazan por versiones mínimas.
 
 import '@testing-library/jest-dom/vitest';
 import { afterEach } from 'vitest';
@@ -26,5 +26,19 @@ if (typeof window !== 'undefined') {
     dialog.close = function (this: HTMLDialogElement) {
       this.removeAttribute('open');
     };
+  }
+
+  // PointerEvent mínimo: un MouseEvent (que ya trae clientX/clientY) con pointerId y pointerType.
+  if (!('PointerEvent' in window)) {
+    class PointerEventPolyfill extends MouseEvent {
+      readonly pointerId: number;
+      readonly pointerType: string;
+      constructor(type: string, init: PointerEventInit = {}) {
+        super(type, init);
+        this.pointerId = init.pointerId ?? 1;
+        this.pointerType = init.pointerType ?? 'mouse';
+      }
+    }
+    Object.assign(window, { PointerEvent: PointerEventPolyfill });
   }
 }

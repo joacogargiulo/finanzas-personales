@@ -37,3 +37,10 @@ El ADR 0001 eligió la dirección visual "Sereno" (colores, tipografías, navega
 - La app se ve igual con y sin conexión. Las fuentes suman unos 100 KB, que el service worker va a cachear (Fase 7).
 - Agregar un ícono o un color de categoría es sumar la clave a la lista, su dibujo en `Icon.tsx` o su color en `tokens.css`, y nada más.
 - El SRS sube a la versión 3.3.0: la Fase 3 incluye el tipo Cambio.
+
+## Nota de la Fase 3b: editar y eliminar desde la lista
+El diseño de Movimientos proponía "deslizá un movimiento para editarlo o eliminarlo". El dueño eligió tener **las dos formas**:
+- **Tocar la fila** abre el panel de edición, que tiene "Eliminar movimiento" con confirmación simple. Funciona igual en el celular y en la compu, con el teclado y con un lector de pantalla.
+- **Arrastrar la fila hacia la izquierda** (solo con el dedo o un lápiz) muestra Editar y Eliminar (`SwipeRow`). Usa *pointer events* y `touch-action: pan-y`, así el scroll vertical sigue siendo del navegador. Solo una fila queda abierta a la vez, y las filas de movimientos que no se pueden modificar (cuenta archivada) no se arrastran.
+
+Los cálculos del gesto (cuándo es un arrastre y no un scroll, hasta dónde se mueve, cuándo queda abierta) son funciones puras en `src/ui/swipe.ts`, con tests.

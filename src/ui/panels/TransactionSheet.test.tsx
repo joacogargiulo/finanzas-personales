@@ -139,6 +139,50 @@ describe('edición', () => {
   });
 });
 
+// Eliminar desde el panel de edición, con confirmación simple (SRS 6.7).
+describe('eliminar', () => {
+  it('pide confirmación antes de eliminar', async () => {
+    const original = makeExpense({ accountId: 'cash', categoryId: 'food' });
+    const onDelete = vi.fn();
+    const { user } = setup({ original, onDelete });
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar movimiento' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('dialog', { name: '¿Eliminar este movimiento?' });
+    await user.click(within(confirm).getByRole('button', { name: 'Eliminar' }));
+    expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('un movimiento nuevo no tiene "Eliminar"', () => {
+    setup({ onDelete: vi.fn() });
+    expect(screen.queryByRole('button', { name: 'Eliminar movimiento' })).not.toBeInTheDocument();
+  });
+});
+
+// "+ Nueva" crea una categoría sin perder lo que ya se escribió, y la deja elegida.
+describe('categoría nueva', () => {
+  it('crea la categoría y la deja elegida', async () => {
+    const onCreateCategory = vi.fn(() => 'pets');
+    const { user } = setup({
+      onCreateCategory,
+      categories: [food, salary, makeCategory({ id: 'pets', name: 'Mascotas', type: 'expense' })],
+    });
+    await user.click(screen.getByRole('button', { name: '5' }));
+    await user.click(screen.getByRole('button', { name: '+ Nueva' }));
+
+    const sheet = screen.getByRole('dialog', { name: 'Nueva categoría' });
+    await user.type(within(sheet).getByLabelText('Nombre'), 'Regalos');
+    await user.click(within(sheet).getByRole('button', { name: 'Crear categoría' }));
+
+    expect(onCreateCategory).toHaveBeenCalledWith(expect.objectContaining({ name: 'Regalos' }));
+    expect(screen.getByRole('button', { name: 'Mascotas' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 5');
+  });
+});
+
 describe('sin cuentas', () => {
   it('invita a crear la primera cuenta', async () => {
     const { onCreateAccount, user } = setup({ accounts: [] });

@@ -250,20 +250,29 @@ function MonthSummary(props: {
 
 function AccountRow(props: { account: Account; balance: number; equivalent: number | null }) {
   const { account, balance, equivalent } = props;
+  // Tocar la cuenta abre su edición (nombre y tipo).
   return (
-    <li className="list-row">
-      <span className="badge" title={ACCOUNT_KIND_LABELS[account.kind]}>
-        <Icon name={account.kind} />
-      </span>
-      <span className="row-main">
-        <span className="row-title">{account.name}</span>
-      </span>
-      <span className="row-end">
-        <Money cents={balance} currency={account.currency} />
-        {equivalent !== null && (
-          <span className="num small muted">≈ {formatAmount(equivalent, 'ARS')}</span>
-        )}
-      </span>
+    <li>
+      <button
+        type="button"
+        className="list-row row-button"
+        onClick={() => {
+          openPanel({ kind: 'account', id: account.id });
+        }}
+      >
+        <span className="badge" title={ACCOUNT_KIND_LABELS[account.kind]}>
+          <Icon name={account.kind} />
+        </span>
+        <span className="row-main">
+          <span className="row-title">{account.name}</span>
+        </span>
+        <span className="row-end">
+          <Money cents={balance} currency={account.currency} />
+          {equivalent !== null && (
+            <span className="num small muted">≈ {formatAmount(equivalent, 'ARS')}</span>
+          )}
+        </span>
+      </button>
     </li>
   );
 }

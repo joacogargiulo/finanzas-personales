@@ -17,6 +17,11 @@ type UiIcon =
   | 'cloud-sync'
   | 'warning'
   | 'backspace'
+  | 'edit'
+  | 'trash'
+  | 'more'
+  | 'chevron'
+  | 'filter'
   | 'income'
   | 'expense'
   | 'transfer'
@@ -79,6 +84,12 @@ const PATHS: Record<IconName, ReactElement> = {
       <path d="m12 9 5 6M17 9l-5 6" />
     </>
   ),
+
+  edit: <path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />,
+  trash: <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
+  more: <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />,
+  chevron: <path d="m6 9 6 6 6-6" />,
+  filter: <path d="M3 5h18l-7 8v6l-4-2v-4z" />,
 
   // Tipos de movimiento
   income: <path d="M7 17 17 7M9 7h8v8" />,

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { dayMonth, initials, monthShort, rateLabel, ratesAge, syncState } from './format';
+import {
+  dayHeading,
+  dayMonth,
+  initials,
+  monthShort,
+  rateLabel,
+  ratesAge,
+  syncState,
+} from './format';
 
 describe('initials', () => {
   it('usa las iniciales de las dos primeras palabras del nombre', () => {
@@ -61,5 +69,23 @@ describe('syncState', () => {
 
   it('todo al día: sincronizado', () => {
     expect(syncState({ pendingWrites: false, upToDate: true }, true)).toBe('synced');
+  });
+});
+
+// Encabezados de la lista de Movimientos agrupada por día.
+describe('dayHeading', () => {
+  const TODAY = '2026-10-03';
+
+  it('marca hoy y ayer', () => {
+    expect(dayHeading('2026-10-03', TODAY)).toBe('Hoy · sábado 3 de octubre');
+    expect(dayHeading('2026-10-02', TODAY)).toBe('Ayer · viernes 2 de octubre');
+  });
+
+  it('muestra el día de la semana y la fecha', () => {
+    expect(dayHeading('2026-09-29', TODAY)).toBe('martes 29 de septiembre');
+  });
+
+  it('agrega el año si no es el actual', () => {
+    expect(dayHeading('2025-12-31', TODAY)).toBe('miércoles 31 de diciembre de 2025');
   });
 });

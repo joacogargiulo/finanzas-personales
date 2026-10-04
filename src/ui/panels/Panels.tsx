@@ -4,12 +4,15 @@
 
 import { useEffect } from 'react';
 import { errorMessage } from '../../domain/errors';
+import { canChangeCategoryType } from '../../domain/lifecycle';
 import { canModifyTransaction } from '../../domain/validation';
+import { changedFields, type AccountChanges, type CategoryChanges } from '../../data/writes';
 import { useData, useLedger, useToday } from '../app/hooks';
 import { closePanel, openPanel } from '../app/navigation';
 import type { Panel } from '../app/route';
 import { session } from '../session';
 import { AccountSheet } from './AccountSheet';
+import { CategorySheet } from './CategorySheet';
 import { TransactionSheet } from './TransactionSheet';
 
 const BLOCKED_MESSAGE =
@@ -17,38 +20,90 @@ const BLOCKED_MESSAGE =
 
 export function Panels({ panel }: { panel: Panel | null }) {
   const { accounts, categories, transactions, accountsById } = useLedger();
-  const loaded = useData((s) => s.loaded.transactions);
+  const budgets = useData((s) => s.budgets);
+  const recurring = useData((s) => s.recurring);
+  const loaded = useData((s) => s.loaded);
   const writesBlocked = useData((s) => s.writesBlocked);
   const today = useToday();
 
+  // El documento que se edita (sin lápidas). `undefined` si es nuevo o todavía no llegó.
+  const id = panel?.id ?? null;
   const original =
-    panel?.kind === 'transaction' && panel.id
-      ? transactions.find((tx) => tx.id === panel.id && tx.deletedAt === null)
+    panel?.kind === 'transaction' && id
+      ? transactions.find((tx) => tx.id === id && tx.deletedAt === null)
       : undefined;
-  // Un movimiento que no existe (o se eliminó en otro dispositivo): se cierra el panel.
-  const missing = panel?.kind === 'transaction' && panel.id !== null && loaded && !original;
+  const account =
+    panel?.kind === 'account' && id
+      ? accounts.find((a) => a.id === id && a.deletedAt === null)
+      : undefined;
+  const category =
+    panel?.kind === 'category' && id
+      ? categories.find((c) => c.id === id && c.deletedAt === null)
+      : undefined;
+
+  // Un documento que no existe (o se eliminó en otro dispositivo): se cierra el panel.
+  const collection =
+    panel?.kind === 'transaction'
+      ? 'transactions'
+      : panel?.kind === 'account'
+        ? 'accounts'
+        : 'categories';
+  const missing =
+    panel !== null && id !== null && loaded[collection] && !original && !account && !category;
   useEffect(() => {
     if (missing) closePanel();
   }, [missing]);
 
-  if (!panel || missing) return null;
+  if (!panel || (id !== null && !original && !account && !category)) return null;
+
+  const writer = writesBlocked ? null : session.writer();
 
   if (panel.kind === 'account') {
     return (
       <AccountSheet
+        key={id ?? 'nueva'}
         accounts={accounts}
+        original={account}
         onClose={closePanel}
         onSave={(fields) => {
-          if (writesBlocked) return;
-          session.writer()?.createAccount(fields);
+          if (account) {
+            const changes: AccountChanges = changedFields(account, {
+              name: fields.name,
+              kind: fields.kind,
+            });
+            writer?.updateAccount(account.id, changes);
+          } else {
+            writer?.createAccount(fields);
+          }
           closePanel();
         }}
       />
     );
   }
 
-  // Edición de un movimiento que todavía no llegó del almacenamiento local.
-  if (panel.id !== null && !original) return null;
+  if (panel.kind === 'category') {
+    const typeCheck = category
+      ? canChangeCategoryType(category.id, { transactions, budgets, recurring })
+      : null;
+    return (
+      <CategorySheet
+        key={id ?? 'nueva'}
+        categories={categories}
+        original={category}
+        typeLockedReason={typeCheck && !typeCheck.ok ? errorMessage(typeCheck.error) : null}
+        onClose={closePanel}
+        onSave={(fields) => {
+          if (category) {
+            const changes: CategoryChanges = changedFields(category, fields);
+            writer?.updateCategory(category.id, changes);
+          } else {
+            writer?.createCategory(fields);
+          }
+          closePanel();
+        }}
+      />
+    );
+  }
 
   const locked = original ? canModifyTransaction(original, accountsById) : null;
   const lockedReason = writesBlocked
@@ -59,7 +114,7 @@ export function Panels({ panel }: { panel: Panel | null }) {
 
   return (
     <TransactionSheet
-      key={panel.id ?? 'nuevo'}
+      key={id ?? 'nuevo'}
       accounts={accounts}
       categories={categories}
       today={today}
@@ -69,11 +124,18 @@ export function Panels({ panel }: { panel: Panel | null }) {
       onCreateAccount={() => {
         openPanel({ kind: 'account', id: null });
       }}
+      onCreateCategory={(fields) => writer?.createCategory(fields) ?? null}
+      onDelete={
+        original
+          ? () => {
+              writer?.deleteTransaction(original.id);
+              closePanel();
+            }
+          : undefined
+      }
       onSave={(fields) => {
-        const writer = session.writer();
-        if (!writer) return;
-        if (original) writer.updateTransaction(original, fields);
-        else writer.createTransaction(fields);
+        if (original) writer?.updateTransaction(original, fields);
+        else writer?.createTransaction(fields);
         closePanel();
       }}
     />

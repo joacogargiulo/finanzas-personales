@@ -21,6 +21,11 @@ describe('parseHash', () => {
       id: 'abc_123',
     });
     expect(parseHash('#/inicio?cuenta=nueva').panel).toEqual({ kind: 'account', id: null });
+    expect(parseHash('#/ajustes?categoria=nueva').panel).toEqual({ kind: 'category', id: null });
+    expect(parseHash('#/ajustes?categoria=seed_comida').panel).toEqual({
+      kind: 'category',
+      id: 'seed_comida',
+    });
   });
 
   it('ignora un panel con un ID inválido', () => {
