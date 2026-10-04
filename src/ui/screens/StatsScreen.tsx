@@ -152,7 +152,7 @@ export function StatsScreen() {
 
       {stats && !stats.isEmpty && (
         <div className="stats-grid">
-          <section className="card" aria-labelledby="stats-summary-title">
+          <section className="card stats-summary" aria-labelledby="stats-summary-title">
             <h2 id="stats-summary-title" className="card-title">
               Resumen del período
             </h2>

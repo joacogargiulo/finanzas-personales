@@ -505,10 +505,26 @@ body:has(dialog[open]) {
     gap: 20px;
   }
 
-  /* El gráfico de barras ocupa todo el ancho: con 12 meses necesita lugar. */
+  /* El resumen va arriba como una franja, y el gráfico de barras ocupa todo el ancho: con 12
+     meses necesita lugar. Las dos donas quedan lado a lado. */
+  .stats-summary,
   .stats-wide {
     grid-column: 1 / -1;
-    order: -1;
+  }
+
+  .stats-summary .totals {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .stats-summary .totals-row {
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stats-summary .totals-row dd {
+    font-size: 18px;
   }
 }
 

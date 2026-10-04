@@ -3,6 +3,7 @@ import {
   axisLabel,
   barHeight,
   barLayout,
+  donutLabel,
   donutSegments,
   labelStep,
   MAX_BAR_WIDTH,
@@ -43,6 +44,17 @@ describe('axisLabel', () => {
     [0, 'ARS', '$ 0'],
   ] as const)('%i %s → %s', (cents, currency, label) => {
     expect(axisLabel(cents, currency)).toBe(label);
+  });
+});
+
+// El centro de la dona tiene poco lugar: sin centavos, y abreviado si es enorme.
+describe('donutLabel', () => {
+  it.each([
+    [850_000_99, 'ARS', '$ 850.000'],
+    [9_999_999_00, 'USD', 'US$ 9.999.999'],
+    [12_300_000_00, 'ARS', '$ 12,3 M'],
+  ] as const)('%i %s → %s', (cents, currency, label) => {
+    expect(donutLabel(cents, currency)).toBe(label);
   });
 });
 

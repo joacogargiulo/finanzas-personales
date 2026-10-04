@@ -44,6 +44,18 @@ export function axisLabel(cents: Cents, currency: Currency): string {
   return `${symbol} ${String(units)}`;
 }
 
+const wholeNumber = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+
+/**
+ * Total del centro de la dona, que tiene poco lugar: sin centavos (`$ 850.000`) y, desde 10
+ * millones, abreviado (`$ 12,3 M`). El monto exacto está en el resumen del período.
+ */
+export function donutLabel(cents: Cents, currency: Currency): string {
+  const units = Math.trunc(cents / 100);
+  if (units >= 10_000_000) return axisLabel(cents, currency);
+  return `${currencySymbol(currency)} ${wholeNumber.format(units)}`;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Barras agrupadas por mes
 

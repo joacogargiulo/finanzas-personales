@@ -5,7 +5,7 @@
 import { categoryIcon } from '../../../domain/categoryStyle';
 import type { Category, Currency } from '../../../domain/model';
 import { groupSmallCategories, OTHER_CATEGORY_ID, type CategoryTotal } from '../../../domain/stats';
-import { donutSegments } from '../../charts';
+import { donutLabel, donutSegments } from '../../charts';
 import { categoryTone } from '../../categoryTone';
 import { percentLabel } from '../../format';
 import { Icon } from '../Icon';
@@ -46,7 +46,6 @@ export function CategoryDonut({
     slices.map((s) => s.share),
     { radius: RADIUS, thickness: THICKNESS },
   );
-  const signed = kind === 'expense' ? -total : total;
 
   return (
     <div className="donut-chart">
@@ -73,12 +72,7 @@ export function CategoryDonut({
         </svg>
         <div className="donut-center">
           <span className="small muted">{title}</span>
-          <Money
-            cents={signed}
-            currency={currency}
-            sign={kind === 'income' ? 'always' : 'auto'}
-            className="donut-total"
-          />
+          <span className="num donut-total">{donutLabel(total, currency)}</span>
         </div>
       </div>
 
