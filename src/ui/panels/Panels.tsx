@@ -211,6 +211,7 @@ export function Panels({ panel }: { panel: Panel | null }) {
       today={today}
       original={original}
       lockedReason={lockedReason}
+      autoDictate={panel.dictate === true}
       onClose={closePanel}
       onCreateAccount={() => {
         openPanel({ kind: 'account', id: null });
@@ -224,9 +225,9 @@ export function Panels({ panel }: { panel: Panel | null }) {
             }
           : undefined
       }
-      onSave={(fields) => {
+      onSave={(fields, source) => {
         if (original) writer?.updateTransaction(original, fields);
-        else writer?.createTransaction(fields);
+        else writer?.createTransaction(fields, source);
         closePanel();
       }}
     />

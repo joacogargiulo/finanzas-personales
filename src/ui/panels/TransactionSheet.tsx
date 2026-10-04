@@ -1,10 +1,11 @@
 // Panel de nuevo movimiento o de edición (SRS 6.7, ADR 0001): tipo, monto grande con teclado
-// propio, categorías como botones, cuentas, fecha y descripción.
+// propio, categorías como botones, cuentas, fecha y descripción. Al crear, también se puede
+// dictar (ADR 0023): la frase precarga el formulario y el usuario revisa y guarda.
 //
 // Es un componente "de presentación": recibe los datos y avisa con `onSave` qué guardar. No
 // conoce Firestore ni el store, así se puede testear con Testing Library sin emuladores.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   amountKeyFromKeyboard,
   formatAmountInput,
@@ -21,16 +22,19 @@ import type {
   Currency,
   LocalDate,
   Transaction,
+  TransactionSource,
   TransactionType,
 } from '../../domain/model';
 import { currencySymbol, MINUS } from '../../domain/money';
 import type { TransactionDraft, TransactionFields } from '../../domain/validation';
+import { parsePhrase, type ParsedField } from '../../domain/voice/parsePhrase';
 import type { CategoryFields } from '../../data/writes';
 import { CategoryChips } from '../components/CategoryChips';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
 import { Keypad } from '../components/Keypad';
 import { Sheet } from '../components/Sheet';
+import { speechErrorMessage, useSpeech } from '../voice/speech';
 import { CategorySheet } from './CategorySheet';
 import {
   accountOptions,
@@ -41,6 +45,7 @@ import {
   destinationOptions,
   emptyForm,
   formFromDraft,
+  formFromPhrase,
   formFromTransaction,
   type TransactionForm,
   type TransactionFormErrors,
@@ -67,7 +72,10 @@ export interface TransactionSheetProps {
   typeLocked?: boolean;
   /** Si no se puede modificar (usa una cuenta archivada, SRS 5.3), el motivo. */
   lockedReason?: string | null;
-  onSave: (fields: TransactionFields) => void;
+  /** Empezar a dictar al abrir (`dictar=1`, ADR 0023). */
+  autoDictate?: boolean;
+  /** `source` es `'voice'` si el formulario se precargó dictando. */
+  onSave: (fields: TransactionFields, source: TransactionSource) => void;
   onClose: () => void;
   onCreateAccount: () => void;
   /** Crea una categoría desde el chip "+ Nueva" y devuelve su ID, para dejarla elegida. */
@@ -83,6 +91,28 @@ function FieldError({ error, id }: { error: DomainError | undefined; id: string 
       {errorMessage(error)}
     </p>
   );
+}
+
+/** Un campo que se precargó dictando pero no se entendió (ADR 0023). */
+function Unclear({ show }: { show: boolean }) {
+  if (!show) return null;
+  return <p className="field-unclear">No se entendió, revisalo.</p>;
+}
+
+/** Qué marca de "no se entendió" se borra cuando el usuario cambia cada campo. */
+const UNCLEAR_FIELD: Partial<Record<keyof TransactionFormErrors, ParsedField>> = {
+  amount: 'amount',
+  accountId: 'account',
+  toAccountId: 'toAccount',
+  categoryId: 'category',
+};
+
+/** Lo último que se dictó y qué quedó para revisar. */
+interface Dictation {
+  heard: string;
+  unclear: ParsedField[];
+  /** Sonaba a un cambio de moneda, que no se puede dictar (ADR 0015). */
+  exchange: boolean;
 }
 
 function accountLabel(account: Account): string {
@@ -104,6 +134,7 @@ export function TransactionSheet({
   title: customTitle,
   typeLocked = false,
   lockedReason = null,
+  autoDictate = false,
   onSave,
   onClose,
   onCreateAccount,
@@ -127,6 +158,36 @@ export function TransactionSheet({
   /** Paneles que se abren encima de este, sin perder lo que ya se escribió. */
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [dictation, setDictation] = useState<Dictation | null>(null);
+  /** El formulario se precargó dictando: el movimiento se guarda con origen `voice`. */
+  const [dictated, setDictated] = useState(false);
+
+  // Nunca guarda solo (ADR 0015): precarga y espera a que el usuario toque Guardar.
+  const speech = useSpeech((text) => {
+    const parsed = parsePhrase(text, { accounts, categories, today });
+    if (parsed.unsupported === 'exchange') {
+      setDictation({ heard: text, unclear: [], exchange: true });
+      return;
+    }
+    const result = formFromPhrase(parsed, form, accounts);
+    setForm(result.form);
+    setErrors({});
+    setTarget('amount');
+    setDictated(true);
+    setDictation({ heard: text, unclear: result.unclear, exchange: false });
+  });
+  const canDictate = speech.supported && !original && !typeLocked && origins.length > 0;
+  const { start: startDictation } = speech;
+  useEffect(() => {
+    if (autoDictate && canDictate) startDictation();
+  }, [autoDictate, canDictate, startDictation]);
+  const unclear = (field: ParsedField) => dictation?.unclear.includes(field) === true;
+  function settle(fields: readonly ParsedField[]) {
+    setDictation(
+      (current) =>
+        current && { ...current, unclear: current.unclear.filter((f) => !fields.includes(f)) },
+    );
+  }
 
   const keepCategoryId =
     original && (original.type === 'income' || original.type === 'expense')
@@ -144,6 +205,7 @@ export function TransactionSheet({
     setForm((current) => ({ ...current, ...changes }));
     // El error de un campo se borra cuando el usuario lo cambia.
     setErrors((current) => withoutErrors(current, fields));
+    settle(fields.flatMap((field) => UNCLEAR_FIELD[field] ?? []));
   }
 
   function press(key: AmountKey) {
@@ -155,6 +217,7 @@ export function TransactionSheet({
     setForm((current) => changeType(current, type));
     setTarget('amount');
     setErrors({});
+    settle(['type']);
   }
 
   function submit() {
@@ -167,7 +230,7 @@ export function TransactionSheet({
       setErrors(result.error);
       return;
     }
-    onSave(result.value);
+    onSave(result.value, dictated ? 'voice' : 'app');
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDialogElement>) {
@@ -204,13 +267,48 @@ export function TransactionSheet({
         )
       : null;
 
+  const micButton = canDictate ? (
+    <button
+      type="button"
+      className="icon-btn mic-btn"
+      aria-label="Dictar movimiento"
+      aria-pressed={speech.listening}
+      onClick={speech.listening ? speech.stop : speech.start}
+    >
+      <Icon name="mic" size={22} />
+    </button>
+  ) : null;
+
   return (
-    <Sheet title={title} onClose={onClose} onKeyDown={onKeyDown} routed>
+    <Sheet title={title} onClose={onClose} onKeyDown={onKeyDown} routed actions={micButton}>
       {lockedReason && (
         <div className="notice" role="alert">
           <Icon name="warning" />
           <div className="notice-body">{lockedReason}</div>
         </div>
+      )}
+
+      {speech.listening && (
+        <p className="voice-status" role="status">
+          Te escucho… Por ejemplo: «gasté 5000 en el súper con efectivo».
+        </p>
+      )}
+      {speech.error && (
+        <div className="notice" role="alert">
+          <Icon name="warning" />
+          <div className="notice-body">{speechErrorMessage(speech.error)}</div>
+        </div>
+      )}
+      {dictation?.exchange && (
+        <div className="notice" role="alert">
+          <Icon name="warning" />
+          <div className="notice-body">
+            Los cambios de moneda todavía no se pueden dictar. Elegí «Cambio» y cargalo a mano.
+          </div>
+        </div>
+      )}
+      {dictation && !dictation.exchange && (
+        <p className="voice-heard">Escuché: «{dictation.heard}»</p>
       )}
 
       {!typeLocked && (
@@ -230,6 +328,7 @@ export function TransactionSheet({
           ))}
         </div>
       )}
+      <Unclear show={unclear('type')} />
 
       {isExchange ? (
         <div className="exchange-amounts">
@@ -279,6 +378,8 @@ export function TransactionSheet({
           </p>
           {errors.amount ? (
             <FieldError error={errors.amount} id="error-amount" />
+          ) : unclear('amount') ? (
+            <Unclear show />
           ) : (
             <p className="field-hint">Coma o punto para los centavos</p>
           )}
@@ -311,6 +412,7 @@ export function TransactionSheet({
             }
           />
           <FieldError error={errors.categoryId} id="error-categoryId" />
+          <Unclear show={!errors.categoryId && unclear('category')} />
         </div>
       )}
 
@@ -327,6 +429,7 @@ export function TransactionSheet({
               const accountId = event.target.value;
               setForm((current) => changeAccount(current, accountId, accounts));
               setErrors((current) => withoutErrors(current, ['accountId', 'toAccountId']));
+              settle(['account']);
             }}
           >
             {origin && !origins.includes(origin) && (
@@ -339,6 +442,7 @@ export function TransactionSheet({
             ))}
           </select>
           <FieldError error={errors.accountId} id="error-accountId" />
+          <Unclear show={!errors.accountId && unclear('account')} />
         </label>
 
         {(form.type === 'transfer' || isExchange) && (
@@ -362,6 +466,7 @@ export function TransactionSheet({
               ))}
             </select>
             <FieldError error={errors.toAccountId} id="error-toAccountId" />
+            <Unclear show={!errors.toAccountId && unclear('toAccount')} />
           </label>
         )}
 

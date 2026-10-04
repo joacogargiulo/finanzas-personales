@@ -17,9 +17,18 @@ interface SheetProps {
   onKeyDown?: (event: React.KeyboardEvent<HTMLDialogElement>) => void;
   /** Es el panel de la dirección (`?movimiento=…`): Atrás ya lo cierra la ruta. */
   routed?: boolean | undefined;
+  /** Botones del encabezado, antes de la X (por ejemplo, el micrófono). */
+  actions?: ReactNode;
 }
 
-export function Sheet({ title, onClose, children, onKeyDown, routed = false }: SheetProps) {
+export function Sheet({
+  title,
+  onClose,
+  children,
+  onKeyDown,
+  routed = false,
+  actions,
+}: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   useLayer(onClose, !routed);
@@ -52,6 +61,7 @@ export function Sheet({ title, onClose, children, onKeyDown, routed = false }: S
           <h2 id={titleId} className="sheet-title">
             {title}
           </h2>
+          {actions}
           <button type="button" className="icon-btn" aria-label="Cerrar" onClick={onClose}>
             <Icon name="close" size={22} />
           </button>
