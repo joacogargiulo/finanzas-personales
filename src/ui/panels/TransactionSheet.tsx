@@ -171,7 +171,7 @@ export function TransactionSheet({
 
   if (origins.length === 0 && !original) {
     return (
-      <Sheet title={title} onClose={onClose}>
+      <Sheet title={title} onClose={onClose} routed>
         <div className="empty">
           <p>Para cargar un movimiento, primero creá una cuenta (por ejemplo, Efectivo).</p>
           <button type="button" className="btn btn-primary" onClick={onCreateAccount}>
@@ -191,7 +191,7 @@ export function TransactionSheet({
       : null;
 
   return (
-    <Sheet title={title} onClose={onClose} onKeyDown={onKeyDown}>
+    <Sheet title={title} onClose={onClose} onKeyDown={onKeyDown} routed>
       {lockedReason && (
         <div className="notice" role="alert">
           <Icon name="warning" />

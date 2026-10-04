@@ -219,6 +219,41 @@ body:has(dialog[open]) {
 
 /* ── Movimientos ─────────────────────────────────────────────────────────── */
 
+/* Buscador: el campo ocupa toda la caja; la lupa y la X van adentro. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 4px 0 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+/* La X propia reemplaza a la del navegador, que cambia de un navegador a otro. */
+.search-input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
 .filter-bar {
   display: flex;
   gap: 8px;
@@ -440,4 +475,216 @@ body:has(dialog[open]) {
   box-shadow:
     0 0 0 2px var(--surface),
     0 0 0 4px var(--tone);
+}
+
+/* ── Estadísticas ────────────────────────────────────────────────────────── */
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 20px;
+  }
+
+  /* El resumen va arriba como una franja, y el gráfico de barras ocupa todo el ancho: con 12
+     meses necesita lugar. Las dos donas quedan lado a lado. */
+  .stats-summary,
+  .stats-wide {
+    grid-column: 1 / -1;
+  }
+
+  .stats-summary .totals {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .stats-summary .totals-row {
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stats-summary .totals-row dd {
+    font-size: 18px;
+  }
+}
+
+/* Barras por mes */
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bars-svg {
+  display: block;
+  overflow: visible;
+}
+
+.bars-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.bars-axis {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.bar--income {
+  fill: var(--inc);
+}
+
+.bar--expense {
+  fill: var(--exp);
+}
+
+.bars-group {
+  transition: opacity 0.15s;
+}
+
+.bars-group.is-dimmed {
+  opacity: 0.35;
+}
+
+.bars-months {
+  display: grid;
+}
+
+/* Cada mes es un botón de 44 px de alto (SRS 10), aunque la etiqueta sea chica. */
+.bars-month {
+  min-height: var(--tap);
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.bars-month[aria-pressed='true'] {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.bars-detail {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  font-size: 13px;
+}
+
+.bars-detail-month {
+  font-weight: 700;
+  width: 100%;
+}
+
+.bars-detail-month::first-letter {
+  text-transform: uppercase;
+}
+
+/* Leyenda: un cuadradito del color de la serie, además del texto. */
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.legend::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--tone);
+}
+
+.legend > .num {
+  color: var(--text);
+}
+
+.legend--income {
+  --tone: var(--inc);
+}
+
+.legend--expense {
+  --tone: var(--exp);
+}
+
+/* Dona por categoría */
+
+.donut-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.donut {
+  position: relative;
+  align-self: center;
+  display: grid;
+  place-items: center;
+}
+
+.donut > svg {
+  display: block;
+}
+
+.donut-segment {
+  --tone: var(--muted);
+  fill: var(--tone);
+}
+
+.donut-segment--other,
+.badge--other {
+  --tone: color-mix(in srgb, var(--muted) 55%, var(--surface));
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-total {
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 108px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.donut-legend .row-end {
+  align-items: flex-end;
 }

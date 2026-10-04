@@ -133,3 +133,10 @@ export function syncState(sync: SyncStatus, online: boolean): SyncState {
   if (!online) return 'offline';
   return sync.pendingWrites || !sync.upToDate ? 'syncing' : 'synced';
 }
+
+/** Parte de un total (0 a 1) como porcentaje: `0.493` → `49 %`. Menos del 1 % → `< 1 %`. */
+export function percentLabel(share: number): string {
+  if (share > 0 && share < 0.005) return '< 1 %';
+  // Armado a mano: según el motor, Intl escribe "49%" o "49 %".
+  return `${String(Math.round(share * 100))} %`;
+}

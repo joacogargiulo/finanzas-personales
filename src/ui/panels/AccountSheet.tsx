@@ -62,7 +62,7 @@ export function AccountSheet({ accounts, original, onSave, onClose }: AccountShe
   }
 
   return (
-    <Sheet title={original ? 'Editar cuenta' : 'Nueva cuenta'} onClose={onClose}>
+    <Sheet title={original ? 'Editar cuenta' : 'Nueva cuenta'} onClose={onClose} routed>
       <form className="sheet-form" onSubmit={submit} noValidate>
         <label className="field">
           <span className="field-label">Nombre</span>

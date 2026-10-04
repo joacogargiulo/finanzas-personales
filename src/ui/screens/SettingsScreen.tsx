@@ -6,7 +6,7 @@
 // ADR 0005 y 0009). Acá solo se decide qué diálogo mostrar.
 
 import { useMemo, useState } from 'react';
-import { categoryColor, categoryIcon } from '../../domain/categoryStyle';
+import { categoryIcon } from '../../domain/categoryStyle';
 import { alive, compareNames, isActive, sortAccounts } from '../../domain/collections';
 import { errorMessage } from '../../domain/errors';
 import {
@@ -37,6 +37,7 @@ import { Icon } from '../components/Icon';
 import { Money } from '../components/Money';
 import { RenameDialog } from '../components/RenameDialog';
 import { RowMenu } from '../components/RowMenu';
+import { categoryTone } from '../categoryTone';
 import { ACCOUNT_KIND_LABELS } from '../format';
 import { session } from '../session';
 
@@ -53,10 +54,6 @@ type Dialog =
   | { kind: 'archiveCategory'; category: Category }
   | { kind: 'deleteCategory'; category: Category }
   | { kind: 'restoreCategory'; category: Category; reason: string };
-
-function categoryTone(category: Category): React.CSSProperties {
-  return { '--tone': `var(--cat-${categoryColor(category.color)})` } as React.CSSProperties;
-}
 
 function byName(a: Category, b: Category): number {
   return compareNames(a.name, b.name);
@@ -219,7 +216,7 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
                 <ul className="list">
                   {list.map((category) => (
                     <li key={category.id} className="list-row">
-                      <span className="badge" style={categoryTone(category)}>
+                      <span className="badge" style={categoryTone(category.color)}>
                         <Icon name={categoryIcon(category.icon)} />
                       </span>
                       <span className="row-main">
@@ -263,7 +260,7 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
             <ul className="list">
               {archivedCategories.map((category) => (
                 <li key={category.id} className="list-row">
-                  <span className="badge" style={categoryTone(category)}>
+                  <span className="badge" style={categoryTone(category.color)}>
                     <Icon name={categoryIcon(category.icon)} />
                   </span>
                   <span className="row-main">

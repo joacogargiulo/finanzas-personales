@@ -3,8 +3,17 @@
 // Las categorías archivadas sí se incluyen.
 
 import { isAlive } from './collections';
-import { addMonthsClamped, endOfMonth, monthKey, startOfMonth } from './dates';
-import type { Account, Cents, Currency, LocalDate, Transaction } from './model';
+import { addMonthsClamped, endOfMonth, isValidLocalDate, monthKey, startOfMonth } from './dates';
+import type { DomainError } from './errors';
+import {
+  CURRENCIES,
+  type Account,
+  type Cents,
+  type Currency,
+  type LocalDate,
+  type Transaction,
+} from './model';
+import { err, ok, type Result } from './result';
 
 export const PERIOD_PRESETS = [
   'thisMonth',
@@ -132,4 +141,58 @@ export function computeStats(
     totalExpense,
     isEmpty: totalIncome === 0 && totalExpense === 0,
   };
+}
+
+/**
+ * ID de la entrada "Otras" de las donas. Firestore reserva los IDs `__…__`, así que nunca
+ * coincide con una categoría real.
+ */
+export const OTHER_CATEGORY_ID = '__other__';
+
+/**
+ * Para que la dona se lea bien (ADR 0021): si hay más de `maxSlices` categorías, deja las
+ * `maxSlices - 1` más grandes y suma el resto en "Otras". Recibe la lista ordenada de mayor a
+ * menor, como la devuelve `computeStats`.
+ */
+export function groupSmallCategories(
+  totals: readonly CategoryTotal[],
+  maxSlices = 5,
+): CategoryTotal[] {
+  if (totals.length <= maxSlices) return [...totals];
+  const kept = totals.slice(0, maxSlices - 1);
+  const rest = totals.slice(maxSlices - 1);
+  const sum = totals.reduce((acc, t) => acc + t.total, 0);
+  const restTotal = rest.reduce((acc, t) => acc + t.total, 0);
+  return [
+    ...kept,
+    { categoryId: OTHER_CATEGORY_ID, total: restTotal, share: sum > 0 ? restTotal / sum : 0 },
+  ];
+}
+
+/**
+ * Las monedas que tienen alguna cuenta (archivadas incluidas, porque siguen en las
+ * estadísticas), en el orden ARS, USD, EUR. Para el selector de moneda.
+ */
+export function currenciesInUse(accounts: readonly Account[]): Currency[] {
+  const used = new Set(accounts.filter(isAlive).map((a) => a.currency));
+  return CURRENCIES.filter((currency) => used.has(currency));
+}
+
+export interface CustomRangeErrors {
+  from?: DomainError;
+  to?: DomainError;
+}
+
+/** Valida el período "Personalizado": dos fechas válidas y "desde" no posterior a "hasta". */
+export function validateCustomRange(
+  from: string,
+  to: string,
+): Result<DateRange, CustomRangeErrors> {
+  if (isValidLocalDate(from) && isValidLocalDate(to)) {
+    return to < from ? err({ to: { code: 'date.endBeforeStart' } }) : ok({ from, to });
+  }
+  const errors: CustomRangeErrors = {};
+  if (!isValidLocalDate(from)) errors.from = { code: 'date.invalid' };
+  if (!isValidLocalDate(to)) errors.to = { code: 'date.invalid' };
+  return err(errors);
 }

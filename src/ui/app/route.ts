@@ -5,6 +5,8 @@
 //   #/inicio?movimiento=abc123     → Inicio con el panel editando el movimiento abc123
 //   #/inicio?cuenta=nueva          → Inicio con el panel de cuenta nueva
 //   #/ajustes?categoria=abc        → Ajustes con el panel editando la categoría abc
+//   #/movimientos?capa=1           → Movimientos con un diálogo o un panel sin dirección propia
+//                                    abierto (Filtros, una confirmación): Atrás lo cierra
 
 export const SCREENS = ['inicio', 'movimientos', 'estadisticas', 'ajustes'] as const;
 export type Screen = (typeof SCREENS)[number];
@@ -19,6 +21,11 @@ export interface Panel {
 export interface Route {
   screen: Screen;
   panel: Panel | null;
+  /**
+   * Hay una "capa" abierta encima: un diálogo que no tiene dirección propia. Solo sirve para
+   * que el botón Atrás la cierre (ver `useLayer` en navigation.ts).
+   */
+  layer: boolean;
 }
 
 /** Parámetro del hash de cada tipo de panel, y el valor que significa "nuevo". */
@@ -27,6 +34,8 @@ const PANEL_PARAMS = {
   account: { param: 'cuenta', create: 'nueva' },
   category: { param: 'categoria', create: 'nueva' },
 } as const;
+
+const LAYER_PARAM = 'capa';
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
 
@@ -45,11 +54,16 @@ function parsePanel(query: URLSearchParams): Panel | null {
 export function parseHash(hash: string): Route {
   const [path = '', queryText = ''] = hash.replace(/^#\/?/, '').split('?');
   const screen = SCREENS.find((s) => s === path) ?? 'inicio';
-  return { screen, panel: parsePanel(new URLSearchParams(queryText)) };
+  const query = new URLSearchParams(queryText);
+  return { screen, panel: parsePanel(query), layer: query.get(LAYER_PARAM) === '1' };
 }
 
-export function formatHash({ screen, panel }: Route): string {
-  if (!panel) return `#/${screen}`;
-  const { param, create } = PANEL_PARAMS[panel.kind];
-  return `#/${screen}?${param}=${panel.id ?? create}`;
+export function formatHash({ screen, panel, layer }: Route): string {
+  const params: string[] = [];
+  if (panel) {
+    const { param, create } = PANEL_PARAMS[panel.kind];
+    params.push(`${param}=${panel.id ?? create}`);
+  }
+  if (layer) params.push(`${LAYER_PARAM}=1`);
+  return params.length === 0 ? `#/${screen}` : `#/${screen}?${params.join('&')}`;
 }

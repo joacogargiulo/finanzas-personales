@@ -60,6 +60,8 @@ interface CategorySheetProps {
   typeLockedReason?: string | null;
   onSave: (fields: CategoryFields) => void;
   onClose: () => void;
+  /** Abierta como panel de la dirección (desde Ajustes) y no desde otro panel. */
+  routed?: boolean;
 }
 
 export function CategorySheet({
@@ -69,6 +71,7 @@ export function CategorySheet({
   typeLockedReason = null,
   onSave,
   onClose,
+  routed = false,
 }: CategorySheetProps) {
   const [name, setName] = useState(original?.name ?? '');
   const [type, setType] = useState<CategoryType>(original?.type ?? defaultType);
@@ -87,7 +90,11 @@ export function CategorySheet({
   }
 
   return (
-    <Sheet title={original ? 'Editar categoría' : 'Nueva categoría'} onClose={onClose}>
+    <Sheet
+      title={original ? 'Editar categoría' : 'Nueva categoría'}
+      onClose={onClose}
+      routed={routed}
+    >
       <form className="sheet-form" onSubmit={submit} noValidate>
         <label className="field">
           <span className="field-label">Nombre</span>

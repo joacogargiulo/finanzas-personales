@@ -6,13 +6,14 @@ import { alive, selectable, sortAccounts, sortTransactions } from '../../domain/
 import { consolidate, equivalentArs, rateFor } from '../../domain/consolidation';
 import { errorMessage } from '../../domain/errors';
 import { canRestoreAccount } from '../../domain/lifecycle';
-import { CURRENCIES, type Account, type Currency } from '../../domain/model';
+import { CURRENCIES, type Account } from '../../domain/model';
 import { formatAmount } from '../../domain/money';
 import { computeStats, periodRange } from '../../domain/stats';
 import { useData, useLedger, useNow, useToday } from '../app/hooks';
 import { goTo, openPanel } from '../app/navigation';
 import { Icon } from '../components/Icon';
 import { Money } from '../components/Money';
+import { TotalsSummary } from '../components/TotalsSummary';
 import { TransactionRow } from '../components/TransactionRow';
 import { ACCOUNT_KIND_LABELS, monthLong, rateLabel, ratesAge } from '../format';
 import { session } from '../session';
@@ -98,7 +99,7 @@ export function HomeScreen() {
               Resumen de {monthLong(today)}
             </h2>
             {month.map(({ currency, stats }) => (
-              <MonthSummary
+              <TotalsSummary
                 key={currency}
                 currency={currency}
                 income={stats.totalIncome}
@@ -213,38 +214,6 @@ function RatesLine({ now }: { now: number }) {
       {' · '}
       <span className={age.stale ? 'warn-text' : undefined}>{age.label}</span>
     </p>
-  );
-}
-
-function MonthSummary(props: {
-  currency: Currency;
-  income: number;
-  expense: number;
-  showCurrency: boolean;
-}) {
-  const { currency, income, expense, showCurrency } = props;
-  return (
-    <dl className="totals month-summary">
-      {showCurrency && <dt className="month-currency">{currency}</dt>}
-      <div className="totals-row">
-        <dt>Ingresos</dt>
-        <dd>
-          <Money cents={income} currency={currency} sign="always" tone="income" />
-        </dd>
-      </div>
-      <div className="totals-row">
-        <dt>Gastos</dt>
-        <dd>
-          <Money cents={-expense} currency={currency} tone="expense" />
-        </dd>
-      </div>
-      <div className="totals-row">
-        <dt>Balance</dt>
-        <dd>
-          <Money cents={income - expense} currency={currency} sign="always" />
-        </dd>
-      </div>
-    </dl>
   );
 }
 

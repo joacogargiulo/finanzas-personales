@@ -28,3 +28,11 @@ Se adopta la **opción 1**, elegida por el dueño después de comparar las tres:
 - No se agrega ninguna dependencia, y la navegación tiene tests unitarios (`route.test.ts`) y uno e2e (Atrás cierra el panel).
 - Los paneles se abren con la dirección: `#/inicio?movimiento=abc123` abre la edición de ese movimiento, y si el movimiento no existe, el panel se cierra.
 - Si más adelante la app necesita muchas más rutas, se puede migrar a React Router con `HashRouter` sin cambiar las direcciones.
+
+## Nota de la Fase 4: Atrás también cierra los diálogos
+En la Fase 3, el panel de Filtros y los diálogos de confirmación no tenían dirección propia, así que Atrás salía de la pantalla en vez de cerrarlos. Se agrega una **capa**:
+- `Route` suma `layer`, que se escribe `capa=1` en el hash: `#/movimientos?capa=1`, o `#/inicio?movimiento=abc&capa=1` si hay un diálogo encima de un panel.
+- El hook `useLayer(onClose)` (en `navigation.ts`) agrega esa entrada al abrir el diálogo. Si el usuario vuelve atrás, llama a `onClose`; si el diálogo se cierra por su cuenta (Cancelar, Aplicar), saca la entrada.
+- `Sheet` usa la capa **por defecto**. Solo los paneles con dirección propia (movimiento, cuenta y categoría abiertos desde la ruta) la desactivan con `routed`. Así, cualquier diálogo nuevo se cierra con Atrás sin hacer nada extra.
+- `closePanel()` con una capa encima (confirmar "Eliminar movimiento") vuelve las dos entradas de una vez.
+- El cierre de la capa espera un instante, para que el modo estricto de React (que en desarrollo monta los efectos dos veces) y el paso de un diálogo a otro no la cierren por error. Al recargar la página, la capa se descarta: el diálogo vive en la memoria de React.

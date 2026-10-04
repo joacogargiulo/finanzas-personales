@@ -4,6 +4,7 @@ import {
   dayMonth,
   initials,
   monthShort,
+  percentLabel,
   rateLabel,
   ratesAge,
   syncState,
@@ -87,5 +88,16 @@ describe('dayHeading', () => {
 
   it('agrega el año si no es el actual', () => {
     expect(dayHeading('2025-12-31', TODAY)).toBe('miércoles 31 de diciembre de 2025');
+  });
+});
+
+describe('percentLabel', () => {
+  it.each([
+    [0.493, '49 %'],
+    [1, '100 %'],
+    [0, '0 %'],
+    [0.004, '< 1 %'],
+  ])('%f → %s', (share, label) => {
+    expect(percentLabel(share)).toBe(label);
   });
 });
