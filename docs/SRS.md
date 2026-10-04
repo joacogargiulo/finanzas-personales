@@ -1,8 +1,8 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.3.0
-**Fecha:** 2026-10-03
+**Versión:** 3.4.0
+**Fecha:** 2026-10-04
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
 
@@ -10,7 +10,15 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+| Tema | v3.3.0 | v3.4.0 | ADR |
+|---|---|---|---|
+| Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
+| Gráficos | Sin especificar | SVG propio, sin librería; la geometría son funciones puras con tests | 0021 |
+| Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
+| Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
+
+### 0.0.1 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -18,7 +26,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.1 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.2 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -402,11 +410,12 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
   - Etiqueta "(archivada)" junto a cuentas o categorías archivadas.
 
 ### 6.5 Estadísticas
-- **Selector de moneda:** ARS, USD, EUR. Solo considera transacciones de cuentas de esa moneda.
+- **Selector de moneda:** ARS, USD, EUR; solo las que tienen alguna cuenta, archivadas incluidas (ADR 0021). Solo considera transacciones de cuentas de esa moneda.
 - **Selector de período:** Este mes, Últimos 3 meses, Últimos 6 meses (por defecto), Últimos 12 meses, Este año, Personalizado (desde/hasta).
 - **Gráfico 1:** barras agrupadas por mes del período, ingresos (verde) vs gastos (rojo).
-- **Gráfico 2:** torta de gastos por categoría en el período, con porcentajes y leyenda.
-- **Gráfico 3:** torta de ingresos por categoría en el período.
+- **Resumen del período:** ingresos, gastos y balance.
+- **Gráfico 2:** dona de gastos por categoría en el período, con el total en el centro y una lista debajo (ícono, nombre, monto y porcentaje). Con más de 5 categorías, quedan las 4 más grandes y el resto se suma en "Otras" (ADR 0021).
+- **Gráfico 3:** dona de ingresos por categoría en el período, igual que la de gastos.
 - Transferencias y cambios de moneda **no** se incluyen. Las categorías archivadas sí se incluyen.
 - Estado vacío si no hay datos en el período.
 
