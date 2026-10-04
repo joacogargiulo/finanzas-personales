@@ -1,10 +1,4 @@
-import {
-  getDocFromServer,
-  serverTimestamp,
-  updateDoc,
-  waitForPendingWrites,
-  type DocumentData,
-} from 'firebase/firestore';
+import { getDocFromServer, waitForPendingWrites, type DocumentData } from 'firebase/firestore';
 import { describe, expect, it } from 'vitest';
 import type { Budget, Recurring, Transaction } from '../../src/domain/model';
 import type { RecurringFields, TransactionFields } from '../../src/domain/validation';
@@ -239,11 +233,10 @@ describe('recurrentes', () => {
     const db = createClient(OWNER);
     const { writer, errors } = writerFor(db);
     const id = writer.createRecurring(internet);
-    // Simula que ya se confirmaron enero y febrero (confirmar llega en la Fase 5).
-    await updateDoc(docRef(db, OWNER, 'recurring', id), {
-      nextDate: '2026-03-31',
-      updatedAt: serverTimestamp(),
-    });
+    // Ya se confirmaron enero y febrero.
+    const created = asStored<Recurring>(internet, { id, nextDate: '2026-01-31' });
+    writer.skipOccurrence(created, '2026-01-31');
+    writer.skipOccurrence({ ...created, nextDate: '2026-02-28' }, '2026-02-28');
     const stored = asStored<Recurring>(internet, { id, nextDate: '2026-03-31' });
 
     writer.updateRecurring(stored, { ...internet, frequency: 'weekly' });
@@ -268,6 +261,114 @@ describe('recurrentes', () => {
       amount: 1_800_000,
       nextDate: '2026-01-31',
     });
+  });
+});
+
+describe('confirmar y saltar ocurrencias (SRS 5.10)', () => {
+  const internet: RecurringFields = {
+    type: 'expense',
+    amount: 1_500_000,
+    accountId: 'acc_sueldo',
+    categoryId: 'seed_servicios',
+    description: 'Internet',
+    frequency: 'monthly',
+    startDate: '2026-01-31',
+    endDate: null,
+  };
+  /** Los campos del movimiento tal como salen del panel "Confirmar". */
+  function confirmedFields(amount: number, date = '2026-01-31'): TransactionFields {
+    return {
+      type: 'expense',
+      amount,
+      date,
+      description: 'Internet',
+      accountId: 'acc_sueldo',
+      categoryId: 'seed_servicios',
+    };
+  }
+
+  // Un solo lote: el movimiento con el ID fijo y el avance de nextDate llegan juntos.
+  it('confirmar crea el movimiento con ID fijo y avanza nextDate', async () => {
+    const db = createClient(OWNER);
+    const { writer, errors } = writerFor(db);
+    const id = writer.createRecurring(internet);
+    const stored = asStored<Recurring>(internet, { id, nextDate: '2026-01-31' });
+
+    // El usuario cambió la fecha del movimiento: el ID sigue usando la de la ocurrencia.
+    const txId = writer.confirmOccurrence(
+      stored,
+      '2026-01-31',
+      confirmedFields(1_600_000, '2026-02-02'),
+    );
+
+    expect(txId).toBe(`rec_${id}_2026-01-31`);
+    expect(await onServer(db, 'transactions', txId)).toMatchObject({
+      amount: 1_600_000,
+      date: '2026-02-02',
+      recurringId: id,
+      source: 'app',
+      deletedAt: null,
+    });
+    expect((await onServer(db, 'recurring', id))?.['nextDate']).toBe('2026-02-28');
+    expect(errors).toEqual([]);
+  });
+
+  it('saltar solo avanza nextDate', async () => {
+    const db = createClient(OWNER);
+    const { writer, errors } = writerFor(db);
+    const id = writer.createRecurring(internet);
+
+    writer.skipOccurrence(
+      asStored<Recurring>(internet, { id, nextDate: '2026-01-31' }),
+      '2026-01-31',
+    );
+
+    expect((await onServer(db, 'recurring', id))?.['nextDate']).toBe('2026-02-28');
+    expect(await onServer(db, 'transactions', `rec_${id}_2026-01-31`)).toBeUndefined();
+    expect(errors).toEqual([]);
+  });
+
+  // TC-14: el celular y la compu confirman la misma ocurrencia. El segundo lote llega como una
+  // edición con otro createdAt (inmutable) y las reglas lo rechazan entero. Queda un solo
+  // movimiento, el del primero, y la app no muestra un error porque el resultado es correcto.
+  it('TC-14: confirmar en dos dispositivos deja un solo movimiento y ningún error', async () => {
+    const phone = createClient(OWNER);
+    const computer = createClient(OWNER);
+    const fromPhone = writerFor(phone);
+    const fromComputer = writerFor(computer);
+    const id = fromPhone.writer.createRecurring(internet);
+    await waitForPendingWrites(phone);
+    const stored = asStored<Recurring>(internet, { id, nextDate: '2026-01-31' });
+
+    const txId = fromPhone.writer.confirmOccurrence(
+      stored,
+      '2026-01-31',
+      confirmedFields(1_500_000),
+    );
+    await waitForPendingWrites(phone);
+    fromComputer.writer.confirmOccurrence(stored, '2026-01-31', confirmedFields(1_700_000));
+    await waitForPendingWrites(computer);
+    // El manejo del rechazo lee el documento del servidor: se le da un momento para terminar.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    expect(await onServer(phone, 'transactions', txId)).toMatchObject({ amount: 1_500_000 });
+    expect((await onServer(phone, 'recurring', id))?.['nextDate']).toBe('2026-02-28');
+    expect(fromComputer.errors).toEqual([]);
+    expect(fromPhone.errors).toEqual([]);
+  });
+
+  // Un rechazo por otro motivo (acá, un monto inválido) sí se informa.
+  it('un lote rechazado por otro motivo se informa', async () => {
+    const db = createClient(OWNER);
+    const { writer, errors } = writerFor(db);
+    const id = writer.createRecurring(internet);
+    const stored = asStored<Recurring>(internet, { id, nextDate: '2026-01-31' });
+
+    writer.confirmOccurrence(stored, '2026-01-31', confirmedFields(10.5));
+
+    await until(() => errors.length === 1, 'el error del servidor');
+    expect(errors[0]?.action).toBe(`confirmar transactions/rec_${id}_2026-01-31`);
+    expect((await onServer(db, 'recurring', id))?.['nextDate']).toBe('2026-01-31');
   });
 });
 

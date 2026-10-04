@@ -190,3 +190,29 @@ describe('sin cuentas', () => {
     expect(onCreateAccount).toHaveBeenCalled();
   });
 });
+
+// Confirmar un recurrente (Fase 5): el panel llega precargado con la ocurrencia y sin selector
+// de tipo. El usuario puede ajustar el monto, la fecha o la descripción antes de guardar.
+describe('precargado (confirmar un recurrente)', () => {
+  const initial = {
+    type: 'expense' as const,
+    amount: 250_000_00,
+    date: '2026-10-01',
+    description: 'Alquiler',
+    accountId: 'cash',
+    categoryId: 'food',
+  };
+
+  it('muestra los datos del recurrente y guarda lo que ajustó el usuario', async () => {
+    const { onSave, user } = setup({ initial, title: 'Confirmar recurrente', typeLocked: true });
+    expect(screen.getByRole('dialog', { name: 'Confirmar recurrente' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Tipo de movimiento' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 250.000');
+    expect(screen.getByRole('button', { name: 'Comida' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Borrar' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar gasto' }));
+
+    expect(onSave).toHaveBeenCalledWith({ ...initial, amount: 25_000_00 });
+  });
+});

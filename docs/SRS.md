@@ -1,7 +1,7 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.4.0
+**Versión:** 3.5.0
 **Fecha:** 2026-10-04
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
@@ -10,7 +10,15 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+### 0.0 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
+| Tema | v3.4.0 | v3.5.0 | ADR |
+|---|---|---|---|
+| Pendientes en Inicio | Después del total y del resumen | Arriba de todo, porque piden una acción | 0022 |
+| Confirmar un pendiente | Modal precargado | Panel con dirección propia (`pendiente=rec_…`), sin selector de tipo | 0022 |
+| Saltar un pendiente | Sin confirmación | Con confirmación simple | 0022 |
+| Confirmar en dos dispositivos | Mismo ID, mismo `nextDate` | Además, el rechazo del segundo lote por las reglas no se muestra como error | 0004 |
+
+### 0.0.1 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
 | Tema | v3.3.0 | v3.4.0 | ADR |
 |---|---|---|---|
 | Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
@@ -18,7 +26,7 @@
 | Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
 | Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
 
-### 0.0.1 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0.2 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -26,7 +34,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.2 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.3 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -388,10 +396,10 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 - Avatar con iniciales del usuario de Google; al tocarlo, menú con nombre, email y "Cerrar sesión".
 
 ### 6.3 Dashboard
-1. **Tarjeta de total estimado** en ARS, con las cotizaciones usadas y su fecha (y advertencias de 5.7).
-2. **Totales por moneda:** ARS, USD, EUR.
-3. **Pendientes de confirmar** (solo si hay recurrentes pendientes): lista con fecha, descripción y monto; botones "Confirmar" y "Saltar".
-4. **Presupuestos del mes** (solo si hay presupuestos): barras de progreso compactas.
+1. **Pendientes de confirmar** (solo si hay recurrentes pendientes), arriba de todo (ADR 0022): lista con fecha, descripción y monto; botones "Confirmar" y "Saltar" (este último con confirmación). Con la cuenta o la categoría archivada, "Editar recurrente" en lugar de "Confirmar".
+2. **Tarjeta de total estimado** en ARS, con las cotizaciones usadas y su fecha (y advertencias de 5.7), y los **totales por moneda**.
+3. **Resumen del mes:** ingresos y gastos.
+4. **Presupuestos del mes** (solo si hay presupuestos): barras de progreso compactas, con el porcentaje en texto.
 5. **Mis Cuentas:** cuentas activas con nombre, moneda, saldo y equivalencia en ARS. Botón "+ Agregar cuenta". Si no hay cuentas, estado vacío que invita a crear la primera.
 6. **Últimas transacciones:** las 5 más recientes; botón "Ver todas" → Historial.
 7. Botón principal "+ Nueva transacción".
@@ -444,9 +452,11 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 
 **Categoría:** nombre; tipo (bloqueado con explicación si la usa algún movimiento, presupuesto o recurrente); ícono y color.
 
-**Presupuesto:** categoría, moneda, límite mensual.
+**Presupuesto:** categoría, moneda, límite mensual. Al editar, solo el límite (categoría y moneda forman el ID).
 
 **Recurrente:** tipo (Gasto, Ingreso, Transferencia), monto, cuentas, categoría, descripción, frecuencia, fecha de inicio, fecha de fin opcional.
+
+**Confirmar recurrente:** el panel de transacción precargado con la ocurrencia, sin selector de tipo (ADR 0022).
 
 **Confirmaciones:** simple para eliminar transacciones; reforzada (escribir el nombre exacto) para archivar cuentas y categorías y para restaurar un respaldo.
 

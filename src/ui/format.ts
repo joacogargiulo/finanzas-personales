@@ -3,7 +3,7 @@
 
 import { STALE_RATES_MS, toArs } from '../domain/consolidation';
 import { addDays, parseLocalDate } from '../domain/dates';
-import type { AccountKind, EpochMs, LocalDate, TransactionType } from '../domain/model';
+import type { AccountKind, EpochMs, Frequency, LocalDate, TransactionType } from '../domain/model';
 import { formatAmount } from '../domain/money';
 import type { SyncStatus } from '../data/sync';
 
@@ -20,6 +20,12 @@ export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   income: 'Ingreso',
   transfer: 'Transferencia',
   exchange: 'Cambio de moneda',
+};
+
+export const FREQUENCY_LABELS: Record<Frequency, string> = {
+  weekly: 'Semanal',
+  monthly: 'Mensual',
+  yearly: 'Anual',
 };
 
 const MONTHS_SHORT = [

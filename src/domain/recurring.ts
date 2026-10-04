@@ -6,6 +6,7 @@ import {
   addMonthsClamped,
   addYearsClamped,
   daysBetween,
+  isValidLocalDate,
   monthsBetween,
   parseLocalDate,
 } from './dates';
@@ -127,6 +128,17 @@ export function recalculateNextDate(edited: Schedule, previousNextDate: LocalDat
 /** ID fijo de la ocurrencia: siempre con la fecha de la ocurrencia (ADR 0004). */
 export function recurringTransactionId(recurringId: string, occurrenceDate: LocalDate): string {
   return `rec_${recurringId}_${occurrenceDate}`;
+}
+
+/**
+ * Lo inverso de `recurringTransactionId`: de `rec_{recurringId}_{fecha}` saca el recurrente y la
+ * fecha de la ocurrencia. `null` si el texto no tiene esa forma.
+ */
+export function parseOccurrenceId(id: string): { recurringId: string; date: LocalDate } | null {
+  const match = /^rec_(.+)_(\d{4}-\d{2}-\d{2})$/.exec(id);
+  if (!match) return null;
+  const [, recurringId = '', date = ''] = match;
+  return isValidLocalDate(date) ? { recurringId, date } : null;
 }
 
 /**
