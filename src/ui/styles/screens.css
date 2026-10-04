@@ -814,3 +814,12 @@ body:has(dialog[open]) {
 .donut-legend .row-end {
   align-items: flex-end;
 }
+
+/* ── Respaldo y exportación (Ajustes) ────────────────────────────────────── */
+
+.export-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}

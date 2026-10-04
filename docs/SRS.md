@@ -1,7 +1,7 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.5.1
+**Versión:** 3.6.0
 **Fecha:** 2026-10-04
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
@@ -10,7 +10,15 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.5.1 (Fase 5b: dictado)
+### 0.0 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
+| Tema | v3.5.1 | v3.6.0 | ADR |
+|---|---|---|---|
+| Restaurar desde JSON | Reemplaza todos los datos | Fuera de alcance: el JSON es una copia para guardar | 0024 |
+| `schemaVersion` del JSON | 3 | El del esquema de los documentos (`SCHEMA_VERSION`) | 0024 |
+| Origen de la exportación | Sin especificar | Los datos del dispositivo (sin lecturas); aviso si no está al día | 0024 |
+| TC-23 | Exportar y restaurar | Exportar y verificar el contenido del JSON | 0024 |
+
+### 0.0.1 Cambios de la versión 3.5.1 (Fase 5b: dictado)
 | Tema | v3.5.0 | v3.5.1 | ADR |
 |---|---|---|---|
 | Dictado | Parser de frases sin micrófono | Micrófono en el panel de movimiento (Web Speech API), solo al crear y si el navegador lo soporta; precarga y espera Guardar | 0023 |
@@ -18,7 +26,7 @@
 | Origen `voice` | Sin especificar | Si el formulario se precargó dictando, aunque después se corrija a mano | 0023 |
 | Atajo "Dictar movimiento" | Fase 5 | Fase 7 (con el manifiesto); en la 5b queda la ruta `movimiento=nuevo&dictar=1` | 0023 |
 
-### 0.0.1 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
+### 0.0.2 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
 | Tema | v3.4.0 | v3.5.0 | ADR |
 |---|---|---|---|
 | Pendientes en Inicio | Después del total y del resumen | Arriba de todo, porque piden una acción | 0022 |
@@ -26,7 +34,7 @@
 | Saltar un pendiente | Sin confirmación | Con confirmación simple | 0022 |
 | Confirmar en dos dispositivos | Mismo ID, mismo `nextDate` | Además, el rechazo del segundo lote por las reglas no se muestra como error | 0004 |
 
-### 0.0.2 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+### 0.0.3 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
 | Tema | v3.3.0 | v3.4.0 | ADR |
 |---|---|---|---|
 | Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
@@ -34,7 +42,7 @@
 | Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
 | Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
 
-### 0.0.3 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0.4 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -42,7 +50,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.4 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.5 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -107,7 +115,7 @@ Aplicación web progresiva (PWA) de finanzas personales, **multiusuario**: cualq
 2. Los datos se sincronizan automáticamente entre dispositivos mediante Firebase Firestore.
 3. Soporte de tres monedas: ARS (moneda de consolidación), USD y EUR.
 4. Cotización del Dólar Blue y Euro Blue (Bluelytics) para estimar el patrimonio total en ARS.
-5. Exportación a JSON, CSV y Google Sheets; restauración desde JSON.
+5. Exportación a JSON, CSV y Google Sheets (sin restauración, ADR 0024).
 
 ### 1.3 Fuera de alcance
 - Datos compartidos entre personas (cada usuario tiene sus datos aislados).
@@ -468,7 +476,7 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 
 **Dictar** (ADR 0023): al crear una transacción, si el navegador soporta la Web Speech API, un botón de micrófono en el encabezado del panel. La frase precarga el formulario (parser del ADR 0015), muestra lo que se escuchó y marca los campos que no se entendieron; nunca guarda sola. Lo guardado lleva `source: 'voice'`. La dirección `movimiento=nuevo&dictar=1` abre el panel escuchando.
 
-**Confirmaciones:** simple para eliminar transacciones; reforzada (escribir el nombre exacto) para archivar cuentas y categorías y para restaurar un respaldo.
+**Confirmaciones:** simple para eliminar transacciones; reforzada (escribir el nombre exacto) para archivar cuentas y categorías.
 
 ---
 
@@ -549,14 +557,14 @@ Por defecto, todo lo demás queda denegado. Las reglas no limitan *cuántos* doc
 
 ## 8. RESPALDO, EXPORTACIÓN E IMPORTACIÓN
 
-Firestore es la fuente de verdad. Estas funciones son copias de seguridad y salidas de datos.
+Firestore es la fuente de verdad. Estas funciones son copias de seguridad y salidas de datos. Salen de los datos que ya están en el dispositivo, sin lecturas de Firestore; si el dispositivo no está al día con el servidor, se avisa (ADR 0024).
 
 ### 8.1 Exportar JSON
 Descarga `finanzas_YYYY-MM-DD.json` con:
 ```json
 {
   "format": "control-finanzas",
-  "schemaVersion": 3,
+  "schemaVersion": 1,
   "exportedAt": 1759363200000,
   "accounts": [ ... ],
   "categories": [ ... ],
@@ -565,14 +573,10 @@ Descarga `finanzas_YYYY-MM-DD.json` con:
   "recurring": [ ... ]
 }
 ```
-Incluye registros archivados y conserva los IDs.
+Incluye registros archivados (no las lápidas) y conserva los IDs. `schemaVersion` es el del esquema de los documentos (ADR 0011).
 
-### 8.2 Restaurar desde JSON
-- Requiere conexión (para evitar una cola offline enorme).
-- Validar el archivo: `format`, `schemaVersion`, tipos de cada campo y consistencia de referencias (toda `accountId`/`categoryId` debe existir en el archivo). Si algo falla, mostrar el error y no tocar nada.
-- Mostrar resumen ("12 cuentas, 8 categorías, 1.530 movimientos…") y confirmación reforzada escribiendo `REEMPLAZAR`.
-- Reemplaza todos los datos del usuario: borra los documentos actuales y escribe los del archivo, en batches de hasta 500 operaciones.
-- Mostrar progreso.
+### 8.2 ~~Restaurar desde JSON~~
+Fuera de alcance (ADR 0024): reemplazar los datos rompería la sincronización de los otros dispositivos y chocaría con los campos inmutables de las reglas. El JSON es una copia para guardar.
 
 ### 8.3 Exportar CSV
 - Descarga **un solo archivo ZIP** `finanzas_YYYY-MM-DD.zip` con `cuentas.csv`, `categorias.csv` y `movimientos.csv` (descargar varios archivos sueltos a la vez suele ser bloqueado por el navegador).
@@ -616,7 +620,7 @@ Incluye registros archivados y conserva los IDs.
 
 ## 10. REQUISITOS NO FUNCIONALES
 
-- **Offline:** todas las funciones de carga, edición, consulta, filtros, búsqueda y estadísticas funcionan sin conexión después del primer login. Requieren conexión: login inicial, cotizaciones, restaurar JSON, exportar a Sheets.
+- **Offline:** todas las funciones de carga, edición, consulta, filtros, búsqueda y estadísticas funcionan sin conexión después del primer login. Requieren conexión: login inicial, cotizaciones, exportar a Sheets.
 - **Multi-dispositivo:** un cambio hecho con conexión en un dispositivo aparece en el otro (si está abierto y con conexión) en pocos segundos, sin recargar.
 - **Rendimiento:** guardar un movimiento y ver el saldo actualizado se siente instantáneo (sin esperar a la red). La app debe mantenerse fluida con al menos 10.000 transacciones.
 - **Compatibilidad:** Chrome en Android (APK y navegador) y Chrome/Edge/Firefox en escritorio. Diseño responsivo, pensado primero para celular.
@@ -682,7 +686,7 @@ Según 7.3, con un grupo por colección:
 | TC-20 | Cerrar sesión con cambios pendientes | Muestra advertencia |
 | TC-21 | Abrir el APK | Pantalla completa, sin barra de direcciones; login funciona |
 | TC-22 | Exportar CSV y abrir en Excel | Columnas separadas, acentos y decimales correctos |
-| TC-23 | Exportar JSON y restaurarlo | Datos idénticos a los exportados |
+| TC-23 | Exportar el JSON (ADR 0024) | Trae las cuentas, categorías y movimientos cargados, con los archivados y sin los eliminados |
 | TC-24 | Eliminar un movimiento en el celular con la compu abierta | Desaparece en la compu en segundos (lápida) |
 | TC-25 | Archivar "Efectivo" (saldo 0) en la compu mientras el celular, sin conexión, le carga un gasto; reconectar | El gasto no se pierde; aparece en el historial con la cuenta marcada "archivada" |
 | TC-26 | Confirmar la ocurrencia de hoy de un recurrente mensual y después cambiarle la frecuencia a semanal | La ocurrencia de hoy no vuelve a quedar pendiente |
@@ -701,7 +705,7 @@ Cada fase termina con: typecheck sin errores, tests pasando y una verificación 
 4. **Fase 3 — Paridad con la app actual:** Dashboard, Historial, Ajustes de cuentas y categorías (con archivado), modales (incluido el cambio de moneda, ADR 0020), indicador de sincronización.
 5. **Fase 4 — Estadísticas y búsqueda:** período elegible y buscador.
 6. **Fase 5 — Nuevas funciones:** presupuestos, recurrentes y dictado por voz (ADR 0023).
-7. **Fase 6 — Respaldo:** JSON (exportar/restaurar), CSV, Google Sheets.
+7. **Fase 6 — Respaldo:** exportar JSON, CSV y Google Sheets (sin restauración, ADR 0024).
 8. **Fase 7 — PWA y publicación:** service worker, manifiesto (con el atajo "Dictar movimiento" a `#/inicio?movimiento=nuevo&dictar=1`), Firebase Hosting.
 9. **Fase 8 — APK:** Bubblewrap, assetlinks, pruebas en el celular.
 
