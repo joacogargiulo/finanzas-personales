@@ -6,7 +6,7 @@ import type { SessionUser } from '../../data/auth';
 import { Icon } from '../components/Icon';
 import { initials, syncState, type SyncState } from '../format';
 import { useData, useOnline } from './hooks';
-import { signOutWithWarning } from './signOut';
+import { SignOutButton } from './SignOutButton';
 
 const SYNC_TEXT: Record<SyncState, string> = {
   offline: 'Sin conexión',
@@ -37,14 +37,15 @@ export function SyncIndicator() {
 
 export function AccountMenu({ user }: { user: SessionUser }) {
   const [open, setOpen] = useState(false);
-  const pendingWrites = useData((s) => s.sync.pendingWrites);
   const anchor = useRef<HTMLDivElement>(null);
 
   // Se cierra con Escape o tocando afuera.
   useEffect(() => {
     if (!open) return;
     const onPointer = (event: PointerEvent) => {
-      if (!anchor.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Element;
+      // Los diálogos (por ejemplo, "¿Cerrar sesión?") se dibujan aparte: no cierran el menú.
+      if (!anchor.current?.contains(target) && !target.closest('dialog')) setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
@@ -76,13 +77,7 @@ export function AccountMenu({ user }: { user: SessionUser }) {
             <p className="menu-name">{user.displayName ?? 'Tu cuenta'}</p>
             <p className="menu-email">{user.email}</p>
           </div>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void signOutWithWarning(pendingWrites)}
-          >
-            Cerrar sesión
-          </button>
+          <SignOutButton />
         </div>
       )}
     </div>

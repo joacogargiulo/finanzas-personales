@@ -4,13 +4,17 @@
 //   #/movimientos?movimiento=nuevo → Movimientos con el panel de nuevo movimiento abierto
 //   #/inicio?movimiento=abc123     → Inicio con el panel editando el movimiento abc123
 //   #/inicio?cuenta=nueva          → Inicio con el panel de cuenta nueva
+//   #/ajustes?categoria=abc        → Ajustes con el panel editando la categoría abc
 
 export const SCREENS = ['inicio', 'movimientos', 'estadisticas', 'ajustes'] as const;
 export type Screen = (typeof SCREENS)[number];
 
 /** Panel abierto encima de la pantalla. `id: null` = crear; con un ID = editar ese documento. */
-export type Panel =
-  { kind: 'transaction'; id: string | null } | { kind: 'account'; id: string | null };
+export type PanelKind = 'transaction' | 'account' | 'category';
+export interface Panel {
+  kind: PanelKind;
+  id: string | null;
+}
 
 export interface Route {
   screen: Screen;
@@ -21,12 +25,13 @@ export interface Route {
 const PANEL_PARAMS = {
   transaction: { param: 'movimiento', create: 'nuevo' },
   account: { param: 'cuenta', create: 'nueva' },
+  category: { param: 'categoria', create: 'nueva' },
 } as const;
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
 
 function parsePanel(query: URLSearchParams): Panel | null {
-  for (const kind of ['transaction', 'account'] as const) {
+  for (const kind of ['transaction', 'account', 'category'] as const) {
     const { param, create } = PANEL_PARAMS[kind];
     const value = query.get(param);
     if (value === null) continue;

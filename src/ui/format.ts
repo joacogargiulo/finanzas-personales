@@ -2,7 +2,7 @@
 // la cotización. Los montos se formatean con `formatAmount` del dominio.
 
 import { STALE_RATES_MS, toArs } from '../domain/consolidation';
-import { parseLocalDate } from '../domain/dates';
+import { addDays, parseLocalDate } from '../domain/dates';
 import type { AccountKind, EpochMs, LocalDate, TransactionType } from '../domain/model';
 import { formatAmount } from '../domain/money';
 import type { SyncStatus } from '../data/sync';
@@ -68,6 +68,24 @@ export function monthLong(date: LocalDate): string {
 export function dayMonth(date: LocalDate): string {
   const parts = parseLocalDate(date);
   return parts ? `${String(parts.day)} ${monthShort(date)}` : date;
+}
+
+const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+/**
+ * Encabezado de un día en Movimientos: "Hoy · sábado 3 de octubre", "Ayer · …" o
+ * "jueves 1 de octubre". Con el año si no es el actual.
+ */
+export function dayHeading(date: LocalDate, today: LocalDate): string {
+  const parts = parseLocalDate(date);
+  if (!parts) return date;
+  // Día de la semana con UTC: no depende de la zona horaria del dispositivo.
+  const weekday = WEEKDAYS[new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()];
+  const year = date.slice(0, 4) === today.slice(0, 4) ? '' : ` de ${String(parts.year)}`;
+  const label = `${weekday ?? ''} ${String(parts.day)} de ${monthLong(date)}${year}`;
+  if (date === today) return `Hoy · ${label}`;
+  if (date === addDays(today, -1)) return `Ayer · ${label}`;
+  return label;
 }
 
 /** Iniciales para el avatar: "Joaquín Gargiulo" → "JG". Sin nombre, la primera letra del email. */
