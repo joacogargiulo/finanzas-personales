@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeAccount, makeCategory, makeExpense } from '../../domain/testing/factories';
 import { TransactionSheet, type TransactionSheetProps } from './TransactionSheet';
 
@@ -43,14 +43,17 @@ describe('nuevo gasto', () => {
     await user.click(screen.getByRole('button', { name: 'Comida' }));
     await user.click(screen.getByRole('button', { name: 'Guardar gasto' }));
 
-    expect(onSave).toHaveBeenCalledWith({
-      type: 'expense',
-      amount: 150050,
-      date: '2026-10-03',
-      description: '',
-      accountId: 'bank', // las cuentas se ordenan por moneda y nombre: Banco va primero
-      categoryId: 'food',
-    });
+    expect(onSave).toHaveBeenCalledWith(
+      {
+        type: 'expense',
+        amount: 150050,
+        date: '2026-10-03',
+        description: '',
+        accountId: 'bank', // las cuentas se ordenan por moneda y nombre: Banco va primero
+        categoryId: 'food',
+      },
+      'app', // origen: cargado a mano
+    );
   });
 
   it('muestra los errores junto a cada campo y no guarda', async () => {
@@ -110,6 +113,7 @@ describe('cambiar de tipo', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar cambio' }));
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'exchange', amount: 13_000_000, toAmount: 10_000 }),
+      'app',
     );
   });
 });
@@ -127,7 +131,7 @@ describe('edición', () => {
     await typeAmount(user, '500');
     await user.click(screen.getByRole('button', { name: 'Guardar gasto' }));
 
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ amount: 50000 }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ amount: 50000 }), 'app');
   });
 
   it('bloquea el guardado con la explicación si usa una cuenta archivada', () => {
@@ -213,6 +217,156 @@ describe('precargado (confirmar un recurrente)', () => {
     await user.click(screen.getByRole('button', { name: 'Borrar' }));
     await user.click(screen.getByRole('button', { name: 'Guardar gasto' }));
 
-    expect(onSave).toHaveBeenCalledWith({ ...initial, amount: 25_000_00 });
+    expect(onSave).toHaveBeenCalledWith({ ...initial, amount: 25_000_00 }, 'app');
+  });
+});
+
+// Dictado (ADR 0023). jsdom no tiene micrófono: se instala un reconocimiento de voz falso que
+// imita a `webkitSpeechRecognition` de Chrome, y el test decide qué "escuchó".
+class FakeRecognition {
+  static last: FakeRecognition | null = null;
+  lang = '';
+  continuous = true;
+  interimResults = true;
+  maxAlternatives = 0;
+  onresult: ((event: { results: { transcript: string }[][] }) => void) | null = null;
+  onerror: ((event: { error: string }) => void) | null = null;
+  onend: (() => void) | null = null;
+  started = false;
+
+  constructor() {
+    FakeRecognition.last = this;
+  }
+  start() {
+    this.started = true;
+  }
+  stop() {
+    this.onend?.();
+  }
+  abort() {
+    this.onend?.();
+  }
+  /** El usuario dijo `text` y se calló. */
+  say(text: string) {
+    act(() => {
+      this.onresult?.({ results: [[{ transcript: text }]] });
+      this.onend?.();
+    });
+  }
+  fail(error: string) {
+    act(() => {
+      this.onerror?.({ error });
+      this.onend?.();
+    });
+  }
+}
+
+/** El reconocimiento que está escuchando ahora. */
+function recognition(): FakeRecognition {
+  const last = FakeRecognition.last;
+  if (!last) throw new Error('No se empezó a escuchar');
+  return last;
+}
+
+describe('dictado', () => {
+  // "súper" es sinónimo de la categoría inicial Comida, que tiene ID fijo.
+  const seedFood = makeCategory({ id: 'seed_comida', name: 'Comida', type: 'expense' });
+
+  function withSpeech() {
+    FakeRecognition.last = null;
+    vi.stubGlobal('webkitSpeechRecognition', FakeRecognition);
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  async function dictate(text: string, props: Partial<TransactionSheetProps> = {}) {
+    withSpeech();
+    const result = setup({ categories: [seedFood, salary], ...props });
+    await result.user.click(screen.getByRole('button', { name: 'Dictar movimiento' }));
+    expect(recognition().lang).toBe('es-AR');
+    recognition().say(text);
+    return result;
+  }
+
+  it('el botón aparece solo si el navegador sabe dictar, y solo al crear', () => {
+    setup();
+    expect(screen.queryByRole('button', { name: 'Dictar movimiento' })).not.toBeInTheDocument();
+  });
+
+  it('no aparece al editar ni al confirmar un recurrente', () => {
+    withSpeech();
+    const { unmount } = render(
+      <TransactionSheet
+        accounts={[cash]}
+        categories={[food]}
+        today="2026-10-03"
+        original={makeExpense({ accountId: 'cash', categoryId: 'food' })}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        onCreateAccount={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Dictar movimiento' })).not.toBeInTheDocument();
+    unmount();
+    setup({ typeLocked: true });
+    expect(screen.queryByRole('button', { name: 'Dictar movimiento' })).not.toBeInTheDocument();
+  });
+
+  it('precarga el formulario, no guarda solo y guarda con origen voice', async () => {
+    const { onSave, user } = await dictate('gasté dieciocho mil en el súper con efectivo');
+
+    expect(
+      screen.getByText('Escuché: «gasté dieciocho mil en el súper con efectivo»'),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 18.000');
+    expect(screen.getByRole('button', { name: 'Comida' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('combobox', { name: 'Cuenta' })).toHaveValue('cash');
+    expect(onSave).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Guardar gasto' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'expense', amount: 1_800_000, accountId: 'cash' }),
+      'voice',
+    );
+  });
+
+  it('marca lo que no se entendió, y la marca se va al corregirlo', async () => {
+    const { user } = await dictate('gasté en el súper con efectivo');
+
+    expect(screen.getByText('No se entendió, revisalo.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '5' }));
+    expect(screen.queryByText('No se entendió, revisalo.')).not.toBeInTheDocument();
+  });
+
+  it('un cambio de moneda no se dicta: avisa y no toca el formulario', async () => {
+    await dictate('compré 100 dólares');
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Los cambios de moneda todavía no se pueden dictar',
+    );
+    expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 0');
+  });
+
+  it('explica en castellano si el micrófono no está permitido', async () => {
+    withSpeech();
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Dictar movimiento' }));
+    recognition().fail('not-allowed');
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Permití el uso del micrófono');
+  });
+
+  it('con autoDictate empieza a escuchar al abrir', () => {
+    withSpeech();
+    setup({ autoDictate: true });
+
+    expect(recognition().started).toBe(true);
+    expect(screen.getByRole('status')).toHaveTextContent('Te escucho');
+    expect(screen.getByRole('button', { name: 'Dictar movimiento' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 });

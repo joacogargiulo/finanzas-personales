@@ -94,7 +94,38 @@ describe('formatHash', () => {
       { screen: 'ajustes', panel: { kind: 'account', id: 'cuenta1' }, layer: false },
       { screen: 'movimientos', panel: null, layer: true },
       { screen: 'inicio', panel: { kind: 'transaction', id: 'x1' }, layer: true },
+      { screen: 'inicio', panel: { kind: 'transaction', id: null, dictate: true }, layer: false },
     ];
     for (const route of routes) expect(parseHash(formatHash(route))).toEqual(route);
+  });
+});
+
+// El atajo "Dictar movimiento" (Fase 7) abre el panel ya escuchando (ADR 0023).
+describe('dictar=1', () => {
+  it('marca el panel de movimiento nuevo para empezar a dictar', () => {
+    expect(parseHash('#/inicio?movimiento=nuevo&dictar=1').panel).toEqual({
+      kind: 'transaction',
+      id: null,
+      dictate: true,
+    });
+    expect(
+      formatHash({
+        screen: 'inicio',
+        panel: { kind: 'transaction', id: null, dictate: true },
+        layer: false,
+      }),
+    ).toBe('#/inicio?movimiento=nuevo&dictar=1');
+  });
+
+  it('se ignora al editar o en otros paneles', () => {
+    expect(parseHash('#/inicio?movimiento=abc&dictar=1').panel).toEqual({
+      kind: 'transaction',
+      id: 'abc',
+    });
+    expect(parseHash('#/inicio?cuenta=nueva&dictar=1').panel).toEqual({
+      kind: 'account',
+      id: null,
+    });
+    expect(parseHash('#/inicio?movimiento=nuevo&dictar=0').panel).not.toHaveProperty('dictate');
   });
 });

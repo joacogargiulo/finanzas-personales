@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { indexById } from '../../domain/collections';
 import { makeAccount, makeCategory, makeExpense } from '../../domain/testing/factories';
+import { parsePhrase } from '../../domain/voice/parsePhrase';
 import {
   buildTransaction,
   categoryOptions,
@@ -8,6 +9,7 @@ import {
   changeType,
   destinationOptions,
   emptyForm,
+  formFromPhrase,
   formFromTransaction,
   type TransactionForm,
 } from './transactionForm';
@@ -164,5 +166,63 @@ describe('buildTransaction', () => {
     const tx = makeExpense({ accountId: 'cash', categoryId: 'food', amount: 30000 });
     const result = buildTransaction({ ...formFromTransaction(tx), amount: '500' }, ctx, tx);
     expect(result.ok && result.value.amount).toBe(50000);
+  });
+});
+
+// Dictado (ADR 0023): la frase precarga el formulario y marca lo que hay que revisar.
+describe('formFromPhrase', () => {
+  // "súper" es sinónimo de la categoría inicial Comida, que tiene ID fijo.
+  const seedFood = makeCategory({ id: 'seed_comida', name: 'Comida', type: 'expense' });
+  const phraseCategories = [seedFood, salary];
+  const fromPhrase = (text: string, current = form()) =>
+    formFromPhrase(
+      parsePhrase(text, { accounts, categories: phraseCategories, today: '2026-10-03' }),
+      current,
+      accounts,
+    );
+
+  it('una frase completa llena todo y no marca nada', () => {
+    const { form: next, unclear } = fromPhrase('gasté dieciocho mil en el súper con efectivo ayer');
+    expect(next).toEqual({
+      type: 'expense',
+      amount: '18000',
+      toAmount: '',
+      date: '2026-10-02',
+      description: 'Súper',
+      accountId: 'cash',
+      toAccountId: '',
+      categoryId: 'seed_comida',
+    });
+    expect(unclear).toEqual([]);
+  });
+
+  it('lo que no se entendió queda vacío y marcado; la cuenta queda la elegida', () => {
+    const { form: next, unclear } = fromPhrase('algo raro', form({ accountId: 'bank' }));
+    expect(next).toMatchObject({ type: 'expense', amount: '', accountId: 'bank', categoryId: '' });
+    expect(unclear).toEqual(['type', 'amount', 'account', 'category']);
+  });
+
+  it('marca la cuenta si la moneda que se dijo no es la de la cuenta', () => {
+    const { form: next, unclear } = fromPhrase('cobré 50 dólares con efectivo');
+    expect(next).toMatchObject({ type: 'income', amount: '50', accountId: 'cash' });
+    expect(unclear).toContain('account');
+  });
+
+  it('una transferencia llena las dos cuentas y no lleva categoría', () => {
+    const { form: next, unclear } = fromPhrase('transferí 2000 del banco a efectivo');
+    expect(next).toMatchObject({
+      type: 'transfer',
+      amount: '2000',
+      accountId: 'bank',
+      toAccountId: 'cash',
+      categoryId: '',
+    });
+    expect(unclear).toEqual([]);
+  });
+
+  it('descarta una cuenta destino de otra moneda (la transferencia no la permite)', () => {
+    const { form: next, unclear } = fromPhrase('transferí 2000 del banco a caja dólares');
+    expect(next.toAccountId).toBe('');
+    expect(unclear).toEqual(['toAccount']);
   });
 });
