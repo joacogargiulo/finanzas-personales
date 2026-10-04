@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { indexById } from './collections';
-import { computeStats, monthsInRange, periodRange } from './stats';
+import {
+  computeStats,
+  currenciesInUse,
+  groupSmallCategories,
+  monthsInRange,
+  OTHER_CATEGORY_ID,
+  periodRange,
+  validateCustomRange,
+} from './stats';
 import {
   makeAccount,
   makeCategory,
@@ -90,5 +98,73 @@ describe('computeStats', () => {
     const stats = computeStats(txs, accounts, 'EUR', range);
     expect(stats.isEmpty).toBe(true);
     expect(stats.monthly).toHaveLength(2);
+  });
+});
+
+describe('groupSmallCategories (ADR 0021)', () => {
+  const total = (categoryId: string, cents: number, sum: number) => ({
+    categoryId,
+    total: cents,
+    share: cents / sum,
+  });
+
+  // Con pocas categorías, la dona las muestra todas.
+  it('con 5 o menos no agrupa', () => {
+    const totals = [total('a', 60_00, 100_00), total('b', 40_00, 100_00)];
+    expect(groupSmallCategories(totals)).toEqual(totals);
+  });
+
+  // Con más, quedan las 4 más grandes y el resto suma en "Otras", sin perder un centavo.
+  it('agrupa el resto en "Otras"', () => {
+    const sum = 100_00;
+    const totals = [
+      total('a', 40_00, sum),
+      total('b', 25_00, sum),
+      total('c', 15_00, sum),
+      total('d', 10_00, sum),
+      total('e', 6_00, sum),
+      total('f', 3_00, sum),
+      total('g', 1_00, sum),
+    ];
+    const grouped = groupSmallCategories(totals);
+    expect(grouped.map((t) => t.categoryId)).toEqual(['a', 'b', 'c', 'd', OTHER_CATEGORY_ID]);
+    expect(grouped[4]).toEqual({ categoryId: OTHER_CATEGORY_ID, total: 10_00, share: 0.1 });
+    expect(grouped.reduce((acc, t) => acc + t.total, 0)).toBe(sum);
+    expect(grouped.reduce((acc, t) => acc + t.share, 0)).toBeCloseTo(1);
+  });
+});
+
+describe('currenciesInUse', () => {
+  // Solo las monedas con cuentas (archivadas incluidas), siempre en el orden ARS, USD, EUR.
+  it('ordena y omite las monedas sin cuentas', () => {
+    const accounts = [
+      makeAccount({ currency: 'EUR', archivedAt: 1 }),
+      makeAccount({ currency: 'ARS' }),
+      makeAccount({ currency: 'USD', deletedAt: 1 }), // eliminada: no cuenta
+    ];
+    expect(currenciesInUse(accounts)).toEqual(['ARS', 'EUR']);
+  });
+});
+
+describe('validateCustomRange', () => {
+  it('acepta un rango válido, incluso de un solo día', () => {
+    expect(validateCustomRange('2026-01-15', '2026-01-15')).toEqual({
+      ok: true,
+      value: { from: '2026-01-15', to: '2026-01-15' },
+    });
+  });
+
+  it('"hasta" antes de "desde" es un error en "hasta"', () => {
+    expect(validateCustomRange('2026-02-01', '2026-01-31')).toEqual({
+      ok: false,
+      error: { to: { code: 'date.endBeforeStart' } },
+    });
+  });
+
+  it('fechas vacías o imposibles', () => {
+    expect(validateCustomRange('', '2026-02-30')).toEqual({
+      ok: false,
+      error: { from: { code: 'date.invalid' }, to: { code: 'date.invalid' } },
+    });
   });
 });
