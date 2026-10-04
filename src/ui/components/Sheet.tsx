@@ -2,8 +2,11 @@
 // navegador con `showModal()`, que ya resuelve lo difícil de la accesibilidad: atrapa el foco
 // adentro, deja inerte el resto de la página y lo anuncia como diálogo a los lectores de pantalla.
 // Escape, tocar afuera o la X llaman a `onClose`; quien lo usa decide qué hacer (ADR 0018).
+// El botón Atrás también: los paneles con dirección propia (`routed`) ya lo resuelven con la
+// ruta, y el resto de las hojas (Filtros, confirmaciones) se abren como una capa (`useLayer`).
 
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useLayer } from '../app/navigation';
 import { Icon } from './Icon';
 
 interface SheetProps {
@@ -12,11 +15,14 @@ interface SheetProps {
   children: ReactNode;
   /** Teclas que el panel maneja por su cuenta (por ejemplo, el teclado numérico en la compu). */
   onKeyDown?: (event: React.KeyboardEvent<HTMLDialogElement>) => void;
+  /** Es el panel de la dirección (`?movimiento=…`): Atrás ya lo cierra la ruta. */
+  routed?: boolean | undefined;
 }
 
-export function Sheet({ title, onClose, children, onKeyDown }: SheetProps) {
+export function Sheet({ title, onClose, children, onKeyDown, routed = false }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  useLayer(onClose, !routed);
 
   useEffect(() => {
     const dialog = ref.current;

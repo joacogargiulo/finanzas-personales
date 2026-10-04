@@ -91,6 +91,7 @@ export function Panels({ panel }: { panel: Panel | null }) {
         categories={categories}
         original={category}
         typeLockedReason={typeCheck && !typeCheck.ok ? errorMessage(typeCheck.error) : null}
+        routed
         onClose={closePanel}
         onSave={(fields) => {
           if (category) {
