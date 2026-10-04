@@ -180,6 +180,17 @@ describe('editar un movimiento', () => {
     await assertFails(updateDoc(doc(owner(), path), { ...change, updatedAt: serverTimestamp() }));
   });
 
+  // TC-14: si otro dispositivo ya confirmó la misma ocurrencia de un recurrente, el segundo
+  // `set` llega como edición con otro createdAt y se rechaza. Queda el movimiento del primero
+  // (la app lo detecta y no lo muestra como error, ver src/data/writes.ts).
+  it('rechaza pisar una ocurrencia ya confirmada con otro createdAt', async () => {
+    const recPath = `users/${OWNER}/transactions/rec_r1_2026-10-03`;
+    await seed(recPath, { ...validExpense(), recurringId: 'r1' });
+    await assertFails(
+      setDoc(doc(owner(), recPath), { ...validExpense(), recurringId: 'r1', createdAt: NOW + 1 }),
+    );
+  });
+
   it('rechaza una edición que no actualiza updatedAt', async () => {
     await seed(path, validExpense());
     await assertFails(updateDoc(doc(owner(), path), { amount: 70_000 }));

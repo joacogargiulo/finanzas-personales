@@ -9,12 +9,15 @@
 // - Eliminar es marcar `deletedAt` (lápida). El borrado físico existe solo en "Borrar mi cuenta".
 // - Si el servidor rechaza una escritura, se avisa con `onError` en vez de perderla en silencio.
 
+import { FirebaseError } from 'firebase/app';
 import {
   deleteField,
   doc,
+  getDocFromServer,
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
   type DocumentData,
   type Firestore,
 } from 'firebase/firestore';
@@ -23,11 +26,12 @@ import type {
   Account,
   Budget,
   Category,
+  LocalDate,
   Recurring,
   Transaction,
   TransactionSource,
 } from '../domain/model';
-import { recalculateNextDate } from '../domain/recurring';
+import { nextDateAfter, recalculateNextDate, recurringTransactionId } from '../domain/recurring';
 import type { BudgetDraft, RecurringFields, TransactionFields } from '../domain/validation';
 import { collectionRef, docRef, type UserCollection } from './paths';
 
@@ -215,6 +219,55 @@ export function createWriter(db: Firestore, uid: string, options: WriterOptions)
     },
     deleteRecurring(id: string): void {
       tombstone('recurring', id);
+    },
+
+    /**
+     * Confirma una ocurrencia (SRS 5.10). En un solo lote, que se aplica entero o no se aplica:
+     * - crea el movimiento con el ID fijo `rec_{recurringId}_{fecha}` (la fecha de la ocurrencia,
+     *   aunque el usuario haya cambiado la del movimiento);
+     * - pasa `nextDate` a la ocurrencia siguiente a la confirmada (idempotente, ADR 0004).
+     */
+    confirmOccurrence(
+      recurring: Recurring,
+      occurrenceDate: LocalDate,
+      fields: TransactionFields,
+    ): string {
+      ensureCanWrite();
+      const id = recurringTransactionId(recurring.id, occurrenceDate);
+      const transactionRef = docRef(db, uid, 'transactions', id);
+      const batch = writeBatch(db);
+      batch.set(transactionRef, {
+        ...fields,
+        source: 'app',
+        recurringId: recurring.id,
+        createdAt: now(),
+        updatedAt: serverTimestamp(),
+        deletedAt: null,
+      });
+      batch.update(docRef(db, uid, 'recurring', recurring.id), {
+        nextDate: nextDateAfter(recurring, occurrenceDate),
+        updatedAt: serverTimestamp(),
+      });
+      const action = `confirmar transactions/${id}`;
+      batch.commit().catch(async (error: unknown) => {
+        // Otro dispositivo ya confirmó esta ocurrencia (TC-14): el movimiento existe con otro
+        // createdAt, que es inmutable, y las reglas rechazan el lote entero. Es el resultado
+        // correcto (queda un solo movimiento y el nextDate es el mismo), así que no es un error.
+        // Se confirma leyendo el documento del servidor (ADR 0004, nota de la Fase 5).
+        if (error instanceof FirebaseError && error.code === 'permission-denied') {
+          try {
+            if ((await getDocFromServer(transactionRef)).exists()) return;
+          } catch {
+            // Si no se pudo leer, se informa el error original.
+          }
+        }
+        options.onError({ action, error });
+      });
+      return id;
+    },
+    /** Saltea una ocurrencia: solo avanza `nextDate`, con el mismo cálculo que confirmar. */
+    skipOccurrence(recurring: Recurring, occurrenceDate: LocalDate): void {
+      update('recurring', recurring.id, { nextDate: nextDateAfter(recurring, occurrenceDate) });
     },
   };
 }

@@ -8,6 +8,7 @@ import {
   nextDateAfter,
   occurrenceAfter,
   occurrenceDraft,
+  parseOccurrenceId,
   pendingOccurrences,
   recalculateNextDate,
   recurringTransactionId,
@@ -134,6 +135,23 @@ describe('confirmar y saltar (ADR 0004)', () => {
     };
     expect(second).toEqual(first);
     expect(first.id).toBe('rec_r1_2026-02-28');
+  });
+
+  // El panel "Confirmar" recibe el ID fijo en la dirección y tiene que recuperar de qué
+  // recurrente y de qué fecha es. Los IDs de Firestore pueden tener "_", así que se corta por
+  // la fecha del final.
+  it('parseOccurrenceId recupera el recurrente y la fecha', () => {
+    expect(parseOccurrenceId('rec_r1_2026-02-28')).toEqual({
+      recurringId: 'r1',
+      date: '2026-02-28',
+    });
+    expect(parseOccurrenceId(recurringTransactionId('a_b', '2026-01-31'))).toEqual({
+      recurringId: 'a_b',
+      date: '2026-01-31',
+    });
+    expect(parseOccurrenceId('r1_2026-02-28')).toBeNull();
+    expect(parseOccurrenceId('rec_r1_2026-02-30')).toBeNull();
+    expect(parseOccurrenceId('rec__2026-02-28')).toBeNull();
   });
 
   // El modal se precarga con los datos del recurrente y la fecha de la ocurrencia.
