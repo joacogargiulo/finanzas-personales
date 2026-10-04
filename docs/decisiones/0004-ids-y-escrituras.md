@@ -26,8 +26,17 @@ La app escribe sin conexión desde varios dispositivos. Cuando dos dispositivos 
 ## Consecuencias
 - TC-14 (confirmar el mismo recurrente en dos dispositivos) da una sola transacción y un solo avance de `nextDate`.
 - En un conflicto sobre el mismo campo (por ejemplo, el mismo presupuesto con límites distintos), gana el último. Se acepta: es raro y no rompe ningún saldo.
-- Caso borde aceptado: si un dispositivo confirma una ocurrencia, el usuario elimina ese movimiento y otro dispositivo sin conexión confirma la misma ocurrencia más tarde, el movimiento reaparece. Es poco probable y se arregla eliminándolo otra vez.
+- ~~Caso borde aceptado: si un dispositivo confirma una ocurrencia, el usuario elimina ese movimiento y otro dispositivo sin conexión confirma la misma ocurrencia más tarde, el movimiento reaparece.~~ No pasa: ver la nota de la Fase 5.
 - El documento de perfil (dónde vive `seededAt`) se define en el bloque 3.
 
 ## Nota de implementación (Fase 2)
 Con dos dispositivos sembrando a la vez, el emulador evalúa las reglas de la transacción perdedora **antes** de detectar el conflicto. Para ese momento las categorías ya existen con otro `createdAt`, que es inmutable, así que responde `permission-denied` en vez de pedir un reintento. Como la transacción es atómica, no se escribe nada a medias. `ensureSeeded` (`src/data/seed.ts`) maneja ese caso: si recibe `permission-denied`, lee el perfil del servidor y, si ya tiene `seededAt`, da la siembra por hecha. Hay un test que lo cubre (`tests/data/seed.test.ts`).
+
+## Nota de implementación (Fase 5): confirmar en dos dispositivos
+Confirmar es un `writeBatch` con dos escrituras: `set` del movimiento `rec_{recurrente}_{fecha}` y `update` de `nextDate` en el recurrente (`confirmOccurrence` en `src/data/writes.ts`). Un lote se aplica entero o no se aplica.
+
+Si el celular y la compu confirman la misma ocurrencia, el segundo `set` llega al servidor cuando el documento ya existe, así que las reglas lo evalúan como una **edición**. Su `createdAt` es distinto (cada dispositivo pone su hora) y `createdAt` es inmutable: las reglas rechazan el lote entero. El resultado es el correcto (un solo movimiento, el del primero, y el mismo `nextDate`), pero la app lo vería como un error.
+
+Por eso, ante un `permission-denied` al confirmar, el writer lee ese movimiento del servidor (una lectura). Si existe, da la ocurrencia por confirmada sin avisar nada; si no, informa el error como cualquier otro. Es el mismo enfoque que la siembra (nota de la Fase 2). Hay un test de datos que lo cubre (TC-14) y uno de reglas que documenta el rechazo.
+
+Lo mismo resuelve el caso borde de las consecuencias: si el movimiento confirmado se eliminó (lápida), el lote del otro dispositivo también se rechaza por `createdAt`, así que el movimiento **no** reaparece.

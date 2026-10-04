@@ -16,10 +16,7 @@ import { FREQUENCY_LABELS, TRANSACTION_TYPE_LABELS } from '../format';
 import { session } from '../session';
 
 /** Cómo se llama un recurrente en la lista: su descripción, o la categoría si no tiene. */
-function recurringTitle(
-  recurring: Recurring,
-  categories: ReadonlyMap<string, Category>,
-): string {
+function recurringTitle(recurring: Recurring, categories: ReadonlyMap<string, Category>): string {
   const description = recurring.description.trim();
   if (description) return description;
   if (recurring.type === 'transfer') return TRANSACTION_TYPE_LABELS.transfer;
