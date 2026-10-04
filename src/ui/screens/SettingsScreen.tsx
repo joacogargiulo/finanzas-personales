@@ -1,6 +1,5 @@
 // Ajustes (SRS 6.6): cuentas y categorías (editar, archivar, eliminar y restaurar),
-// apariencia y cuenta de Google. Presupuestos y recurrentes llegan en la Fase 5; el respaldo,
-// en la Fase 6.
+// presupuestos, recurrentes, apariencia y cuenta de Google. El respaldo llega en la Fase 6.
 //
 // Las reglas de archivar, eliminar y restaurar son del dominio (src/domain/lifecycle.ts,
 // ADR 0005 y 0009). Acá solo se decide qué diálogo mostrar.
@@ -40,6 +39,8 @@ import { RowMenu } from '../components/RowMenu';
 import { categoryTone } from '../categoryTone';
 import { ACCOUNT_KIND_LABELS } from '../format';
 import { session } from '../session';
+import { BudgetsSettings } from './BudgetsSettings';
+import { RecurringSettings } from './RecurringSettings';
 
 const THEME_LABELS: Record<Theme, string> = {
   auto: 'Automático',
@@ -285,6 +286,10 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
           </details>
         )}
       </section>
+
+      <BudgetsSettings />
+
+      <RecurringSettings />
 
       <section className="card" aria-labelledby="appearance-title">
         <h2 id="appearance-title" className="card-title">

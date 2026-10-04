@@ -12,7 +12,6 @@ import {
   pressAmountKey,
   type AmountKey,
 } from '../../domain/amountInput';
-import { categoryColor, categoryIcon } from '../../domain/categoryStyle';
 import { indexById } from '../../domain/collections';
 import { errorMessage, type DomainError } from '../../domain/errors';
 import { implicitRate } from '../../domain/exchange';
@@ -25,8 +24,9 @@ import type {
   TransactionType,
 } from '../../domain/model';
 import { currencySymbol, MINUS } from '../../domain/money';
-import type { TransactionFields } from '../../domain/validation';
+import type { TransactionDraft, TransactionFields } from '../../domain/validation';
 import type { CategoryFields } from '../../data/writes';
+import { CategoryChips } from '../components/CategoryChips';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
 import { Keypad } from '../components/Keypad';
@@ -40,6 +40,7 @@ import {
   changeType,
   destinationOptions,
   emptyForm,
+  formFromDraft,
   formFromTransaction,
   type TransactionForm,
   type TransactionFormErrors,
@@ -58,6 +59,12 @@ export interface TransactionSheetProps {
   today: LocalDate;
   /** El movimiento que se edita; sin él, se crea uno nuevo. */
   original?: Transaction | undefined;
+  /** Datos para precargar un movimiento nuevo (por ejemplo, la ocurrencia de un recurrente). */
+  initial?: TransactionDraft | undefined;
+  /** Título del panel, si no es "Nuevo movimiento" o "Editar movimiento". */
+  title?: string | undefined;
+  /** Oculta el selector de tipo: al confirmar un recurrente, el tipo no cambia. */
+  typeLocked?: boolean;
   /** Si no se puede modificar (usa una cuenta archivada, SRS 5.3), el motivo. */
   lockedReason?: string | null;
   onSave: (fields: TransactionFields) => void;
@@ -93,6 +100,9 @@ export function TransactionSheet({
   categories,
   today,
   original,
+  initial,
+  title: customTitle,
+  typeLocked = false,
   lockedReason = null,
   onSave,
   onClose,
@@ -105,7 +115,11 @@ export function TransactionSheet({
   const categoriesById = useMemo(() => indexById(categories), [categories]);
 
   const [form, setForm] = useState<TransactionForm>(() =>
-    original ? formFromTransaction(original) : emptyForm(today, origins[0]?.id ?? ''),
+    original
+      ? formFromTransaction(original)
+      : initial
+        ? formFromDraft(initial)
+        : emptyForm(today, origins[0]?.id ?? ''),
   );
   const [errors, setErrors] = useState<TransactionFormErrors>({});
   /** Qué monto escribe el teclado: en un cambio de moneda hay dos. */
@@ -167,7 +181,7 @@ export function TransactionSheet({
     press(key);
   }
 
-  const title = original ? 'Editar movimiento' : 'Nuevo movimiento';
+  const title = customTitle ?? (original ? 'Editar movimiento' : 'Nuevo movimiento');
 
   if (origins.length === 0 && !original) {
     return (
@@ -199,21 +213,23 @@ export function TransactionSheet({
         </div>
       )}
 
-      <div className="segmented" role="group" aria-label="Tipo de movimiento">
-        {TYPES.map(({ type, label }) => (
-          <button
-            key={type}
-            type="button"
-            className={`tone-${type}`}
-            aria-pressed={form.type === type}
-            onClick={() => {
-              selectType(type);
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {!typeLocked && (
+        <div className="segmented" role="group" aria-label="Tipo de movimiento">
+          {TYPES.map(({ type, label }) => (
+            <button
+              key={type}
+              type="button"
+              className={`tone-${type}`}
+              aria-pressed={form.type === type}
+              onClick={() => {
+                selectType(type);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isExchange ? (
         <div className="exchange-amounts">
@@ -279,39 +295,21 @@ export function TransactionSheet({
               No tenés categorías de {form.type === 'income' ? 'ingreso' : 'gasto'} activas.
             </p>
           )}
-          <div className="chips" role="group" aria-labelledby="categories-label">
-            {categoryChoices.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                className="chip"
-                style={
-                  {
-                    '--tone': `var(--cat-${categoryColor(category.color)})`,
-                  } as React.CSSProperties
-                }
-                aria-pressed={form.categoryId === category.id}
-                onClick={() => {
-                  update({ categoryId: category.id }, ['categoryId']);
-                }}
-              >
-                <Icon name={categoryIcon(category.icon)} size={16} />
-                {category.name}
-                {category.archivedAt !== null && <em className="tag">archivada</em>}
-              </button>
-            ))}
-            {onCreateCategory && lockedReason === null && (
-              <button
-                type="button"
-                className="chip"
-                onClick={() => {
-                  setCreatingCategory(true);
-                }}
-              >
-                + Nueva
-              </button>
-            )}
-          </div>
+          <CategoryChips
+            categories={categoryChoices}
+            selectedId={form.categoryId}
+            labelledBy="categories-label"
+            onSelect={(categoryId) => {
+              update({ categoryId }, ['categoryId']);
+            }}
+            onCreate={
+              onCreateCategory && lockedReason === null
+                ? () => {
+                    setCreatingCategory(true);
+                  }
+                : undefined
+            }
+          />
           <FieldError error={errors.categoryId} id="error-categoryId" />
         </div>
       )}

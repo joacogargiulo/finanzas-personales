@@ -23,6 +23,8 @@ type UiIcon =
   | 'chevron'
   | 'filter'
   | 'search'
+  | 'repeat'
+  | 'mic'
   | 'income'
   | 'expense'
   | 'transfer'
@@ -95,6 +97,13 @@ const PATHS: Record<IconName, ReactElement> = {
     <>
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-4-4" />
+    </>
+  ),
+  repeat: <path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4" />,
+  mic: (
+    <>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
     </>
   ),
 

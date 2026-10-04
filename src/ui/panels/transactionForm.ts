@@ -16,6 +16,7 @@ import { err, type Result } from '../../domain/result';
 import {
   validateTransaction,
   type FieldErrors,
+  type TransactionDraft,
   type TransactionField,
   type TransactionFields,
   type ValidationContext,
@@ -64,6 +65,20 @@ export function formFromTransaction(tx: Transaction): TransactionForm {
   };
 }
 
+/** Formulario precargado para un movimiento nuevo (la ocurrencia de un recurrente, el dictado). */
+export function formFromDraft(draft: TransactionDraft): TransactionForm {
+  return {
+    type: draft.type,
+    amount: draft.amount > 0 ? amountToInput(draft.amount) : '',
+    toAmount: draft.toAmount ? amountToInput(draft.toAmount) : '',
+    date: draft.date,
+    description: draft.description,
+    accountId: draft.accountId,
+    toAccountId: draft.toAccountId ?? '',
+    categoryId: draft.categoryId ?? '',
+  };
+}
+
 /**
  * Cambia el tipo y limpia los campos que dejan de aplicar (SRS 6.7): la categoría es de un tipo
  * (ingreso o gasto), la cuenta destino depende de la regla de moneda (igual para transferir,
@@ -80,12 +95,15 @@ export function changeType(form: TransactionForm, type: TransactionType): Transa
   };
 }
 
+/** Lo que miran las reglas de cuentas y categorías: sirve también para el formulario de recurrente. */
+type AccountsPart = Pick<TransactionForm, 'type' | 'accountId' | 'toAccountId'>;
+
 /** Cambia la cuenta de origen; si la destino deja de ser válida, la limpia. */
-export function changeAccount(
-  form: TransactionForm,
+export function changeAccount<F extends AccountsPart>(
+  form: F,
   accountId: string,
   accounts: readonly Account[],
-): TransactionForm {
+): F {
   const next = { ...form, accountId };
   if (
     next.toAccountId &&
@@ -105,7 +123,10 @@ export function accountOptions(accounts: readonly Account[]): Account[] {
  * Cuentas destino (SRS 6.7): activas y distintas del origen; de la misma moneda para una
  * transferencia (TC-03) y de otra moneda para un cambio.
  */
-export function destinationOptions(form: TransactionForm, accounts: readonly Account[]): Account[] {
+export function destinationOptions(
+  form: Pick<TransactionForm, 'type' | 'accountId'>,
+  accounts: readonly Account[],
+): Account[] {
   const origin = accounts.find((a) => a.id === form.accountId);
   if (!origin || (form.type !== 'transfer' && form.type !== 'exchange')) return [];
   const sameCurrency = form.type === 'transfer';
@@ -119,7 +140,7 @@ export function destinationOptions(form: TransactionForm, accounts: readonly Acc
  * que ya tenía aunque esté archivada (SRS 5.3).
  */
 export function categoryOptions(
-  form: TransactionForm,
+  form: Pick<TransactionForm, 'type'>,
   categories: readonly Category[],
   keepId?: string,
 ): Category[] {

@@ -1,13 +1,15 @@
-// Inicio (SRS 6.3, diseño "Sereno"): patrimonio estimado, resumen del mes, cuentas y últimos
-// movimientos. Pendientes de confirmar y presupuestos se suman en la Fase 5.
+// Inicio (SRS 6.3, diseño "Sereno"): pendientes de confirmar (arriba de todo, porque piden una
+// acción), patrimonio estimado, resumen y presupuestos del mes, cuentas y últimos movimientos.
 
 import { useMemo, useState } from 'react';
+import { computeBudgets } from '../../domain/budgets';
 import { alive, selectable, sortAccounts, sortTransactions } from '../../domain/collections';
 import { consolidate, equivalentArs, rateFor } from '../../domain/consolidation';
 import { errorMessage } from '../../domain/errors';
 import { canRestoreAccount } from '../../domain/lifecycle';
 import { CURRENCIES, type Account } from '../../domain/model';
 import { formatAmount } from '../../domain/money';
+import { allPendingOccurrences, recurringTransactionId } from '../../domain/recurring';
 import { computeStats, periodRange } from '../../domain/stats';
 import { useData, useLedger, useNow, useToday } from '../app/hooks';
 import { goTo, openPanel } from '../app/navigation';
@@ -17,6 +19,8 @@ import { TotalsSummary } from '../components/TotalsSummary';
 import { TransactionRow } from '../components/TransactionRow';
 import { ACCOUNT_KIND_LABELS, monthLong, rateLabel, ratesAge } from '../format';
 import { session } from '../session';
+import { BudgetsCard } from './BudgetsCard';
+import { PendingCard } from './PendingCard';
 
 const RECENT_COUNT = 5;
 
@@ -24,6 +28,9 @@ export function HomeScreen() {
   const { accounts, transactions, accountsById, categoriesById, balances } = useLedger();
   const loaded = useData((s) => s.loaded.accounts && s.loaded.transactions);
   const rates = useData((s) => s.rates);
+  const budgets = useData((s) => s.budgets);
+  const recurring = useData((s) => s.recurring);
+  const writesBlocked = useData((s) => s.writesBlocked);
   const now = useNow();
   const today = useToday();
 
@@ -52,6 +59,13 @@ export function HomeScreen() {
     return withActivity.length > 0 ? withActivity : all.slice(0, 1);
   }, [transactions, accountsById, today, currencies]);
 
+  const pending = useMemo(() => allPendingOccurrences(recurring, today), [recurring, today]);
+  const budgetStatuses = useMemo(
+    () => computeBudgets(budgets, categoriesById, accountsById, transactions, today),
+    [budgets, categoriesById, accountsById, transactions, today],
+  );
+  const budgetCurrencies = new Set(budgetStatuses.map((s) => s.budget.currency));
+
   if (!loaded) {
     return <p className="muted">Cargando tus datos…</p>;
   }
@@ -66,6 +80,23 @@ export function HomeScreen() {
           accounts={accounts}
         />
       ))}
+
+      <PendingCard
+        pending={pending}
+        accounts={accountsById}
+        categories={categoriesById}
+        today={today}
+        disabled={writesBlocked}
+        onConfirm={({ recurring: source, date }) => {
+          openPanel({ kind: 'occurrence', id: recurringTransactionId(source.id, date) });
+        }}
+        onSkip={({ recurring: source, date }) => {
+          session.writer()?.skipOccurrence(source, date);
+        }}
+        onEdit={({ recurring: source }) => {
+          openPanel({ kind: 'recurring', id: source.id });
+        }}
+      />
 
       <div className="home-grid">
         <section className="card wealth" aria-labelledby="wealth-title">
@@ -109,6 +140,12 @@ export function HomeScreen() {
             ))}
           </section>
         )}
+
+        <BudgetsCard
+          statuses={budgetStatuses}
+          today={today}
+          showCurrency={budgetCurrencies.size > 1}
+        />
 
         <section className="card" aria-labelledby="accounts-title">
           <div className="card-header">

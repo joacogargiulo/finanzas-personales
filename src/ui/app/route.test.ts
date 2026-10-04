@@ -32,6 +32,29 @@ describe('parseHash', () => {
     });
   });
 
+  // Fase 5: presupuestos, recurrentes y el panel para confirmar un pendiente.
+  it('lee los paneles de presupuesto, recurrente y pendiente', () => {
+    expect(parseHash('#/ajustes?presupuesto=nuevo').panel).toEqual({ kind: 'budget', id: null });
+    expect(parseHash('#/ajustes?presupuesto=seed_comida_ARS').panel).toEqual({
+      kind: 'budget',
+      id: 'seed_comida_ARS',
+    });
+    expect(parseHash('#/ajustes?recurrente=nuevo').panel).toEqual({ kind: 'recurring', id: null });
+    expect(parseHash('#/inicio?pendiente=rec_r1_2026-10-05').panel).toEqual({
+      kind: 'occurrence',
+      id: 'rec_r1_2026-10-05',
+    });
+  });
+
+  it('va y vuelve sin perder nada', () => {
+    const routes: Route[] = [
+      { screen: 'ajustes', panel: { kind: 'budget', id: null }, layer: false },
+      { screen: 'ajustes', panel: { kind: 'recurring', id: 'r1' }, layer: false },
+      { screen: 'inicio', panel: { kind: 'occurrence', id: 'rec_r1_2026-10-05' }, layer: true },
+    ];
+    for (const route of routes) expect(parseHash(formatHash(route))).toEqual(route);
+  });
+
   it('ignora un panel con un ID inválido', () => {
     expect(parseHash('#/inicio?movimiento=a/b').panel).toBeNull();
     expect(parseHash('#/inicio?movimiento=').panel).toBeNull();
