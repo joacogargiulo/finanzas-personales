@@ -14,7 +14,7 @@ import { goTo, openPanel, useRoute } from './navigation';
 import { Notices } from './Notices';
 import type { Screen } from './route';
 import { loadTheme } from './theme';
-import { SyncIndicator, TopBar } from './TopBar';
+import { TopBar } from './TopBar';
 
 const NAV: { screen: Screen; label: string; icon: IconName }[] = [
   { screen: 'inicio', label: 'Inicio', icon: 'home' },
@@ -91,9 +91,6 @@ export function Shell({ user }: { user: SessionUser }) {
             <NavLink key={item.screen} {...item} className="nav-link" />
           ))}
         </nav>
-        <div className="sidebar-footer">
-          <SyncIndicator />
-        </div>
       </aside>
 
       <div className="shell-main">

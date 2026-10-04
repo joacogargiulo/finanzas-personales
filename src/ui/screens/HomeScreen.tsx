@@ -14,7 +14,7 @@ import { goTo, openPanel } from '../app/navigation';
 import { Icon } from '../components/Icon';
 import { Money } from '../components/Money';
 import { TransactionRow } from '../components/TransactionRow';
-import { ACCOUNT_KIND_LABELS, monthLong, monthShort, rateLabel, ratesAge } from '../format';
+import { ACCOUNT_KIND_LABELS, monthLong, rateLabel, ratesAge } from '../format';
 import { session } from '../session';
 
 const RECENT_COUNT = 5;
@@ -40,12 +40,15 @@ export function HomeScreen() {
     () => sortTransactions(alive(transactions)).slice(0, RECENT_COUNT),
     [transactions],
   );
+  // Resumen del mes: solo las monedas con ingresos o gastos este mes (o la primera, en cero).
   const month = useMemo(() => {
     const range = periodRange('thisMonth', today);
-    return currencies.map((currency) => ({
+    const all = currencies.map((currency) => ({
       currency,
       stats: computeStats(transactions, accountsById, currency, range),
     }));
+    const withActivity = all.filter(({ stats }) => !stats.isEmpty);
+    return withActivity.length > 0 ? withActivity : all.slice(0, 1);
   }, [transactions, accountsById, today, currencies]);
 
   if (!loaded) {
@@ -90,14 +93,16 @@ export function HomeScreen() {
         </section>
 
         {month.length > 0 && (
-          <section className="card" aria-label={`Resumen de ${monthLong(today)}`}>
+          <section className="card" aria-labelledby="month-title">
+            <h2 id="month-title" className="card-title">
+              Resumen de {monthLong(today)}
+            </h2>
             {month.map(({ currency, stats }) => (
               <MonthSummary
                 key={currency}
                 currency={currency}
                 income={stats.totalIncome}
                 expense={stats.totalExpense}
-                monthLabel={monthShort(today)}
                 showCurrency={month.length > 1}
               />
             ))}
@@ -215,32 +220,31 @@ function MonthSummary(props: {
   currency: Currency;
   income: number;
   expense: number;
-  monthLabel: string;
   showCurrency: boolean;
 }) {
-  const { currency, income, expense, monthLabel, showCurrency } = props;
-  const suffix = showCurrency ? ` (${currency})` : '';
+  const { currency, income, expense, showCurrency } = props;
   return (
-    <div className="month-summary">
-      <div>
-        <span className="small muted">
-          Ingresos {monthLabel}
-          {suffix}
-        </span>
-        <Money cents={income} currency={currency} sign="always" tone="income" />
+    <dl className="totals month-summary">
+      {showCurrency && <dt className="month-currency">{currency}</dt>}
+      <div className="totals-row">
+        <dt>Ingresos</dt>
+        <dd>
+          <Money cents={income} currency={currency} sign="always" tone="income" />
+        </dd>
       </div>
-      <div>
-        <span className="small muted">
-          Gastos {monthLabel}
-          {suffix}
-        </span>
-        <Money cents={-expense} currency={currency} tone="expense" />
+      <div className="totals-row">
+        <dt>Gastos</dt>
+        <dd>
+          <Money cents={-expense} currency={currency} tone="expense" />
+        </dd>
       </div>
-      <div>
-        <span className="small muted">Balance{suffix}</span>
-        <Money cents={income - expense} currency={currency} sign="always" />
+      <div className="totals-row">
+        <dt>Balance</dt>
+        <dd>
+          <Money cents={income - expense} currency={currency} sign="always" />
+        </dd>
       </div>
-    </div>
+    </dl>
   );
 }
 
@@ -248,12 +252,11 @@ function AccountRow(props: { account: Account; balance: number; equivalent: numb
   const { account, balance, equivalent } = props;
   return (
     <li className="list-row">
-      <span className="badge" aria-hidden="true">
+      <span className="badge" title={ACCOUNT_KIND_LABELS[account.kind]}>
         <Icon name={account.kind} />
       </span>
       <span className="row-main">
         <span className="row-title">{account.name}</span>
-        <span className="row-subtitle">{ACCOUNT_KIND_LABELS[account.kind]}</span>
       </span>
       <span className="row-end">
         <Money cents={balance} currency={account.currency} />

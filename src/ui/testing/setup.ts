@@ -15,10 +15,16 @@ if (typeof window !== 'undefined') {
   });
 
   // jsdom no implementa showModal() ni close(): versiones mínimas para los tests.
-  HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
-    this.setAttribute('open', '');
-  };
-  HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) {
-    this.removeAttribute('open');
-  };
+  // (Los tipos de TypeScript dicen que existen, por eso se pregunta con `in`.)
+  const dialog = HTMLDialogElement.prototype as Partial<HTMLDialogElement>;
+  if (!('showModal' in dialog) || typeof dialog.showModal !== 'function') {
+    dialog.showModal = function (this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    };
+  }
+  if (!('close' in dialog) || typeof dialog.close !== 'function') {
+    dialog.close = function (this: HTMLDialogElement) {
+      this.removeAttribute('open');
+    };
+  }
 }

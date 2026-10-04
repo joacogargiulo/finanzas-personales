@@ -110,22 +110,20 @@ body:has(dialog[open]) {
 }
 
 .month-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  margin: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
-.month-summary > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+.month-summary + .month-summary {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
-.month-summary .num {
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.month-currency {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 /* Una fila de lista que es un botón (abre el movimiento). */
@@ -140,11 +138,6 @@ body:has(dialog[open]) {
 
 .list > li:last-child > .row-button {
   border-bottom: none;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  padding: 0 12px;
 }
 
 /* ── Panel de movimiento ─────────────────────────────────────────────────── */
