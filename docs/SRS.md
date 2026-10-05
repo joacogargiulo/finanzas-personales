@@ -729,7 +729,7 @@ Claude Code no puede hacer estas tareas porque requieren cuentas y consolas web:
 4. Registrar una app web en Firebase y copiar la configuración al archivo `.env.local`.
 5. Instalar Firebase CLI (`npm install -g firebase-tools`) y ejecutar `firebase login`.
 6. ~~Copiar el UID en las reglas~~: ya no hace falta, las reglas son multiusuario (7.3).
-7. En Google Cloud Console (mismo proyecto): habilitar Google Sheets API y Google Drive API, agregar el scope `drive.file` a la pantalla de consentimiento OAuth (modo prueba, con el dueño como usuario de prueba), sumar los orígenes autorizados (`http://localhost:5173` y, desde la Fase 7, el de Hosting) al Client ID web que creó Firebase y copiarlo a `.env.local` como `VITE_GOOGLE_CLIENT_ID` (ADR 0025).
+7. En Google Cloud Console (mismo proyecto): habilitar Google Sheets API y Google Drive API, agregar el scope `drive.file` a la pantalla de consentimiento OAuth (queda en producción, como la dejó Firebase para el login: pasarla a prueba limitaría el login a los usuarios de prueba), sumar los orígenes autorizados (`http://localhost:5173` y, desde la Fase 7, el de Hosting) al Client ID web que creó Firebase y copiarlo a `.env.local` como `VITE_GOOGLE_CLIENT_ID` (ADR 0025).
 8. Durante la fase 8: responder las preguntas interactivas de Bubblewrap, crear la clave de firma y guardarla en un lugar seguro.
 9. Habilitar "Instalar apps desconocidas" en el celular para instalar el APK.
 
