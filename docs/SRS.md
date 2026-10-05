@@ -1,8 +1,8 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.6.0
-**Fecha:** 2026-10-04
+**Versión:** 3.6.1
+**Fecha:** 2026-10-05
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
 
@@ -10,7 +10,15 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
+### 0.0 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
+| Tema | v3.6.0 | v3.6.1 | ADR |
+|---|---|---|---|
+| Escritura en Sheets | Escribir y después limpiar las filas sobrantes | Un solo `batchUpdate`, que Google aplica entero o no aplica | 0025 |
+| Montos en Sheets | Formato de moneda | Número con dos decimales (cada fila puede tener otra moneda) y hoja con configuración `es_AR` | 0025 |
+| Hoja borrada o en la papelera | Sin especificar | Se crea otra y se guarda su ID | 0025 |
+| Client ID de OAuth | Crear uno nuevo | Se reutiliza el que creó Firebase (`VITE_GOOGLE_CLIENT_ID`) | 0025 |
+
+### 0.0.1 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
 | Tema | v3.5.1 | v3.6.0 | ADR |
 |---|---|---|---|
 | Restaurar desde JSON | Reemplaza todos los datos | Fuera de alcance: el JSON es una copia para guardar | 0024 |
@@ -18,7 +26,7 @@
 | Origen de la exportación | Sin especificar | Los datos del dispositivo (sin lecturas); aviso si no está al día | 0024 |
 | TC-23 | Exportar y restaurar | Exportar y verificar el contenido del JSON | 0024 |
 
-### 0.0.1 Cambios de la versión 3.5.1 (Fase 5b: dictado)
+### 0.0.2 Cambios de la versión 3.5.1 (Fase 5b: dictado)
 | Tema | v3.5.0 | v3.5.1 | ADR |
 |---|---|---|---|
 | Dictado | Parser de frases sin micrófono | Micrófono en el panel de movimiento (Web Speech API), solo al crear y si el navegador lo soporta; precarga y espera Guardar | 0023 |
@@ -26,7 +34,7 @@
 | Origen `voice` | Sin especificar | Si el formulario se precargó dictando, aunque después se corrija a mano | 0023 |
 | Atajo "Dictar movimiento" | Fase 5 | Fase 7 (con el manifiesto); en la 5b queda la ruta `movimiento=nuevo&dictar=1` | 0023 |
 
-### 0.0.2 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
+### 0.0.3 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
 | Tema | v3.4.0 | v3.5.0 | ADR |
 |---|---|---|---|
 | Pendientes en Inicio | Después del total y del resumen | Arriba de todo, porque piden una acción | 0022 |
@@ -34,7 +42,7 @@
 | Saltar un pendiente | Sin confirmación | Con confirmación simple | 0022 |
 | Confirmar en dos dispositivos | Mismo ID, mismo `nextDate` | Además, el rechazo del segundo lote por las reglas no se muestra como error | 0004 |
 
-### 0.0.3 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+### 0.0.4 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
 | Tema | v3.3.0 | v3.4.0 | ADR |
 |---|---|---|---|
 | Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
@@ -42,7 +50,7 @@
 | Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
 | Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
 
-### 0.0.4 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0.5 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -50,7 +58,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.5 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.6 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -551,7 +559,7 @@ Por defecto, todo lo demás queda denegado. Las reglas no limitan *cuántos* doc
 ### 7.4 Privacidad
 - Sin analíticas ni telemetría de terceros.
 - Las claves de configuración de Firebase son públicas por diseño; la protección está en las reglas de seguridad.
-- El Client ID de OAuth para Sheets se restringe en Google Cloud Console a los orígenes de producción y `localhost`.
+- El Client ID de OAuth para Sheets (el web que creó Firebase, ADR 0025) se restringe en Google Cloud Console a los orígenes de producción y `http://localhost:5173`. No es secreto.
 
 ---
 
@@ -588,9 +596,9 @@ Fuera de alcance (ADR 0024): reemplazar los datos rompería la sincronización d
 ### 8.4 Exportar a Google Sheets (opcional, manual)
 - Botón "Exportar a Google Sheets". Requiere conexión.
 - Obtiene un token con Google Identity Services (`google.accounts.oauth2.initTokenClient`) y scope **`https://www.googleapis.com/auth/drive.file`** únicamente (alcanza para crear y editar hojas creadas por la app).
-- Si `sheetsSpreadsheetId` del perfil (`users/{uid}`) existe y es accesible, actualiza esa hoja; si no, crea "Control de Finanzas — Exportación" y guarda su ID.
-- Pestañas: `Movimientos`, `Cuentas`, `Categorías`, con las mismas columnas que el CSV, montos como números con formato de moneda y fechas como fechas.
-- **Para no dejar la hoja vacía si falla a mitad:** escribir primero los datos nuevos desde la fila 1 y recién después limpiar las filas sobrantes por debajo.
+- Si `sheetsSpreadsheetId` del perfil (`users/{uid}`) existe, es accesible y no está en la papelera, actualiza esa hoja; si no, crea "Control de Finanzas — Exportación" (configuración regional `es_AR`) y guarda su ID. Si falta una pestaña, la vuelve a crear.
+- Pestañas: `Movimientos`, `Cuentas`, `Categorías`, con las mismas columnas que el CSV, montos como números con dos decimales y fechas como fechas (ADR 0025).
+- **Para no dejar la hoja vacía si falla a mitad:** todos los datos van en un solo `batchUpdate`, que Google aplica entero o no aplica; al final la pestaña queda con las filas justas (ADR 0025).
 - Mostrar "Exportado el {fecha y hora}" y un link para abrir la hoja.
 - No hay sincronización automática ni restauración desde Sheets.
 
@@ -721,7 +729,7 @@ Claude Code no puede hacer estas tareas porque requieren cuentas y consolas web:
 4. Registrar una app web en Firebase y copiar la configuración al archivo `.env.local`.
 5. Instalar Firebase CLI (`npm install -g firebase-tools`) y ejecutar `firebase login`.
 6. ~~Copiar el UID en las reglas~~: ya no hace falta, las reglas son multiusuario (7.3).
-7. En Google Cloud Console (mismo proyecto): habilitar Google Sheets API y Google Drive API, configurar la pantalla de consentimiento OAuth (modo prueba, con el dueño como usuario de prueba) y crear un Client ID de tipo "Aplicación web" con los orígenes autorizados.
+7. En Google Cloud Console (mismo proyecto): habilitar Google Sheets API y Google Drive API, agregar el scope `drive.file` a la pantalla de consentimiento OAuth (modo prueba, con el dueño como usuario de prueba), sumar los orígenes autorizados (`http://localhost:5173` y, desde la Fase 7, el de Hosting) al Client ID web que creó Firebase y copiarlo a `.env.local` como `VITE_GOOGLE_CLIENT_ID` (ADR 0025).
 8. Durante la fase 8: responder las preguntas interactivas de Bubblewrap, crear la clave de firma y guardarla en un lugar seguro.
 9. Habilitar "Instalar apps desconocidas" en el celular para instalar el APK.
 
