@@ -2,7 +2,8 @@ import { getDocFromServer, waitForPendingWrites, type DocumentData } from 'fireb
 import { describe, expect, it } from 'vitest';
 import type { Budget, Recurring, Transaction } from '../../src/domain/model';
 import type { RecurringFields, TransactionFields } from '../../src/domain/validation';
-import { docRef, type UserCollection } from '../../src/data/paths';
+import { docRef, profileRef, type UserCollection } from '../../src/data/paths';
+import { ensureSeeded } from '../../src/data/seed';
 import { createWriter } from '../../src/data/writes';
 import { createClient, OWNER, until, useDataEnv, writerFor } from './helpers';
 
@@ -369,6 +370,22 @@ describe('confirmar y saltar ocurrencias (SRS 5.10)', () => {
     await until(() => errors.length === 1, 'el error del servidor');
     expect(errors[0]?.action).toBe(`confirmar transactions/rec_${id}_2026-01-31`);
     expect((await onServer(db, 'recurring', id))?.['nextDate']).toBe('2026-01-31');
+  });
+});
+
+describe('perfil', () => {
+  // La exportación a Sheets guarda el ID de la hoja para actualizar la misma la próxima vez.
+  it('guarda el ID de la hoja de Sheets', async () => {
+    const db = createClient(OWNER);
+    await ensureSeeded(db, OWNER);
+    const { writer, errors } = writerFor(db);
+
+    writer.setSheetsSpreadsheetId('1AbC-dEf_123');
+
+    await waitForPendingWrites(db);
+    const profile = await getDocFromServer(profileRef(db, OWNER));
+    expect(profile.get('sheetsSpreadsheetId')).toBe('1AbC-dEf_123');
+    expect(errors).toEqual([]);
   });
 });
 
