@@ -20,8 +20,10 @@ export type Cell =
   | { kind: 'date'; date: LocalDate };
 
 export interface Table {
-  /** Nombre del archivo CSV y de la pestaña de Sheets. */
+  /** Nombre del archivo CSV, sin extensión. */
   name: string;
+  /** Nombre de la pestaña de Google Sheets. */
+  title: string;
   headers: string[];
   rows: Cell[][];
 }
@@ -113,6 +115,7 @@ export function transactionsTable(
 
   return {
     name: 'movimientos',
+    title: 'Movimientos',
     headers: [
       'Fecha',
       'Tipo',
@@ -137,6 +140,7 @@ export function accountsTable(
   const balances = computeBalances(accounts, transactions);
   return {
     name: 'cuentas',
+    title: 'Cuentas',
     headers: ['Nombre', 'Moneda', 'Saldo inicial', 'Saldo actual', 'Estado'],
     rows: sortAccounts(alive(accounts)).map((account) => [
       text(account.name),
@@ -155,6 +159,7 @@ export function categoriesTable(categories: readonly Category[]): Table {
   );
   return {
     name: 'categorias',
+    title: 'Categorías',
     headers: ['Nombre', 'Tipo', 'Estado'],
     rows: sorted.map((category) => [
       text(category.name),
