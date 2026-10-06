@@ -8,10 +8,32 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Acceso (ADR 0026) ──────────────────────────────────────────────────────
+
+    // La app es privada: solo entran los emails de esta lista. Se guarda el hash SHA-256 de
+    // cada email (en minúsculas) y no el email, porque el repositorio es público.
+    // Para sumar a alguien: `npm run email-hash -- persona@gmail.com`, pegar el resultado
+    // acá y publicar con `npm run deploy:rules`.
+    function allowedEmailHashes() {
+      return [
+        // familia@example.org: solo para los tests (example.org es un dominio reservado).
+        '9be03e4d3b3ceb6e42958fea4bbf6ee32a76f52ba29e200489014f07e586503e'
+      ];
+    }
+
+    // Email verificado por Google y en la lista. Los tests usan cuentas @example.com:
+    // es un dominio reservado, nadie puede verificar una cuenta de Google con él.
+    function isAllowed() {
+      let email = request.auth.token.email.lower();
+      return request.auth.token.email_verified == true
+        && (hashing.sha256(email).toHexString().lower() in allowedEmailHashes()
+          || email.matches('.*@example[.]com$'));
+    }
+
     // ── Utilidades ─────────────────────────────────────────────────────────────
 
     function isOwner(uid) {
-      return request.auth != null && request.auth.uid == uid;
+      return request.auth != null && request.auth.uid == uid && isAllowed();
     }
 
     function data() {

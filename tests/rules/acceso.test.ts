@@ -15,7 +15,7 @@ import {
 // Quién puede entrar a qué (SRS 7.3, TC-19). Cada colección se prueba con un documento válido,
 // así el único motivo para que una escritura falle es el acceso.
 
-const { owner, other, anonymous, seed } = useRulesEnv();
+const { owner, other, anonymous, withToken, seed } = useRulesEnv();
 
 const documents = [
   ['perfil', `users/${OWNER}`, validProfile],
@@ -58,6 +58,46 @@ describe.each(documents)('%s', (_name, path, valid) => {
       await seed(path, valid());
       await assertFails(deleteDoc(doc(db(), path)));
     });
+  });
+});
+
+// La app es privada (ADR 0026): aunque los datos sean suyos, solo entra quien tiene un email
+// verificado de la lista. firestore.rules trae el hash de familia@example.org para estos tests.
+describe('lista de acceso', () => {
+  const profilePath = (uid: string) => `users/${uid}`;
+
+  it('entra un email de la lista', async () => {
+    const db = withToken('fami', { email: 'familia@example.org', email_verified: true });
+    await assertSucceeds(setDoc(doc(db, profilePath('fami')), validProfile()));
+    await assertSucceeds(getDoc(doc(db, profilePath('fami'))));
+  });
+
+  it('las mayúsculas del email no importan', async () => {
+    const db = withToken('fami', { email: 'Familia@Example.ORG', email_verified: true });
+    await assertSucceeds(getDoc(doc(db, profilePath('fami'))));
+  });
+
+  it('no entra un email que no está en la lista, ni siquiera a sus propios datos', async () => {
+    const db = withToken('extra', { email: 'extrano@gmail.com', email_verified: true });
+    await seed(profilePath('extra'), validProfile());
+    await assertFails(getDoc(doc(db, profilePath('extra'))));
+    await assertFails(setDoc(doc(db, `users/extra/accounts/acc1`), validAccount()));
+  });
+
+  it('no entra un email de la lista sin verificar', async () => {
+    const db = withToken('fami', { email: 'familia@example.org', email_verified: false });
+    await assertFails(getDoc(doc(db, profilePath('fami'))));
+  });
+
+  it('no entra una sesión sin email (por ejemplo, anónima)', async () => {
+    const db = withToken('anon', {});
+    await assertFails(getDoc(doc(db, profilePath('anon'))));
+  });
+
+  // Que el dominio de prueba no abra una puerta: tiene que terminar exactamente en @example.com.
+  it('no entra un email que solo se parece al dominio de prueba', async () => {
+    const db = withToken('falso', { email: 'ana@example.com.ar', email_verified: true });
+    await assertFails(getDoc(doc(db, profilePath('falso'))));
   });
 });
 
