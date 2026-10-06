@@ -12,6 +12,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID?: string;
   /** Client ID web de Google para exportar a Sheets (ADR 0025). Sin él, no se ofrece Sheets. */
   readonly VITE_GOOGLE_CLIENT_ID?: string;
+  /** `/interpretar` del Worker del dictado con IA (ADR 0031). Sin ella, se usa solo el parser. */
+  readonly VITE_DICTATION_URL?: string;
 }
 
 interface ImportMeta {
