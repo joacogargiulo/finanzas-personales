@@ -227,6 +227,38 @@ describe('parsePhrase: categorías', () => {
   it('la categoría tiene que ser del tipo del movimiento', () => {
     expect(parse('cobré 5000 de cena').categoryId).toBeNull();
   });
+
+  // Dos categorías en la frase: no adivina. El campo queda dudoso y lo elige el usuario (#22).
+  it('con dos categorías por nombre no elige ninguna', () => {
+    const nala = makeCategory({ id: 'nala', name: 'Nala' });
+    const result = parsePhrase('comida para la nala gasté 85000 con efectivo', {
+      accounts,
+      categories: [...categories, nala],
+      today: TODAY,
+    });
+    expect(result).toMatchObject({
+      type: 'expense',
+      amount: 85_000_00,
+      accountId: 'cash',
+      categoryId: null,
+      description: 'Comida para la nala',
+    });
+    expect(result.missing).toEqual(['category']);
+  });
+
+  it('con un nombre y un sinónimo de otra categoría tampoco elige', () => {
+    expect(parse('farmacia y súper 3000')).toMatchObject({ categoryId: null, type: 'expense' });
+  });
+
+  // Dos sinónimos de la misma categoría no son una duda.
+  it('dos palabras de la misma categoría la eligen igual', () => {
+    expect(parse('cena en el súper 3000').categoryId).toBe('seed_comida');
+  });
+
+  // Si las candidatas son de tipos distintos, tampoco se adivina el tipo.
+  it('con categorías de tipos distintos deja el tipo vacío', () => {
+    expect(parse('súper aguinaldo 3000')).toMatchObject({ categoryId: null, type: null });
+  });
 });
 
 describe('parsePhrase: lo que no entiende', () => {
