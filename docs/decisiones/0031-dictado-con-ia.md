@@ -49,3 +49,7 @@ Según el ADR 0029, con conexión el dictado tiene que interpretarse siempre con
 - **KV no es transaccional:** dos dictados simultáneos pueden contarse como uno. Para un límite orientativo alcanza.
 - **El dueño crea la cuenta de Cloudflare y el KV, y publica el Worker** (los pasos están en el PR de la 10a). Los IDs del KV no son secretos y van en `wrangler.jsonc`.
 - **Tests:** el Worker se prueba en Node con dependencias falsas (token, KV e IA). El token se firma con un par de claves generado en el test. La respuesta real del modelo se prueba a mano con `curl`.
+
+## Nota (prueba en producción, 2026-10-06)
+- **Demora:** Llama 3.3 70B tardó entre 3,4 y 4,9 segundos por dictado (medido con `wrangler tail`), y uno pasó los 6 segundos. Con el timeout original de 6 segundos, ese dictado cayó al parser con "La IA no respondió". El timeout pasó a **12 segundos**; mientras tanto, el panel muestra "Interpretando…".
+- **Miles con coma:** el dictado de Chrome en Android escribió "$38,700", con los miles al estilo inglés. Una coma seguida de exactamente 3 cifras no puede ser de centavos, así que se toma como separador de miles, tanto en el parser como en la respuesta de la IA.

@@ -309,6 +309,14 @@ describe('parsePhrase: lo que no entiende', () => {
   });
 });
 
+// Lo que escribió el dictado de Chrome en un Android (2026-10-06): miles con coma.
+it('"gasté $38,700 en comida para nala" es un gasto de $ 38.700', () => {
+  expect(parse('gasté $38,700 en comida para nala')).toMatchObject({
+    type: 'expense',
+    amount: 3_870_000,
+  });
+});
+
 // El dictado de Chrome escribe los miles con un espacio ("$50 000"): son un solo número.
 describe('parsePhrase: miles separados por espacios', () => {
   it('"pagué $50 000 de gas con mercado pago" es un gasto de $ 50.000', () => {

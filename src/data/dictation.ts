@@ -30,8 +30,11 @@ export interface DictationDeps {
   timeoutMs?: number;
 }
 
-/** Después de esto se usa el parser: la persona está esperando con el panel abierto. */
-export const AI_TIMEOUT_MS = 6_000;
+/**
+ * Después de esto se usa el parser: la persona está esperando con el panel abierto. Llama 3.3
+ * 70B tarda entre 3,5 y 5 segundos (medido en producción, octubre de 2026), a veces más de 6.
+ */
+export const AI_TIMEOUT_MS = 12_000;
 
 /** Solo el parser de reglas: para los tests y cuando no hay Worker. */
 export const rulesOnly: Interpreter = (text, ctx) =>

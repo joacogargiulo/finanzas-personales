@@ -23,8 +23,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * El monto llega como texto ("18000", "2500,50"). Si la IA puso separador de miles ("18.000"),
- * se quita; si mandó un número en vez de texto, se usa su forma escrita. Después pasa por
+ * El monto llega como texto ("18000", "2500,50"). Si la IA puso separador de miles ("18.000" o
+ * "18,000"), se quita; si mandó un número en vez de texto, se usa su forma escrita. Después pasa por
  * `parseAmount`, el mismo que usa el formulario: nunca se hacen cuentas con decimales.
  */
 function toCents(value: unknown): Cents | null {
@@ -33,6 +33,8 @@ function toCents(value: unknown): Cents | null {
   else if (typeof value === 'number' && Number.isFinite(value)) text = String(value);
   else return null;
   if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(text)) text = text.replace(/\./g, '');
+  // Miles con coma, como en inglés ("38,700" o "1,234.50"): se quitan las comas.
+  else if (/^\d{1,3}(,\d{3})+(\.\d{1,2})?$/.test(text)) text = text.replace(/,/g, '');
   const result = parseAmount(text);
   return result.ok ? result.value : null;
 }
