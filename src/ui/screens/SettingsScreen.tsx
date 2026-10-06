@@ -1,5 +1,6 @@
 // Ajustes (SRS 6.6): cuentas y categorías (editar, archivar, eliminar y restaurar),
-// presupuestos, recurrentes, respaldo y exportación, apariencia y cuenta de Google.
+// presupuestos, recurrentes, respaldo y exportación, apariencia, cuenta de Google y borrar la
+// cuenta.
 //
 // Las reglas de archivar, eliminar y restaurar son del dominio (src/domain/lifecycle.ts,
 // ADR 0005 y 0009). Acá solo se decide qué diálogo mostrar.
@@ -41,6 +42,7 @@ import { ACCOUNT_KIND_LABELS } from '../format';
 import { session } from '../session';
 import { BackupSettings } from './BackupSettings';
 import { BudgetsSettings } from './BudgetsSettings';
+import { DeleteAccountSettings } from './DeleteAccountSettings';
 import { RecurringSettings } from './RecurringSettings';
 
 const THEME_LABELS: Record<Theme, string> = {
@@ -327,6 +329,8 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
         </div>
         <SignOutButton />
       </section>
+
+      <DeleteAccountSettings />
 
       {dialog && (
         <SettingsDialog
