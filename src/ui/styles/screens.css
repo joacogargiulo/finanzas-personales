@@ -531,7 +531,8 @@ body:has(dialog[open]) {
   gap: 4px;
 }
 
-.archived > summary {
+.archived > summary,
+.privacy > summary {
   min-height: var(--tap);
   display: flex;
   align-items: center;
@@ -830,4 +831,29 @@ body:has(dialog[open]) {
   width: 100%;
   height: 8px;
   accent-color: var(--accent);
+}
+
+/* ── Privacidad ──────────────────────────────────────────────────────────── */
+
+.privacy[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.privacy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.privacy-list dt {
+  font-weight: 600;
+}
+
+.privacy-list dd {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 14px;
 }

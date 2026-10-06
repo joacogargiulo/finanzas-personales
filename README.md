@@ -2,7 +2,7 @@
 
 PWA de finanzas personales **offline-first**: se carga un gasto sin conexión y se sincroniza sola entre el celular (APK) y la computadora con Firebase Firestore. Cada persona inicia sesión con Google y ve solo sus datos.
 
-Publicada en **https://finanzas-personales-jtg.web.app** (acceso limitado a una lista de cuentas, ADR 0026). Se instala desde Chrome y funciona sin conexión.
+Publicada en **https://finanzas-personales-jtg.web.app** (acceso limitado a una lista de cuentas, ADR 0026). Se instala desde Chrome y funciona sin conexión. Para dar acceso a alguien, ver [`docs/sumar-un-familiar.md`](docs/sumar-un-familiar.md).
 
 > En construcción. Avance por fases: ver [`docs/SRS.md`](docs/SRS.md) (especificación) y [`docs/decisiones/`](docs/decisiones/) (decisiones de arquitectura).
 

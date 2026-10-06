@@ -542,7 +542,7 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 ### 7.3 Reglas de seguridad de Firestore (multiusuario, ADR 0010)
 **Principio:** las reglas rechazan solo lo que la app legítima nunca podría producir. Validan cada documento por separado, sin `get()`. La coherencia entre documentos la valida el dominio (5.3).
 
-**Lista de acceso (ADR 0026):** `isOwner(uid)` exige además `isAllowed()`: email verificado y su SHA-256 (en minúsculas) en `allowedEmailHashes()`. Las cuentas `@example.com` (dominio reservado) se aceptan para los tests. Para sumar a alguien: `npm run email-hash -- persona@gmail.com`, pegar el hash en `firestore.rules` y `npm run deploy:rules`. Si el servidor rechaza la sincronización por permisos, la app muestra "Esta app es privada" con el botón "Usar otra cuenta".
+**Lista de acceso (ADR 0026):** `isOwner(uid)` exige además `isAllowed()`: email verificado y su SHA-256 (en minúsculas) en `allowedEmailHashes()`. Las cuentas `@example.com` (dominio reservado) se aceptan para los tests. Para sumar a alguien: `npm run email-hash -- persona@gmail.com`, pegar el hash en `firestore.rules` y `npm run deploy:rules` (paso a paso en `docs/sumar-un-familiar.md`). Si el servidor rechaza la sincronización por permisos, la app muestra "Esta app es privada" con el botón "Usar otra cuenta".
 
 Borrador en pseudocódigo. Las reglas reales y sus tests se escriben en la Fase 2.
 ```
@@ -601,7 +601,7 @@ Por defecto, todo lo demás queda denegado. Las reglas no limitan *cuántos* doc
 - Sin analíticas ni telemetría de terceros.
 - Las claves de configuración de Firebase son públicas por diseño; la protección está en las reglas de seguridad.
 - El Client ID de OAuth para Sheets (el web que creó Firebase, ADR 0025) se restringe en Google Cloud Console a los orígenes de producción y `http://localhost:5173`. No es secreto.
-- En lugar de una política pública, Ajustes tiene una sección **"Privacidad"** en lenguaje simple: qué datos salen del dispositivo y a dónde (Firebase, Bluelytics, Google Sheets, el audio del dictado a Google y, desde las fases 10 y 11, Cloudflare y Meta). Fase 9b (ADR 0029).
+- En lugar de una política pública, Ajustes tiene una sección **"Privacidad"** en lenguaje simple: qué datos salen del dispositivo y a dónde (Firebase, Bluelytics, Google Sheets, el audio del dictado a Google y, desde las fases 10 y 11, Cloudflare y Meta). Fase 9b (ADR 0029). Incluye qué queda en el dispositivo y cómo irse con "Borrar mi cuenta".
 
 ---
 
