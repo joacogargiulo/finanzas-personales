@@ -124,7 +124,7 @@ export default defineConfig(({ mode }) => {
     ],
     test: {
       // Tests unitarios: rápidos, sin emuladores ni navegador.
-      include: ['src/**/*.test.{ts,tsx}'],
+      include: ['src/**/*.test.{ts,tsx}', 'worker/**/*.test.ts'],
       // Corren en Node, que es más rápido. Los tests de componentes piden jsdom (un navegador
       // simulado) con el comentario `// @vitest-environment jsdom` al principio (ADR 0019).
       environment: 'node',
@@ -133,7 +133,7 @@ export default defineConfig(({ mode }) => {
       env: { TZ: 'America/Argentina/Buenos_Aires' },
       // `npm run test:coverage`: qué líneas del código no ejecuta ningún test (informe en coverage/).
       coverage: {
-        include: ['src/**/*.{ts,tsx}'],
+        include: ['src/**/*.{ts,tsx}', 'worker/**/*.ts'],
         exclude: ['src/**/*.test.{ts,tsx}', 'src/domain/testing/**'],
       },
     },

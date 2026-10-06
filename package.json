@@ -24,6 +24,8 @@
     "dev:emu": "firebase emulators:exec --only auth,firestore --ui \"vite --mode emulators\"",
     "deploy": "npm run build && firebase deploy --only hosting,firestore --project prod",
     "deploy:rules": "firebase deploy --only firestore --project prod",
+    "deploy:worker": "wrangler deploy -c worker/wrangler.jsonc",
+    "dev:worker": "wrangler dev -c worker/wrangler.jsonc",
     "email-hash": "node scripts/email-hash.mjs",
     "icons": "node scripts/icons.mjs"
   },

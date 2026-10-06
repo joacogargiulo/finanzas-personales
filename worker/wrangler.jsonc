@@ -1,0 +1,24 @@
+// Configuración del Worker del dictado con IA (ADR 0031). Publicar: `npm run deploy:worker`.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "finanzas-dictado",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "ai": { "binding": "AI" },
+  "kv_namespaces": [
+    {
+      "binding": "QUOTA",
+      // Lo da `npx wrangler kv namespace create QUOTA`. No es un secreto.
+      "id": "REEMPLAZAR_CON_EL_ID_DEL_KV",
+    },
+  ],
+  "vars": {
+    "FIREBASE_PROJECT_ID": "finanzas-personales-jtg",
+    "ALLOWED_ORIGINS": "https://finanzas-personales-jtg.web.app,http://localhost:5173",
+    "MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "DAILY_LIMIT": "40",
+  },
+  // Sin registro de pedidos: no se guarda nada de lo dictado.
+  "observability": { "enabled": false },
+}
