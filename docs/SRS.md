@@ -1,7 +1,7 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.8.0
+**Versión:** 3.8.1
 **Fecha:** 2026-10-06
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
@@ -10,7 +10,15 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.8.0 (Fase 8: APK)
+### 0.0 Cambios de la versión 3.8.1 (replanificación de las fases 9 a 12)
+| Tema | v3.8.0 | v3.8.1 | ADR |
+|---|---|---|---|
+| Fases | Plan detallado hasta la 8 | Fases 9 a 12: familia y privacidad, dictado con IA, WhatsApp, cierre y v1.0.0 | 0029 |
+| App Check | Fase 9 | Descartado: alcanza con la lista de emails | 0029 |
+| Política de privacidad y términos | Fase 9 | Sección "Privacidad" en Ajustes | 0029 |
+| IA en el dictado | Respaldo del parser | Siempre que haya conexión (se detalla en la Fase 10) | 0029 |
+
+### 0.0.1 Cambios de la versión 3.8.0 (Fase 8: APK)
 | Tema | v3.7.1 | v3.8.0 | ADR |
 |---|---|---|---|
 | Nombre de paquete | A definir | `ar.jtg.finanzas` | 0028 |
@@ -18,7 +26,7 @@
 | Distribución | Sin especificar | Instalación manual del `.apk` (una sola huella en `assetlinks.json`) | 0028 |
 | `ignore` de Hosting | Archivos con punto excluidos | Se publican, para servir `/.well-known/` | 0028 |
 
-### 0.0.1 Cambios de la versión 3.7.1 (Fase 7b: PWA, CSP y Hosting)
+### 0.0.2 Cambios de la versión 3.7.1 (Fase 7b: PWA, CSP y Hosting)
 | Tema | v3.7.0 | v3.7.1 | ADR |
 |---|---|---|---|
 | Actualización de la app | Automática, avisar y recargar | La versión nueva espera; el aviso tiene "Actualizar"; se busca cada hora | 0027 |
@@ -27,14 +35,14 @@
 | Encabezados de Hosting | `no-cache` para `index.html` y el service worker | También `/` y el manifiesto; `/assets/` un año; `frame-ancestors`, `nosniff`, `Referrer-Policy` | 0027 |
 | Publicación | Sin especificar | `npm run deploy` desde la compu del dueño | 0027 |
 
-### 0.0.2 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
+### 0.0.3 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
 | Tema | v3.6.1 | v3.7.0 | ADR |
 |---|---|---|---|
 | Quién puede usar la app | Cualquier persona con cuenta de Google | Solo los emails verificados de una lista (hash SHA-256 en las reglas) | 0026 |
 | Cuenta sin acceso | Sin especificar | Pantalla "Esta app es privada" con "Usar otra cuenta" | 0026 |
 | `isOwner(uid)` en las reglas | Sesión con ese UID | Sesión con ese UID y email en la lista (`isAllowed()`) | 0026 |
 
-### 0.0.3 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
+### 0.0.4 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
 | Tema | v3.6.0 | v3.6.1 | ADR |
 |---|---|---|---|
 | Escritura en Sheets | Escribir y después limpiar las filas sobrantes | Un solo `batchUpdate`, que Google aplica entero o no aplica | 0025 |
@@ -42,7 +50,7 @@
 | Hoja borrada o en la papelera | Sin especificar | Se crea otra y se guarda su ID | 0025 |
 | Client ID de OAuth | Crear uno nuevo | Se reutiliza el que creó Firebase (`VITE_GOOGLE_CLIENT_ID`) | 0025 |
 
-### 0.0.4 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
+### 0.0.5 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
 | Tema | v3.5.1 | v3.6.0 | ADR |
 |---|---|---|---|
 | Restaurar desde JSON | Reemplaza todos los datos | Fuera de alcance: el JSON es una copia para guardar | 0024 |
@@ -50,7 +58,7 @@
 | Origen de la exportación | Sin especificar | Los datos del dispositivo (sin lecturas); aviso si no está al día | 0024 |
 | TC-23 | Exportar y restaurar | Exportar y verificar el contenido del JSON | 0024 |
 
-### 0.0.5 Cambios de la versión 3.5.1 (Fase 5b: dictado)
+### 0.0.6 Cambios de la versión 3.5.1 (Fase 5b: dictado)
 | Tema | v3.5.0 | v3.5.1 | ADR |
 |---|---|---|---|
 | Dictado | Parser de frases sin micrófono | Micrófono en el panel de movimiento (Web Speech API), solo al crear y si el navegador lo soporta; precarga y espera Guardar | 0023 |
@@ -58,7 +66,7 @@
 | Origen `voice` | Sin especificar | Si el formulario se precargó dictando, aunque después se corrija a mano | 0023 |
 | Atajo "Dictar movimiento" | Fase 5 | Fase 7 (con el manifiesto); en la 5b queda la ruta `movimiento=nuevo&dictar=1` | 0023 |
 
-### 0.0.6 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
+### 0.0.7 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
 | Tema | v3.4.0 | v3.5.0 | ADR |
 |---|---|---|---|
 | Pendientes en Inicio | Después del total y del resumen | Arriba de todo, porque piden una acción | 0022 |
@@ -66,7 +74,7 @@
 | Saltar un pendiente | Sin confirmación | Con confirmación simple | 0022 |
 | Confirmar en dos dispositivos | Mismo ID, mismo `nextDate` | Además, el rechazo del segundo lote por las reglas no se muestra como error | 0004 |
 
-### 0.0.7 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+### 0.0.8 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
 | Tema | v3.3.0 | v3.4.0 | ADR |
 |---|---|---|---|
 | Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
@@ -74,7 +82,7 @@
 | Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
 | Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
 
-### 0.0.8 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0.9 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -82,7 +90,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.9 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.10 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -580,12 +588,13 @@ Cada función `validX()` comprueba:
 - Fechas con `isDate`; `createdAt` con `isMs`; `archivedAt` y `deletedAt` con `isMsOrNull`.
 - `icon`, `color` y `kind` con `isKey` o con su lista.
 
-Por defecto, todo lo demás queda denegado. Las reglas no limitan *cuántos* documentos crea un usuario; eso se mitiga con App Check (Fase 9).
+Por defecto, todo lo demás queda denegado. Las reglas no limitan *cuántos* documentos crea un usuario; solo los emails de la lista de la familia pasan las reglas (ADR 0026). App Check queda descartado mientras la app sea familiar (ADR 0029).
 
 ### 7.4 Privacidad
 - Sin analíticas ni telemetría de terceros.
 - Las claves de configuración de Firebase son públicas por diseño; la protección está en las reglas de seguridad.
 - El Client ID de OAuth para Sheets (el web que creó Firebase, ADR 0025) se restringe en Google Cloud Console a los orígenes de producción y `http://localhost:5173`. No es secreto.
+- En lugar de una política pública, Ajustes tiene una sección **"Privacidad"** en lenguaje simple: qué datos salen del dispositivo y a dónde (Firebase, Bluelytics, Google Sheets, el audio del dictado a Google y, desde las fases 10 y 11, Cloudflare y Meta). Fase 9b (ADR 0029).
 
 ---
 
@@ -745,7 +754,13 @@ Cada fase termina con: typecheck sin errores, tests pasando y una verificación 
 6. **Fase 5 — Nuevas funciones:** presupuestos, recurrentes y dictado por voz (ADR 0023).
 7. **Fase 6 — Respaldo:** exportar JSON, CSV y Google Sheets (sin restauración, ADR 0024).
 8. **Fase 7 — PWA y publicación:** service worker, manifiesto (con el atajo "Dictar movimiento" a `#/inicio?movimiento=nuevo&dictar=1`), Firebase Hosting.
-9. **Fase 8 — APK:** Bubblewrap, assetlinks, pruebas en el celular.
+9. **Fase 8 — APK:** Bubblewrap, assetlinks, pruebas en el celular (ADR 0028).
+10. **Fase 9 — Familia y privacidad** (ADR 0029): 9a, "Borrar mi cuenta" (ADR 0006); 9b, sección Privacidad en Ajustes, guía para sumar un familiar y TC-19 con un familiar.
+11. **Fase 10 — Dictado con IA:** Cloudflare Worker que verifica el token de Firebase y la lista de emails, limita los pedidos por día y llama a un LLM de Workers AI con salida JSON restringida. Con conexión, la IA siempre; sin conexión, el parser de reglas.
+12. **Fase 11 — Carga por WhatsApp:** 11a, análisis de la API oficial contra Baileys y ADR; 11b, vincular el número, texto y audio, confirmación antes de guardar y escritura validada con el dominio.
+13. **Fase 12 — Cierre y v1.0.0:** corregir el parpadeo de la app privada, README para el portfolio, repaso del SRS y los ADRs, release v1.0.0.
+
+Para más adelante: evaluar la IA incluida en Chrome (Gemini Nano) cuando esté disponible en Android.
 
 ---
 

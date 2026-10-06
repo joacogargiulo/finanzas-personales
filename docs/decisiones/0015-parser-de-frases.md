@@ -14,6 +14,8 @@ La app va a permitir dictar un movimiento ("gasté dieciocho mil en el súper co
 ## Decisión
 Se adopta la opción 1, en `src/domain/voice/`. La IA queda como respaldo en la Fase 10, como se acordó en el plan.
 
+*Nota (ADR 0029):* el dueño pidió que, con conexión, la IA se use siempre y no solo como respaldo; el parser queda para cuando no hay conexión. Se decide en detalle en la Fase 10.
+
 - **Siempre precarga, nunca guarda.** El resultado completa el formulario y el usuario confirma. Si un campo no se entendió, queda vacío y figura en `missing`.
 - **Entiende:**
   - Tipo por el verbo: gasté, pagué o me cobraron → gasto; cobré o me pagaron → ingreso; transferí o pasé → transferencia.

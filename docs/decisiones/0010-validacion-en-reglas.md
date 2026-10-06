@@ -43,4 +43,5 @@ Al leer, **la app tolera datos incoherentes**. Por ejemplo, un movimiento cuya c
 - Ninguna escritura gasta lecturas extra, y una escritura hecha sin conexión no se pierde por un cambio de estado en otro dispositivo.
 - Un usuario malicioso solo puede ensuciar **sus propios** datos; no es un problema de seguridad.
 - Las reglas no pueden limitar *cuántos* documentos crea un usuario. El abuso de cuota se mitiga con **App Check** en la Fase 9.
+  - *Nota (ADR 0029):* App Check se descartó. Desde el ADR 0026, solo los emails de la familia pasan las reglas.
 - Las reglas reales (`firestore.rules`) y sus tests con el emulador se escriben en la Fase 2. Los tests cubren cada campo, cada tipo de movimiento, los campos que no se pueden cambiar y el acceso entre usuarios (TC-19).

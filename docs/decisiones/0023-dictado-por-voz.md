@@ -35,4 +35,5 @@ El parser de frases existe desde la Fase 1 (ADR 0015): recibe texto y devuelve l
 - El reconocimiento no se puede probar con un micrófono real en los tests: los tests de componentes y el e2e instalan un reconocimiento falso que "escucha" una frase fija. En el e2e se reemplazan los dos nombres (`SpeechRecognition` y `webkitSpeechRecognition`), porque el Chromium de Playwright trae los dos.
 - Si se dicta antes de que lleguen las categorías (un usuario recién creado, en el primer segundo), la categoría queda marcada para revisar. No pasa en el uso normal: la caché local las tiene enseguida.
 - **Privacidad (para la Fase 9):** en Chrome, el audio dictado lo procesa Google. La política de privacidad tiene que decirlo.
+  - *Nota (ADR 0029):* lo dice la sección Privacidad de Ajustes (Fase 9b). La interpretación con IA de la Fase 10 se usa siempre que hay conexión.
 - Sin conexión no se puede dictar; la carga a mano sigue funcionando igual.
