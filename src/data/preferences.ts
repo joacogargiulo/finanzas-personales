@@ -27,10 +27,33 @@ export function writeTheme(uid: string, theme: Theme): void {
   }
 }
 
+function hideBalancesKey(uid: string): string {
+  return `prefs:${uid}:hideBalances`;
+}
+
+/** Si el patrimonio y los saldos están ocultos (el botón del ojo de Inicio). */
+export function readHideBalances(uid: string): boolean {
+  try {
+    return window.localStorage.getItem(hideBalancesKey(uid)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function writeHideBalances(uid: string, hidden: boolean): void {
+  try {
+    if (hidden) window.localStorage.setItem(hideBalancesKey(uid), '1');
+    else window.localStorage.removeItem(hideBalancesKey(uid));
+  } catch {
+    // Sin almacenamiento, la elección dura hasta cerrar la app.
+  }
+}
+
 /** Borra las preferencias de este usuario en el dispositivo ("Borrar mi cuenta", ADR 0030). */
 export function clearPreferences(uid: string): void {
   try {
     window.localStorage.removeItem(themeKey(uid));
+    window.localStorage.removeItem(hideBalancesKey(uid));
   } catch {
     // Sin almacenamiento no había nada guardado.
   }

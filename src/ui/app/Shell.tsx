@@ -13,6 +13,7 @@ import { useData } from './hooks';
 import { goTo, openPanel, useRoute } from './navigation';
 import { Notices } from './Notices';
 import type { Screen } from './route';
+import { loadHideBalances } from './balanceVisibility';
 import { loadTheme } from './theme';
 import { TopBar } from './TopBar';
 
@@ -62,6 +63,7 @@ export function Shell({ user }: { user: SessionUser }) {
 
   useEffect(() => {
     loadTheme(user.uid);
+    loadHideBalances(user.uid);
   }, [user.uid]);
 
   // Al cambiar de pantalla, se vuelve arriba de todo.

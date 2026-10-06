@@ -167,6 +167,19 @@ body:has(dialog[open]) {
   font-weight: 400;
 }
 
+/* El título y el ojo en la misma línea; el botón no agranda la tarjeta. */
+.wealth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block: -10px;
+}
+
+.wealth-eye {
+  color: var(--muted);
+}
+
 .wealth-total {
   font-size: 32px;
   font-weight: 500;
