@@ -36,7 +36,10 @@ export type DomainError =
   | { code: 'delete.inUse' }
   | { code: 'category.typeLocked' }
   | { code: 'restore.accountNameTaken'; name: string }
-  | { code: 'restore.categoryNameTaken'; name: string };
+  | { code: 'restore.categoryNameTaken'; name: string }
+  // Borrar mi cuenta (ADR 0006 y 0030)
+  | { code: 'deletion.pendingWrites' }
+  | { code: 'deletion.notSynced' };
 
 export type DomainErrorCode = DomainError['code'];
 
@@ -99,5 +102,9 @@ export function errorMessage(error: DomainError): string {
       return `Ya tenés una cuenta activa llamada ${error.name}. Elegí otro nombre para restaurarla.`;
     case 'restore.categoryNameTaken':
       return `Ya tenés una categoría activa llamada ${error.name}. Elegí otro nombre para restaurarla.`;
+    case 'deletion.pendingWrites':
+      return 'Tenés cambios que todavía no se subieron. Esperá a que se suban para borrar la cuenta.';
+    case 'deletion.notSynced':
+      return 'Necesitás conexión para borrar la cuenta. Esperá a que la app termine de sincronizar.';
   }
 }
