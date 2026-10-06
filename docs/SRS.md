@@ -751,7 +751,7 @@ Según 7.3, con un grupo por colección:
 | TC-29 | Borrar mi cuenta con datos y volver a entrar con la misma cuenta de Google | Muestra "Tu cuenta se borró"; al volver a entrar, la app está vacía (solo las categorías iniciales) |
 | TC-30 | Cortar la conexión mientras se borra la cuenta | El progreso se detiene y sigue al volver la señal; si se cierra la app, repetir el borrado termina lo que falta |
 | TC-31 | Borrar mi cuenta habiendo iniciado sesión hace más de 5 minutos | Pide confirmar la cuenta de Google antes de borrar; si se elige otra cuenta, avisa y no borra nada |
-| TC-32 | Con conexión, dictar "compré 100 dólares a 1300" | Precarga un cambio: salen $ 130.000 de la cuenta en pesos y entran US$ 100 en la de dólares; no guarda solo |
+| TC-32 | Con conexión, dictar "compré 100 dólares a 1300" (y "vendí…") | Precarga un cambio: salen $ 130.000 de la cuenta en pesos y entran US$ 100 en la de dólares (al vender, al revés); no guarda solo. Probado en el APK el 2026-10-06 (ADR 0031) |
 | TC-33 | Sin conexión (o con el Worker caído), dictar "gasté 5000 en el súper con efectivo" | Lo interpreta el parser de reglas y avisa "se interpretó sin IA" |
 | TC-34 | Dictar con IA más de 40 veces en el día | A partir del 41.°, avisa que se llegó al límite de hoy y usa el parser de reglas |
 
