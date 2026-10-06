@@ -87,7 +87,13 @@ describe('canStartDeletion: cuándo se puede empezar', () => {
 });
 
 describe('deletionFailureMessage', () => {
-  const failures: DeletionFailure[] = ['quota', 'userMismatch', 'recentLogin', 'offline', 'unknown'];
+  const failures: DeletionFailure[] = [
+    'quota',
+    'userMismatch',
+    'recentLogin',
+    'offline',
+    'unknown',
+  ];
 
   it.each(failures)('%s tiene texto', (failure) => {
     expect(deletionFailureMessage(failure).length).toBeGreaterThan(10);
