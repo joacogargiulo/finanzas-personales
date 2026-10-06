@@ -66,7 +66,7 @@ export function createInterpreter(deps: DictationDeps): Interpreter {
       if (response.status === 429) return rules('quota');
       if (!response.ok) return rules('failed');
       const body = (await response.json()) as { result?: unknown };
-      const phrase = parseAiResult(body.result, ctx);
+      const phrase = parseAiResult(body.result, text, ctx);
       return phrase ? { phrase, via: 'ai' } : rules('failed');
     } catch {
       // Sin red a mitad de camino, timeout o respuesta que no es JSON.

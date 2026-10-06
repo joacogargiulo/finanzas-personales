@@ -3,12 +3,18 @@
 // Nunca se confía en la IA sin revisar: puede inventar IDs, elegir una categoría del otro tipo
 // o devolver un monto con formato raro. Lo que no cierra queda vacío y en `missing`, y el panel
 // lo marca para revisar, igual que con el parser.
+//
+// Las cuentas se revisan contra la frase: en las pruebas con el modelo real (2026-10-06), si no
+// se nombraba ninguna, elegía una al azar entre las de la misma moneda, aunque el prompt dijera
+// que no. Solo se acepta una cuenta que la frase nombra o que es la única en su moneda.
 
 import { selectable } from '../collections';
 import { CURRENCIES, type Account, type Cents, type Currency, type LocalDate } from '../model';
 import { isValidLocalDate } from '../dates';
 import { parseAmount } from '../money';
 import { DESCRIPTION_MAX } from '../validation';
+import { findNamed } from './matching';
+import { tokenize } from './tokens';
 import {
   missingFields,
   type ParsedPhrase,
@@ -49,11 +55,20 @@ function toDate(value: unknown, today: LocalDate): LocalDate {
   return typeof value === 'string' && isValidLocalDate(value) && value <= today ? value : today;
 }
 
+/** Las cuentas que la IA puede elegir: las que nombra la frase y las únicas de su moneda. */
+function accountsAllowedBy(text: string, accounts: readonly Account[]): Account[] {
+  const norms = tokenize(text).map((t) => t.norm);
+  const named = new Set(findNamed(norms, [], accounts).map((m) => m.item.id));
+  return accounts.filter(
+    (a) => named.has(a.id) || accounts.filter((b) => b.currency === a.currency).length === 1,
+  );
+}
+
 /**
  * Convierte la respuesta cruda del Worker. `null` si no tiene forma de respuesta: en ese caso
  * se interpreta con el parser de reglas.
  */
-export function parseAiResult(raw: unknown, ctx: PhraseContext): ParsedPhrase | null {
+export function parseAiResult(raw: unknown, text: string, ctx: PhraseContext): ParsedPhrase | null {
   let data = raw;
   if (typeof data === 'string') {
     try {
@@ -69,7 +84,8 @@ export function parseAiResult(raw: unknown, ctx: PhraseContext): ParsedPhrase | 
   const accounts = selectable(ctx.accounts);
   const twoAccounts = type === 'transfer' || type === 'exchange';
 
-  let account = pick(data['accountId'], accounts);
+  const allowed = accountsAllowedBy(text, accounts);
+  let account = pick(data['accountId'], allowed);
   // Cuenta implícita, como en el parser: la única de la moneda nombrada, o la única que hay.
   if (!account && !twoAccounts) {
     const candidates = currency ? accounts.filter((a) => a.currency === currency) : accounts;
@@ -77,7 +93,7 @@ export function parseAiResult(raw: unknown, ctx: PhraseContext): ParsedPhrase | 
   }
 
   // Destino: distinto del origen; misma moneda para transferir y distinta para cambiar.
-  let toAccount: Account | null = twoAccounts ? pick(data['toAccountId'], accounts) : null;
+  let toAccount: Account | null = twoAccounts ? pick(data['toAccountId'], allowed) : null;
   if (toAccount && account) {
     const sameCurrency = toAccount.currency === account.currency;
     if (toAccount.id === account.id || (type === 'transfer') !== sameCurrency) toAccount = null;
