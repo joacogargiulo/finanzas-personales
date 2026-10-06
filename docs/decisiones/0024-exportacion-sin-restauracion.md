@@ -38,4 +38,4 @@ El SRS 8 pide exportar a JSON, CSV y Google Sheets, y además **restaurar** desd
 - El SRS 8.2 queda sin efecto; la confirmación reforzada para "restaurar un respaldo" desaparece de 6.7, y TC-23 pasa a "exportar el JSON y verificar su contenido".
 - Exportar no gasta cuota de Firestore y funciona sin conexión.
 - Si algún día se quiere importar, sería un flujo nuevo ("importar a una cuenta vacía", con IDs nuevos) y necesitaría su propio ADR.
-- Las descargas dentro del APK se verifican en la Fase 8.
+- Las descargas dentro del APK se verificaron en la Fase 8 (ADR 0028): se guardan en Descargas.

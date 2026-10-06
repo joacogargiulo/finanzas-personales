@@ -38,4 +38,10 @@ Faltaba decidir:
 - Si se pierde la clave, no se puede actualizar la app instalada: hay que desinstalarla, crear otra clave y publicar la huella nueva.
 - Si en algún momento se publica en Play Store, hay que sumar a `assetlinks.json` la huella de Play App Signing.
 - Si la huella publicada no coincide, el APK abre con la barra de direcciones. Chrome guarda en caché el resultado de la verificación: después de corregirla, hay que borrar los datos de la app.
-- Pruebas en el celular: pendientes (se completan al cerrar la fase).
+## Resultado de las pruebas en el celular (2026-10-06)
+- **TC-21:** abre a pantalla completa, sin barra de direcciones. Google confirma la relación (API de Digital Asset Links).
+- **Login:** `signInWithPopup` funciona. Dentro de la TWA el popup se abre como una pestaña a pantalla completa y vuelve a la app sin recargar. No hace falta usar el redirect en el APK (ADR 0017).
+- **Sesión compartida con Chrome:** el APK usa los datos de Chrome para el sitio. Si ya había una sesión abierta en Chrome, el APK abre con esa sesión.
+- **Descargas** (CSV y JSON, TC-22 y TC-23): se guardan en la carpeta Descargas del celular.
+- **Google Sheets:** el permiso y la exportación funcionan (ADR 0025).
+- Sin conexión, sincronización con la compu, atajo "Dictar movimiento" y micrófono: funcionan.
