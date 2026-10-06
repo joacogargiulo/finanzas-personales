@@ -1,5 +1,5 @@
-// Descargar un archivo generado en el navegador (SRS 8). Las descargas dentro del APK se
-// verifican en la Fase 8.
+// Descargar un archivo generado en el navegador (SRS 8). También funciona dentro del APK: los
+// archivos van a la carpeta Descargas del celular (ADR 0028).
 
 /**
  * Descarga `blob` con el nombre `fileName`: crea una dirección temporal (`blob:`) que apunta al

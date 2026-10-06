@@ -37,5 +37,5 @@ El SRS 8.4 pide un botón "Exportar a Google Sheets" que cree una hoja en el Dri
 - Exportar a Sheets requiere conexión: el botón se deshabilita sin ella.
 - Tareas manuales (SRS 13): habilitar las APIs de Sheets y Drive, agregar el scope a la pantalla de consentimiento y autorizar los orígenes (con el puerto, `http://localhost:5173`) en el Client ID. La pantalla de consentimiento ya está en producción (Firebase la publicó para el login) y se deja así: en modo prueba, solo los usuarios de prueba podrían iniciar sesión. Como `drive.file` no es sensible, sumarlo no requiere verificación.
 - **Fase 7:** cuando se agregue una Content-Security-Policy, tiene que permitir `accounts.google.com` (script y popup), `sheets.googleapis.com` y `www.googleapis.com`. El dominio de Hosting se suma a los orígenes autorizados.
-- **Fase 8:** dentro del APK el popup podría fallar. Se prueba ahí; si falla, Sheets queda para la computadora.
+- **Fase 8:** dentro del APK el permiso y la exportación funcionan (ADR 0028).
 - Los tests no hablan con Google: los unitarios usan un `fetch` falso y los E2E reemplazan el script y las APIs.

@@ -517,7 +517,7 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 ### 7.1 Firebase Authentication
 - Proveedor Google únicamente.
 - `authDomain` configurado con el dominio de Firebase Hosting donde se publica la app (ej. `<proyecto>.web.app`), para que el handler de autenticación esté en el mismo dominio que la app.
-- Usar `signInWithPopup` y, si el navegador bloquea el popup, `signInWithRedirect` (ADR 0017). **Verificar explícitamente el login dentro del APK** (fase 8).
+- Usar `signInWithPopup` y, si el navegador bloquea el popup, `signInWithRedirect` (ADR 0017). Dentro del APK el popup funciona (verificado en la Fase 8, ADR 0028).
 - Persistencia de sesión local (IndexedDB, la predeterminada del SDK web).
 
 ### 7.2 Cerrar sesión
@@ -652,7 +652,7 @@ Fuera de alcance (ADR 0024): reemplazar los datos rompería la sincronización d
 - La clave de firma (keystore) y su contraseña **no se suben al repositorio**: la clave vive fuera del repo y `.gitignore` excluye `*.keystore`, `*.jks` y los APK. `twa-manifest.json` sí se sube (solo tiene la ruta y el alias). El dueño guarda las contraseñas en un gestor de contraseñas.
 - El contenido se actualiza automáticamente desde el hosting; el APK solo se regenera si cambian nombre, ícono o configuración del manifiesto (subir `appVersionCode`, `bubblewrap update` y `bubblewrap build`).
 - Bubblewrap usa un JDK 17 de 64 bits en una ruta sin espacios (ADR 0028).
-- Verificar en el APK: login con Google, funcionamiento offline, descargas de exportación.
+- Verificado en el APK (ADR 0028): login con Google, funcionamiento offline, descargas de exportación y Google Sheets.
 
 ---
 

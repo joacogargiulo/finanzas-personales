@@ -26,4 +26,4 @@ Se adopta la opción 1:
 
 ## Consecuencias
 - En desarrollo funciona sin configuración extra, contra el emulador de Auth o contra el proyecto real en `localhost`.
-- Dentro del APK (TWA), el popup corre en Chrome. Se verifica en la Fase 8 (TC-21). Si falla, se cambia el orden para ese caso.
+- Dentro del APK (TWA), el popup corre en Chrome. Se verificó en la Fase 8 (TC-21, ADR 0028): funciona; el popup se abre como una pestaña a pantalla completa.
