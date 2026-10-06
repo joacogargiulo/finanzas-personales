@@ -10,7 +10,7 @@
     {
       "binding": "QUOTA",
       // Lo da `npx wrangler kv namespace create QUOTA`. No es un secreto.
-      "id": "REEMPLAZAR_CON_EL_ID_DEL_KV",
+      "id": "e1fcfaeb08824cc785d637f8aa3e10d9",
     },
   ],
   "vars": {
