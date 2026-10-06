@@ -32,3 +32,6 @@ Se adopta la opción 1, en `src/domain/voice/`. La IA queda como respaldo en la 
 - El parser no conoce el micrófono ni WhatsApp: recibe texto y las cuentas y categorías. Sirve igual para la Fase 5, la 10 y la 11.
 - Una frase nueva que no se entiende se arregla sumando un caso a los tests y la palabra al diccionario.
 - `missing` le sirve a la Fase 10 para decidir cuándo pedirle ayuda a la IA.
+
+## Nota (issue #22): dos categorías en la frase
+Si la frase nombra dos o más categorías distintas, por nombre o por sinónimo ("comida para la Nala"), el parser no elige ninguna: la categoría queda en `missing` y el panel la marca con "No se entendió, revisalo", sin preseleccionar (decisión del dueño). El tipo se deduce igual si todas las candidatas son del mismo tipo. Dos palabras de la misma categoría ("cena en el súper") no son una duda.

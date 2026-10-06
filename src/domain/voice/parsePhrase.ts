@@ -218,19 +218,21 @@ export function parsePhrase(text: string, ctx: PhraseContext): ParsedPhrase {
   }
 
   // 5. Categoría: por nombre o por sinónimo. Sus palabras quedan en la descripción.
+  // Si la frase nombra dos o más categorías ("comida para la Nala"), no se elige ninguna: el
+  // campo queda marcado como dudoso y lo elige el usuario.
   let categoryId: string | null = null;
   if (type !== 'transfer' && unsupported === null) {
     const active = selectable(ctx.categories).filter((c) => type === null || c.type === type);
-    const byName = findNamed(norms, used, active)[0]?.item;
+    const byName = findNamed(norms, used, active).map((match) => match.item);
     const bySynonym = norms
       .map((token, i) => (used[i] ? undefined : SYNONYM_INDEX.get(token)))
       .map((id) => active.find((c) => c.id === id))
-      .find((c) => c !== undefined);
-    const category = byName ?? bySynonym;
-    if (category) {
-      categoryId = category.id;
-      type ??= category.type; // "súper 5000 con efectivo" → gasto
-    }
+      .filter((c) => c !== undefined);
+    const candidates = [...new Map([...byName, ...bySynonym].map((c) => [c.id, c])).values()];
+    const [category] = candidates;
+    if (candidates.length === 1 && category) categoryId = category.id;
+    // El tipo igual se deduce si todas las candidatas son del mismo: "súper 5000 con efectivo" → gasto.
+    if (category && candidates.every((c) => c.type === category.type)) type ??= category.type;
   }
 
   // 6. Descripción: lo que sobra. Si es solo el nombre de la categoría, no agrega nada.
