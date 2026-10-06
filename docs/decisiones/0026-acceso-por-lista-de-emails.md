@@ -22,6 +22,7 @@ Restricciones:
 **Hash SHA-256 en las reglas** (alternativa 2, elegida por el dueño):
 - `isAllowed()` exige `email_verified == true` y que el SHA-256 del email **en minúsculas** esté en `allowedEmailHashes()`. Va dentro de `isOwner(uid)`, así cubre todas las colecciones.
 - `npm run email-hash -- persona@gmail.com` imprime el hash listo para pegar. Después, `npm run deploy:rules`.
+  - *Nota (ADR 0031):* el hash también va en `worker/src/access.ts`, la lista del Worker del dictado con IA, que se publica con `npm run deploy:worker`. Un test verifica que las dos listas coincidan.
 - **Cuentas de prueba:** los tests de reglas, de datos y E2E crean usuarios `@example.com` sin hash. Las reglas aceptan ese dominio porque es **reservado** (RFC 2606): nadie puede verificar una cuenta de Google con él, y las reglas exigen el email verificado. La lista trae además el hash de `familia@example.org` (también reservado) para probar la comparación de hashes.
 - **En la app:** si el servidor rechaza la sincronización con `permission-denied`, la sesión detiene los listeners y muestra "Esta app es privada", con el botón "Usar otra cuenta" (cierra la sesión y borra la caché).
 

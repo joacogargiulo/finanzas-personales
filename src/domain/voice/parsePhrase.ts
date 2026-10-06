@@ -11,12 +11,15 @@ import { findDate } from './relativeDates';
 import { SYNONYM_INDEX } from './synonyms';
 import { STOPWORDS, tokenize, type Token } from './tokens';
 
-export type VoiceTransactionType = 'income' | 'expense' | 'transfer';
-export type ParsedField = 'type' | 'amount' | 'account' | 'toAccount' | 'category';
+/** Los tipos que se pueden dictar. El parser no reconoce `exchange`; la IA sí (ADR 0031). */
+export type VoiceTransactionType = 'income' | 'expense' | 'transfer' | 'exchange';
+export type ParsedField = 'type' | 'amount' | 'toAmount' | 'account' | 'toAccount' | 'category';
 
 export interface ParsedPhrase {
   type: VoiceTransactionType | null;
   amount: Cents | null;
+  /** Lo que llega a la cuenta destino en un cambio de moneda. */
+  toAmount: Cents | null;
   /** Moneda que se nombró ("50 dólares"), si se nombró. */
   currency: Currency | null;
   /** Hoy, si no se dijo una fecha. */
@@ -29,6 +32,25 @@ export interface ParsedPhrase {
   missing: ParsedField[];
   /** La frase parece un cambio de moneda, que el parser no interpreta. */
   unsupported: 'exchange' | null;
+}
+
+/** Los campos necesarios para el tipo que quedaron sin entender. Los usan el parser y la IA. */
+export function missingFields(
+  phrase: Pick<
+    ParsedPhrase,
+    'type' | 'amount' | 'toAmount' | 'accountId' | 'toAccountId' | 'categoryId'
+  >,
+): ParsedField[] {
+  const { type } = phrase;
+  const twoAccounts = type === 'transfer' || type === 'exchange';
+  const missing: ParsedField[] = [];
+  if (type === null) missing.push('type');
+  if (phrase.amount === null) missing.push('amount');
+  if (type === 'exchange' && phrase.toAmount === null) missing.push('toAmount');
+  if (phrase.accountId === null) missing.push('account');
+  if (twoAccounts && phrase.toAccountId === null) missing.push('toAccount');
+  if (!twoAccounts && phrase.categoryId === null) missing.push('category');
+  return missing;
 }
 
 export interface PhraseContext {
@@ -240,23 +262,18 @@ export function parsePhrase(text: string, ctx: PhraseContext): ParsedPhrase {
   const category = ctx.categories.find((c) => c.id === categoryId);
   if (category && compact(description) === compact(category.name)) description = '';
 
-  const missing: ParsedField[] = [];
-  if (type === null) missing.push('type');
-  if (amountMatch === null) missing.push('amount');
-  if (accountId === null) missing.push('account');
-  if (type === 'transfer' && toAccountId === null) missing.push('toAccount');
-  if (type !== 'transfer' && categoryId === null) missing.push('category');
-
+  const amount = amountMatch?.cents ?? null;
   return {
     type,
-    amount: amountMatch?.cents ?? null,
+    amount,
+    toAmount: null,
     currency,
     date: dateMatch?.date ?? ctx.today,
     accountId,
     toAccountId,
     categoryId,
     description,
-    missing,
+    missing: missingFields({ type, amount, toAmount: null, accountId, toAccountId, categoryId }),
     unsupported,
   };
 }

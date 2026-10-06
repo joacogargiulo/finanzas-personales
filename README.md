@@ -8,7 +8,7 @@ Publicada en **https://finanzas-personales-jtg.web.app** (acceso limitado a una 
 
 ## Stack
 
-React 19 · TypeScript (strict) · Vite · Firebase (Firestore + Auth con Google + Hosting) · Vitest · Playwright · GitHub Actions.
+React 19 · TypeScript (strict) · Vite · Firebase (Firestore + Auth con Google + Hosting) · Cloudflare Workers + Workers AI (dictado con IA) · Vitest · Playwright · GitHub Actions.
 
 ## Arquitectura
 
@@ -34,20 +34,22 @@ Algunas reglas del diseño:
 
 ## Comandos
 
-| Comando              | Qué hace                                                               |
-| -------------------- | ---------------------------------------------------------------------- |
-| `npm install`        | Instala las dependencias                                               |
-| `npm run dev`        | Servidor local de desarrollo                                           |
-| `npm run build`      | Compila para producción en `dist/`                                     |
-| `npm run typecheck`  | Verifica los tipos de TypeScript                                       |
-| `npm run lint`       | Revisa el código con ESLint                                            |
-| `npm run format`     | Formatea el código con Prettier                                        |
-| `npm test`           | Tests unitarios (Vitest)                                               |
-| `npm run test:rules` | Tests de las reglas de seguridad contra el emulador de Firestore       |
-| `npm run test:e2e`   | Tests de punta a punta con Playwright (necesita `npm run build` antes) |
-| `npm run emulators`  | Levanta los emuladores de Firebase con su interfaz web                 |
-| `npm run icons`      | Regenera los íconos PNG desde los SVG de `icons/`                      |
-| `npm run deploy`     | Compila y publica en Firebase Hosting (con las reglas)                 |
+| Comando                 | Qué hace                                                               |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `npm install`           | Instala las dependencias                                               |
+| `npm run dev`           | Servidor local de desarrollo                                           |
+| `npm run build`         | Compila para producción en `dist/`                                     |
+| `npm run typecheck`     | Verifica los tipos de TypeScript                                       |
+| `npm run lint`          | Revisa el código con ESLint                                            |
+| `npm run format`        | Formatea el código con Prettier                                        |
+| `npm test`              | Tests unitarios (Vitest)                                               |
+| `npm run test:rules`    | Tests de las reglas de seguridad contra el emulador de Firestore       |
+| `npm run test:e2e`      | Tests de punta a punta con Playwright (necesita `npm run build` antes) |
+| `npm run emulators`     | Levanta los emuladores de Firebase con su interfaz web                 |
+| `npm run icons`         | Regenera los íconos PNG desde los SVG de `icons/`                      |
+| `npm run deploy`        | Compila y publica en Firebase Hosting (con las reglas)                 |
+| `npm run dev:worker`    | Corre el Worker del dictado con IA en la compu (`worker/`)             |
+| `npm run deploy:worker` | Publica el Worker en Cloudflare                                        |
 
 ## Cómo se trabaja
 

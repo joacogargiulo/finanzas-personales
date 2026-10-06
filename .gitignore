@@ -48,3 +48,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Cloudflare Worker (ADR 0031): caché de wrangler y secretos locales
+.wrangler/
+.dev.vars

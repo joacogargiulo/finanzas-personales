@@ -67,6 +67,25 @@ export default tseslint.config(
     },
   },
 
+  // Worker de Cloudflare (ADR 0031): puede usar el dominio, pero no la app (data ni ui).
+  {
+    files: ['worker/**/*.ts'],
+    languageOptions: { globals: globals.serviceworker },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/src/data', '**/src/data/*', '**/src/ui', '**/src/ui/*'],
+              message: 'El Worker solo puede usar src/domain.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Archivos de configuración (corren en Node, no en el navegador).
   {
     files: ['*.config.{js,ts}'],
