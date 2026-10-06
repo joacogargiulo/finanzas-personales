@@ -55,3 +55,10 @@ Según el ADR 0029, con conexión el dictado tiene que interpretarse siempre con
 - **Miles con coma:** el dictado de Chrome en Android escribió "$38,700", con los miles al estilo inglés. Una coma seguida de exactamente 3 cifras no puede ser de centavos, así que se toma como separador de miles, tanto en el parser como en la respuesta de la IA.
 - **Vender dólares:** el prompt solo tenía un ejemplo de compra, y "vendí $100 a 1300" se interpretaba como una compra. Se agregaron las reglas de qué sale y qué entra al comprar y al vender, con un ejemplo de cada uno, y la aclaración de que el dictado escribe "$" también para los dólares. Se probó contra el modelo real con un Worker de prueba (`wrangler dev`, que usa la IA remota).
 - **Cuentas que la frase no nombra:** en esas pruebas el modelo elegía una cuenta al azar entre las de la misma moneda, aunque el prompt dijera que no. El dominio ahora acepta la cuenta de la IA solo si la frase la nombra o si es la única en su moneda; si no, queda para revisar. `parseAiResult` recibe la frase para eso.
+
+## Resultado de la prueba en producción (2026-10-06)
+Probado por el dueño en el APK, con el Worker publicado en `finanzas-dictado.joaquintg.workers.dev`:
+- **Gastos dictados** con la IA, incluido un monto con miles con coma ("$38,700"): bien.
+- **Comprar y vender dólares** (TC-32): "compré $100 a 1300" y "vendí $100 a 1300" se precargan con el sentido correcto.
+- **Respaldo con el parser** (TC-33): cuando la IA tardó más de 6 segundos (antes de subir el timeout), el panel avisó "La IA no respondió" y se usó el parser.
+- **Demora:** entre 3,4 y 4,9 segundos por dictado, con unas 40 neuronas cada uno.
