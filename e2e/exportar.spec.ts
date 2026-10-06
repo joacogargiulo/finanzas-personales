@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Download, type Page } from '@playwright/test';
+import type { Download, Page } from '@playwright/test';
 import { unzipSync } from 'fflate';
+import { expect, test } from './fixtures';
 import { addExpense, createAccount, signIn } from './helpers';
 
 // Respaldo y exportación (SRS 8.1 y 8.3): los archivos se arman con los datos del dispositivo

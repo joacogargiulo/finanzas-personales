@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { addExpense, createAccount, signIn } from './helpers';
 
 // Estadísticas y buscador (Fase 4) contra los emuladores: los datos cargados se ven en los

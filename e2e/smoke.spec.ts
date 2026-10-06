@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // Test de humo: si esto falla, la app ni siquiera arranca.
 test('la app carga y muestra el inicio de sesión', async ({ page }) => {

@@ -1,4 +1,5 @@
-import { expect, test, type Route } from '@playwright/test';
+import type { Route } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { addExpense, createAccount, signIn } from './helpers';
 
 // Exportar a Google Sheets (SRS 8.4, ADR 0025) sin hablar con Google de verdad:
