@@ -516,6 +516,8 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 
 **Dictar** (ADR 0023): al crear una transacción, si el navegador soporta la Web Speech API, un botón de micrófono en el encabezado del panel. La frase precarga el formulario (parser del ADR 0015), muestra lo que se escuchó y marca los campos que no se entendieron; nunca guarda sola. Lo guardado lleva `source: 'voice'`. La dirección `movimiento=nuevo&dictar=1` abre el panel escuchando.
 
+**Dictado con IA** (ADR 0031): con conexión, la frase la interpreta una IA (Llama 3.3 70B en Cloudflare Workers AI) a través de un Worker que verifica el token de Firebase, la lista de emails y un límite de 40 dictados por persona y por día. La app valida la respuesta en el dominio y precarga lo mismo que el parser; con la IA también se pueden dictar cambios de moneda. Sin conexión, o si la IA falla, usa el parser.
+
 **Confirmaciones:** simple para eliminar transacciones; reforzada (escribir el nombre exacto) para archivar cuentas y categorías.
 
 ---
@@ -542,7 +544,7 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 ### 7.3 Reglas de seguridad de Firestore (multiusuario, ADR 0010)
 **Principio:** las reglas rechazan solo lo que la app legítima nunca podría producir. Validan cada documento por separado, sin `get()`. La coherencia entre documentos la valida el dominio (5.3).
 
-**Lista de acceso (ADR 0026):** `isOwner(uid)` exige además `isAllowed()`: email verificado y su SHA-256 (en minúsculas) en `allowedEmailHashes()`. Las cuentas `@example.com` (dominio reservado) se aceptan para los tests. Para sumar a alguien: `npm run email-hash -- persona@gmail.com`, pegar el hash en `firestore.rules` y `npm run deploy:rules` (paso a paso en `docs/sumar-un-familiar.md`). Si el servidor rechaza la sincronización por permisos, la app muestra "Esta app es privada" con el botón "Usar otra cuenta".
+**Lista de acceso (ADR 0026):** `isOwner(uid)` exige además `isAllowed()`: email verificado y su SHA-256 (en minúsculas) en `allowedEmailHashes()`. Las cuentas `@example.com` (dominio reservado) se aceptan para los tests. Para sumar a alguien: `npm run email-hash -- persona@gmail.com`, pegar el hash en `firestore.rules` y en `worker/src/access.ts` (ADR 0031), y publicar con `npm run deploy:rules` y `npm run deploy:worker` (paso a paso en `docs/sumar-un-familiar.md`). Si el servidor rechaza la sincronización por permisos, la app muestra "Esta app es privada" con el botón "Usar otra cuenta".
 
 Borrador en pseudocódigo. Las reglas reales y sus tests se escriben en la Fase 2.
 ```

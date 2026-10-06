@@ -22,14 +22,16 @@ La app es privada: solo entran las cuentas de Google de una lista (ADR 0026). Ca
      ];
    }
    ```
-4. **Corré los tests de reglas** (`npm run test:rules`), y después rama, PR y merge, como cualquier cambio.
-5. **Publicá las reglas desde `main`:**
+4. **Pegá la misma línea en `worker/src/access.ts`**, la lista del Worker del dictado con IA (ADR 0031). Si te olvidás, el test `worker/src/access.test.ts` falla.
+5. **Corré los tests** (`npm test` y `npm run test:rules`), y después rama, PR y merge, como cualquier cambio.
+6. **Publicá las reglas y el Worker desde `main`:**
    ```sh
    git checkout main
    git pull
    npm run deploy:rules
+   npm run deploy:worker
    ```
-   Hasta este paso, la persona ve "Esta app es privada".
+   Hasta publicar las reglas, la persona ve "Esta app es privada". Sin publicar el Worker, entra pero el dictado no usa la IA.
 
 ## 2. Lo que hace el familiar
 
@@ -48,7 +50,7 @@ La app es privada: solo entran las cuentas de Google de una lista (ADR 0026). Ca
 ## 3. Sacar a alguien
 
 1. **Pedile que antes use Ajustes → Borrar mi cuenta.** Así sus datos se borran del servidor.
-2. Quitá su hash de `firestore.rules` (PR y merge) y publicá con `npm run deploy:rules`.
+2. Quitá su hash de `firestore.rules` y de `worker/src/access.ts` (PR y merge), y publicá con `npm run deploy:rules` y `npm run deploy:worker`.
 
 Si se quita el hash sin que la persona borre su cuenta, sus datos quedan en Firestore: las reglas ya no la dejan leerlos, pero siguen ocupando lugar. Se pueden borrar a mano desde la consola de Firebase (`users/{uid}`).
 

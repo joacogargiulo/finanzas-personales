@@ -16,6 +16,8 @@ Se adopta la opción 1, en `src/domain/voice/`. La IA queda como respaldo en la 
 
 *Nota (ADR 0029):* el dueño pidió que, con conexión, la IA se use siempre y no solo como respaldo; el parser queda para cuando no hay conexión. Se decide en detalle en la Fase 10.
 
+*Nota (ADR 0031):* la IA devuelve el mismo `ParsedPhrase`, ampliado con el tipo `exchange` y `toAmount`. El cálculo de `missing` pasó a `missingFields`, que comparten el parser y la IA.
+
 - **Siempre precarga, nunca guarda.** El resultado completa el formulario y el usuario confirma. Si un campo no se entendió, queda vacío y figura en `missing`.
 - **Entiende:**
   - Tipo por el verbo: gasté, pagué o me cobraron → gasto; cobré o me pagaron → ingreso; transferí o pasé → transferencia.

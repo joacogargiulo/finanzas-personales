@@ -36,4 +36,5 @@ El parser de frases existe desde la Fase 1 (ADR 0015): recibe texto y devuelve l
 - Si se dicta antes de que lleguen las categorías (un usuario recién creado, en el primer segundo), la categoría queda marcada para revisar. No pasa en el uso normal: la caché local las tiene enseguida.
 - **Privacidad (para la Fase 9):** en Chrome, el audio dictado lo procesa Google. La política de privacidad tiene que decirlo.
   - *Nota (ADR 0029):* lo dice la sección Privacidad de Ajustes (Fase 9b). La interpretación con IA de la Fase 10 se usa siempre que hay conexión.
+  - *Nota (ADR 0031):* con la IA, los cambios de moneda sí se pueden dictar.
 - Sin conexión no se puede dictar; la carga a mano sigue funcionando igual.
