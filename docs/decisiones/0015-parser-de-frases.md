@@ -39,3 +39,6 @@ Se adopta la opción 1, en `src/domain/voice/`. La IA queda como respaldo en la 
 
 ## Nota (issue #22): dos categorías en la frase
 Si la frase nombra dos o más categorías distintas, por nombre o por sinónimo ("comida para la Nala"), el parser no elige ninguna: la categoría queda en `missing` y el panel la marca con "No se entendió, revisalo", sin preseleccionar (decisión del dueño). El tipo se deduce igual si todas las candidatas son del mismo tipo. Dos palabras de la misma categoría ("cena en el súper") no son una duda.
+
+## Nota (ADR 0031): miles con coma
+En Android, el dictado de Chrome a veces escribe los miles con coma ("$38,700"). Una coma seguida de exactamente 3 cifras se toma como separador de miles: los centavos tienen 1 o 2 cifras, así que no hay ambigüedad. "1,5" sigue siendo 1 con 50 centavos.

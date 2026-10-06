@@ -21,6 +21,10 @@ describe('parseDigits', () => {
     ['1.5', 1_50],
     ['5k', 5_000_00],
     ['$18.000', 18_000_00],
+    // En Android, el dictado a veces escribe los miles con coma, como en inglés.
+    ['$38,700', 38_700_00],
+    ['1,500', 1_500_00],
+    ['1,234,567.50', 1_234_567_50],
   ])('"%s" → %i centavos', (token, cents) => {
     expect(parseDigits(token)?.cents).toBe(BigInt(cents));
   });
@@ -29,7 +33,7 @@ describe('parseDigits', () => {
     expect(parseDigits('us$20')?.currency).toBe('USD');
   });
 
-  it.each(['abc', '1,500', '1.50.0', ''])('"%s" no es un número', (token) => {
+  it.each(['abc', '1,5000', '1.50.0', '1,500,5', ''])('"%s" no es un número', (token) => {
     expect(parseDigits(token)).toBeNull();
   });
 });

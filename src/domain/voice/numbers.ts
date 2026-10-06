@@ -105,6 +105,9 @@ interface Digits {
 /**
  * Un número en cifras, como lo escribe el dictado: "18.000" (punto de miles), "2.500,50",
  * "1,5", "5k", "$18.000". Distinto de `parseAmount`, que no acepta separador de miles.
+ * El dictado de Chrome en Android a veces escribe los miles con coma, como en inglés:
+ * "$38,700". Una coma seguida de exactamente 3 cifras no puede ser de centavos (tienen 1 o 2),
+ * así que se toma como separador de miles.
  */
 export function parseDigits(token: string): Digits | null {
   let text = token;
@@ -120,10 +123,11 @@ export function parseDigits(token: string): Digits | null {
   if (thousands) text = text.slice(0, -1);
 
   const grouped = /^(\d{1,3}(?:\.\d{3})+)(?:,(\d{1,2}))?$/.exec(text);
+  const groupedWithCommas = /^(\d{1,3}(?:,\d{3})+)(?:\.(\d{1,2}))?$/.exec(text);
   const plain = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(text);
-  const match = grouped ?? plain;
+  const match = grouped ?? groupedWithCommas ?? plain;
   if (!match) return null;
-  const integerPart = (match[1] ?? '').replaceAll('.', '');
+  const integerPart = (match[1] ?? '').replace(/[.,]/g, '');
   const decimalPart = match[2] ?? '';
   const cents = BigInt(integerPart) * 100n + BigInt(decimalPart.padEnd(2, '0'));
   return { cents: thousands ? cents * 1000n : cents, currency };

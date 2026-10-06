@@ -132,12 +132,14 @@ describe('montos', () => {
     ['18.000', 1_800_000],
     ['1.234.567,89', 123_456_789],
     ['$ 500', 50_000],
+    ['38,700', 3_870_000],
+    ['1,234.50', 123_450],
     [1500, 150_000],
   ])('%s → %i centavos', (amount, cents) => {
     expect(parseAiResult(answer({ amount }), ctx)?.amount).toBe(cents);
   });
 
-  it.each([['-500'], ['0'], ['mil'], ['1,234,567'], [null]])('%s no es un monto', (amount) => {
+  it.each([['-500'], ['0'], ['mil'], ['1,23,4'], [null]])('%s no es un monto', (amount) => {
     const parsed = parseAiResult(answer({ amount }), ctx);
     expect(parsed?.amount).toBeNull();
     expect(parsed?.missing).toContain('amount');
