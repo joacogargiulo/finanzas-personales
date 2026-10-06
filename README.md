@@ -2,6 +2,8 @@
 
 PWA de finanzas personales **offline-first**: se carga un gasto sin conexión y se sincroniza sola entre el celular (APK) y la computadora con Firebase Firestore. Cada persona inicia sesión con Google y ve solo sus datos.
 
+Publicada en **https://finanzas-personales-jtg.web.app** (acceso limitado a una lista de cuentas, ADR 0026). Se instala desde Chrome y funciona sin conexión.
+
 > En construcción. Avance por fases: ver [`docs/SRS.md`](docs/SRS.md) (especificación) y [`docs/decisiones/`](docs/decisiones/) (decisiones de arquitectura).
 
 ## Stack
@@ -44,6 +46,8 @@ Algunas reglas del diseño:
 | `npm run test:rules` | Tests de las reglas de seguridad contra el emulador de Firestore       |
 | `npm run test:e2e`   | Tests de punta a punta con Playwright (necesita `npm run build` antes) |
 | `npm run emulators`  | Levanta los emuladores de Firebase con su interfaz web                 |
+| `npm run icons`      | Regenera los íconos PNG desde los SVG de `icons/`                      |
+| `npm run deploy`     | Compila y publica en Firebase Hosting (con las reglas)                 |
 
 ## Cómo se trabaja
 
