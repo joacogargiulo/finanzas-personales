@@ -1,2 +1,4 @@
 # Fin de línea LF en el repo, aunque se edite en Windows
 * text=auto eol=lf
+# Los scripts de Windows necesitan CRLF (gradlew.bat del proyecto Android)
+*.bat text eol=crlf
