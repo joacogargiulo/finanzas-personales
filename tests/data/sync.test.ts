@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { describe, expect, it } from 'vitest';
 import { collectionRef } from '../../src/data/paths';
+import { isPermissionDenied } from '../../src/data/sync';
 import type { AccountFields } from '../../src/data/writes';
 import { createClient, OWNER, PROJECT_ID, syncInto, until, useDataEnv, writerFor } from './helpers';
 
@@ -160,5 +161,22 @@ describe('el cursor', () => {
     );
     await until(() => second.state.status.upToDate, 'al día con el servidor');
     expect(second.state.collections.accounts?.map((a) => a.id)).not.toContain('vieja');
+  });
+});
+
+// Una cuenta fuera de la lista de acceso (ADR 0026): el servidor rechaza las lecturas y la sesión
+// lo reconoce con `isPermissionDenied` para mostrar "Esta app es privada".
+describe('una cuenta sin acceso', () => {
+  it('recibe el rechazo del servidor en vez de datos', async () => {
+    const db = createClient('extra', { email: 'extrano@gmail.com', email_verified: true });
+    const { state } = syncInto(db, 'extra');
+    await until(() => state.errors.length > 0, 'el servidor rechaza la sincronización');
+
+    expect(state.errors.every(isPermissionDenied)).toBe(true);
+    expect(state.profileFromServer).toBe(false);
+  });
+
+  it('un error cualquiera no se confunde con falta de acceso', () => {
+    expect(isPermissionDenied(new Error('permission-denied'))).toBe(false);
   });
 });

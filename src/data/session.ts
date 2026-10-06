@@ -2,7 +2,8 @@
 //
 // Al iniciar sesión: arranca la sincronización (ADR 0016). Cuando el servidor confirma que el
 // perfil no existe o no está sembrado, siembra las categorías (ADR 0004). Si el perfil tiene un
-// schemaVersion mayor que el de esta app, bloquea las escrituras (ADR 0011).
+// schemaVersion mayor que el de esta app, bloquea las escrituras (ADR 0011). Si el servidor
+// rechaza las lecturas, la cuenta no está en la lista de acceso: se detiene todo (ADR 0026).
 
 import type { Unsubscribe } from 'firebase/firestore';
 import { SCHEMA_VERSION } from '../domain/model';
@@ -17,7 +18,7 @@ import type { FirebaseServices } from './firebase';
 import { ensureSeeded } from './seed';
 import type { DataStore } from './store';
 import { emptyState } from './store';
-import { startSync } from './sync';
+import { isPermissionDenied, startSync } from './sync';
 import { createWriter, type Writer } from './writes';
 
 export interface Session {
@@ -87,6 +88,17 @@ export function startSession({ auth, db }: FirebaseServices, store: DataStore): 
         store.setState({ sync });
       },
       onError: (error) => {
+        if (isPermissionDenied(error)) {
+          // Cada listener avisa por su lado: alcanza con el primero. `currentUid` se conserva,
+          // así la renovación del token no vuelve a arrancar la sincronización.
+          if (currentUid === user.uid && stopSync) {
+            stopSync();
+            stopSync = null;
+            writer = null;
+            store.setState({ accessDenied: true });
+          }
+          return;
+        }
         console.error('Error en la sincronización', error);
       },
     });

@@ -6,6 +6,7 @@
 // se usan. El listener a la caché es gratis y es la única fuente del store: ve al instante las
 // escrituras propias, aunque estén pendientes (un listener filtrado por updatedAt no las vería).
 
+import { FirebaseError } from 'firebase/app';
 import {
   onSnapshot,
   query,
@@ -39,6 +40,14 @@ export interface SyncHandlers {
   onProfile: (profile: Profile | null, fromServer: boolean) => void;
   onStatus: (status: SyncStatus) => void;
   onError: (error: unknown) => void;
+}
+
+/**
+ * El servidor rechazó la lectura por las reglas. A la app legítima solo le pasa si la cuenta no
+ * está en la lista de acceso (ADR 0026).
+ */
+export function isPermissionDenied(error: unknown): boolean {
+  return error instanceof FirebaseError && error.code === 'permission-denied';
 }
 
 /** Arranca la sincronización del usuario. Devuelve la función que la detiene. */

@@ -37,6 +37,8 @@ export interface UserState {
   writesBlocked: boolean;
   /** Escrituras que el servidor rechazó. */
   writeErrors: WriteError[];
+  /** La cuenta no está en la lista de acceso: la app es privada (ADR 0026). */
+  accessDenied: boolean;
 }
 
 export interface DataState extends UserState {
@@ -66,6 +68,7 @@ export function emptyState(session: SessionState): UserState {
     sync: { pendingWrites: false, upToDate: false },
     writesBlocked: false,
     writeErrors: [],
+    accessDenied: false,
   };
 }
 

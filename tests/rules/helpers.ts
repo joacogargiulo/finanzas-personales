@@ -15,6 +15,17 @@ export const OWNER = 'ana';
 /** Otro usuario con sesión iniciada. */
 export const OTHER = 'beto';
 
+/** Datos del token de Google que leen las reglas de acceso (ADR 0026). */
+export interface TokenClaims {
+  email?: string;
+  email_verified?: boolean;
+}
+
+/** Un email permitido: los de @example.com siempre entran (dominio reservado, ADR 0026). */
+function claimsFor(uid: string): TokenClaims {
+  return { email: `${uid}@example.com`, email_verified: true };
+}
+
 /** Un instante fijo para `createdAt`, `archivedAt` y `deletedAt` (milisegundos epoch). */
 export const NOW = 1_759_500_000_000;
 
@@ -28,6 +39,8 @@ export interface RulesClients {
   other: () => TestFirestore;
   /** Base de datos vista por alguien sin sesión. */
   anonymous: () => TestFirestore;
+  /** Base de datos vista por `uid` con un token a medida (para probar la lista de acceso). */
+  withToken: (uid: string, claims: TokenClaims) => TestFirestore;
   /** Escribe un documento salteando las reglas, para preparar el escenario de un test. */
   seed: (path: string, data: DocumentData) => Promise<void>;
 }
@@ -56,9 +69,19 @@ export function useRulesEnv(): RulesClients {
   }
 
   return {
-    owner: () => getEnv().authenticatedContext(OWNER).firestore(),
-    other: () => getEnv().authenticatedContext(OTHER).firestore(),
+    owner: () =>
+      getEnv()
+        .authenticatedContext(OWNER, { ...claimsFor(OWNER) })
+        .firestore(),
+    other: () =>
+      getEnv()
+        .authenticatedContext(OTHER, { ...claimsFor(OTHER) })
+        .firestore(),
     anonymous: () => getEnv().unauthenticatedContext().firestore(),
+    withToken: (uid, claims) =>
+      getEnv()
+        .authenticatedContext(uid, { ...claims })
+        .firestore(),
     seed: (path, data) =>
       getEnv().withSecurityRulesDisabled(async (ctx) => {
         await setDoc(doc(ctx.firestore(), path), data);
