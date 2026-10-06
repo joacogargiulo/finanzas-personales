@@ -1,6 +1,6 @@
 // Ajustes (SRS 6.6): cuentas y categorías (editar, archivar, eliminar y restaurar),
-// presupuestos, recurrentes, respaldo y exportación, apariencia, cuenta de Google y borrar la
-// cuenta.
+// presupuestos, recurrentes, respaldo y exportación, apariencia, privacidad, cuenta de Google y
+// borrar la cuenta.
 //
 // Las reglas de archivar, eliminar y restaurar son del dominio (src/domain/lifecycle.ts,
 // ADR 0005 y 0009). Acá solo se decide qué diálogo mostrar.
@@ -43,6 +43,7 @@ import { session } from '../session';
 import { BackupSettings } from './BackupSettings';
 import { BudgetsSettings } from './BudgetsSettings';
 import { DeleteAccountSettings } from './DeleteAccountSettings';
+import { PrivacySettings } from './PrivacySettings';
 import { RecurringSettings } from './RecurringSettings';
 
 const THEME_LABELS: Record<Theme, string> = {
@@ -318,6 +319,8 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
           Automático sigue la configuración del dispositivo. Se guarda solo en este dispositivo.
         </p>
       </section>
+
+      <PrivacySettings />
 
       <section className="card" aria-labelledby="google-title">
         <h2 id="google-title" className="card-title">
