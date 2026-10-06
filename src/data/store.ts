@@ -44,6 +44,8 @@ export interface UserState {
 export interface DataState extends UserState {
   /** Cotizaciones del dispositivo (SRS 4.8): no dependen del usuario y sobreviven al cambio de sesión. */
   rates: ExchangeRates | null;
+  /** Hay una versión nueva de la app descargada, esperando que la persona la active (ADR 0027). */
+  updateAvailable: boolean;
 }
 
 export type DataStore = StoreApi<DataState>;
@@ -73,5 +75,9 @@ export function emptyState(session: SessionState): UserState {
 }
 
 export function createDataStore(): DataStore {
-  return createStore<DataState>()(() => ({ ...emptyState({ status: 'loading' }), rates: null }));
+  return createStore<DataState>()(() => ({
+    ...emptyState({ status: 'loading' }),
+    rates: null,
+    updateAvailable: false,
+  }));
 }
