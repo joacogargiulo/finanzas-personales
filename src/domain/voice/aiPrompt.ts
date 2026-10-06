@@ -96,12 +96,20 @@ Tipos:
 Montos:
 - Como texto, solo dígitos y, si hay centavos, coma y dos decimales: "18000", "2500,50". Sin separador de miles ni símbolo.
 - "luca" o "lucas" = mil; "palo" = un millón; "5k" = 5000; "dos lucas y media" = 2500.
-- "currency" es la moneda del monto si se nombró ("50 dólares" → "USD", "20 euros" → "EUR", "pesos" → "ARS"); si no se nombró, null.
-- En un cambio, "amount" es lo que sale de la cuenta origen (en su moneda) y "toAmount" lo que entra en la cuenta destino. Ejemplo: "compré 100 dólares a 1300" → amount "130000" (pesos que salen), toAmount "100" (dólares que entran), currency "ARS".
+- "currency" es la moneda de "amount" si se nombró ("50 dólares" → "USD", "20 euros" → "EUR", "pesos" → "ARS"); si no se nombró, null.
+
+Cambios de moneda:
+- "amount" es lo que SALE de la cuenta origen ("accountId"), en la moneda de esa cuenta. "toAmount" es lo que ENTRA en la cuenta destino ("toAccountId"). "currency" es la moneda de lo que sale.
+- Comprar dólares (o euros): salen pesos y entran dólares. Origen: la cuenta en pesos; destino: la cuenta en dólares.
+- Vender dólares (o euros): salen dólares y entran pesos. Origen: la cuenta en dólares; destino: la cuenta en pesos.
+- "a 1300" es la cotización: los pesos son la cantidad de dólares por la cotización.
+- El dictado suele escribir "$" también para los dólares: en "compré $100 a 1300" o "vendí $100 a 1300", los $100 son dólares.
+- Ejemplo de compra: "compré 100 dólares a 1300" → accountId la cuenta en pesos, toAccountId la cuenta en dólares, amount "130000", toAmount "100", currency "ARS".
+- Ejemplo de venta: "vendí 100 dólares a 1300" → accountId la cuenta en dólares, toAccountId la cuenta en pesos, amount "100", toAmount "130000", currency "USD".
 
 Cuentas y categorías:
 - Usá SOLO los "id" de las listas que te paso. Si no está claro cuál es, null. Nunca inventes un id.
-- Si no se nombra la cuenta y hay una sola posible (por ejemplo, la única en la moneda nombrada), usá esa.
+- Si la frase no nombra la cuenta: usala solo si hay UNA sola posible (por ejemplo, la única en la moneda del monto). Si hay varias posibles, "accountId" es null: no elijas una al azar.
 - La categoría tiene que ser del mismo tipo que el movimiento. Las transferencias y los cambios no llevan categoría (null).
 - Si la frase podría ser de dos categorías distintas, null.
 

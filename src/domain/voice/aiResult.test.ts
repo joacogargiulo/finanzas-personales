@@ -19,6 +19,9 @@ const accounts = [
 ];
 const ctx = { accounts, categories, today: TODAY };
 
+/** La frase nombra las dos cuentas en pesos, así la IA puede elegir cualquiera de las dos. */
+const parse = (raw: unknown, text = 'con efectivo o mercado pago') => parseAiResult(raw, text, ctx);
+
 /** Una respuesta completa de gasto; cada test cambia lo que le importa. */
 function answer(overrides: Record<string, unknown> = {}) {
   return {
@@ -37,7 +40,7 @@ function answer(overrides: Record<string, unknown> = {}) {
 
 describe('respuestas completas', () => {
   it('un gasto', () => {
-    expect(parseAiResult(answer(), ctx)).toEqual({
+    expect(parse(answer())).toEqual({
       type: 'expense',
       amount: 1_800_000,
       toAmount: null,
@@ -53,9 +56,8 @@ describe('respuestas completas', () => {
   });
 
   it('una transferencia, sin categoría', () => {
-    const parsed = parseAiResult(
+    const parsed = parse(
       answer({ type: 'transfer', toAccountId: 'mp', categoryId: 'seed_comida' }),
-      ctx,
     );
     expect(parsed).toMatchObject({ type: 'transfer', toAccountId: 'mp', categoryId: null });
     expect(parsed?.missing).toEqual([]);
@@ -63,9 +65,8 @@ describe('respuestas completas', () => {
 
   // "compré 100 dólares a 1300": salen 130.000 pesos y entran 100 dólares.
   it('un cambio de moneda, con los dos montos', () => {
-    const parsed = parseAiResult(
+    const parsed = parse(
       answer({ type: 'exchange', amount: '130000', toAmount: '100', toAccountId: 'usd' }),
-      ctx,
     );
     expect(parsed).toMatchObject({
       type: 'exchange',
@@ -80,48 +81,43 @@ describe('respuestas completas', () => {
 
   // Workers AI a veces devuelve el JSON como texto.
   it('acepta la respuesta como texto JSON', () => {
-    expect(parseAiResult(JSON.stringify(answer()), ctx)?.amount).toBe(1_800_000);
+    expect(parse(JSON.stringify(answer()))?.amount).toBe(1_800_000);
   });
 });
 
 describe('lo que no cierra queda para revisar', () => {
   it('un ID inventado o archivado', () => {
-    expect(parseAiResult(answer({ accountId: 'inventada' }), ctx)?.missing).toEqual(['account']);
-    expect(parseAiResult(answer({ accountId: 'old' }), ctx)?.accountId).toBeNull();
-    expect(parseAiResult(answer({ categoryId: 'gimnasio' }), ctx)?.missing).toEqual(['category']);
+    expect(parse(answer({ accountId: 'inventada' }))?.missing).toEqual(['account']);
+    expect(parse(answer({ accountId: 'old' }))?.accountId).toBeNull();
+    expect(parse(answer({ categoryId: 'gimnasio' }))?.missing).toEqual(['category']);
   });
 
   it('una categoría del otro tipo', () => {
-    expect(parseAiResult(answer({ categoryId: 'seed_salario' }), ctx)?.categoryId).toBeNull();
+    expect(parse(answer({ categoryId: 'seed_salario' }))?.categoryId).toBeNull();
   });
 
   it('una transferencia entre monedas distintas o a la misma cuenta', () => {
-    expect(
-      parseAiResult(answer({ type: 'transfer', toAccountId: 'usd' }), ctx)?.toAccountId,
-    ).toBeNull();
-    expect(parseAiResult(answer({ type: 'transfer', toAccountId: 'cash' }), ctx)?.missing).toEqual([
+    expect(parse(answer({ type: 'transfer', toAccountId: 'usd' }))?.toAccountId).toBeNull();
+    expect(parse(answer({ type: 'transfer', toAccountId: 'cash' }))?.missing).toEqual([
       'toAccount',
     ]);
   });
 
   it('un cambio con la misma moneda o sin el segundo monto', () => {
-    const sameCurrency = parseAiResult(
-      answer({ type: 'exchange', toAmount: '100', toAccountId: 'mp' }),
-      ctx,
-    );
+    const sameCurrency = parse(answer({ type: 'exchange', toAmount: '100', toAccountId: 'mp' }));
     expect(sameCurrency?.toAccountId).toBeNull();
-    const noToAmount = parseAiResult(answer({ type: 'exchange', toAccountId: 'usd' }), ctx);
+    const noToAmount = parse(answer({ type: 'exchange', toAccountId: 'usd' }));
     expect(noToAmount?.missing).toEqual(['toAmount']);
   });
 
   it('un tipo desconocido', () => {
-    expect(parseAiResult(answer({ type: 'regalo' }), ctx)?.missing).toContain('type');
+    expect(parse(answer({ type: 'regalo' }))?.missing).toContain('type');
   });
 
   it('una fecha futura o inválida se reemplaza por hoy', () => {
-    expect(parseAiResult(answer({ date: '2026-10-04' }), ctx)?.date).toBe(TODAY);
-    expect(parseAiResult(answer({ date: '2026-02-31' }), ctx)?.date).toBe(TODAY);
-    expect(parseAiResult(answer({ date: null }), ctx)?.date).toBe(TODAY);
+    expect(parse(answer({ date: '2026-10-04' }))?.date).toBe(TODAY);
+    expect(parse(answer({ date: '2026-02-31' }))?.date).toBe(TODAY);
+    expect(parse(answer({ date: null }))?.date).toBe(TODAY);
   });
 });
 
@@ -136,29 +132,59 @@ describe('montos', () => {
     ['1,234.50', 123_450],
     [1500, 150_000],
   ])('%s → %i centavos', (amount, cents) => {
-    expect(parseAiResult(answer({ amount }), ctx)?.amount).toBe(cents);
+    expect(parse(answer({ amount }))?.amount).toBe(cents);
   });
 
   it.each([['-500'], ['0'], ['mil'], ['1,23,4'], [null]])('%s no es un monto', (amount) => {
-    const parsed = parseAiResult(answer({ amount }), ctx);
+    const parsed = parse(answer({ amount }));
     expect(parsed?.amount).toBeNull();
     expect(parsed?.missing).toContain('amount');
+  });
+});
+
+// El modelo real elegía una cuenta al azar si la frase no nombraba ninguna (2026-10-06).
+describe('cuentas que la frase no nombra', () => {
+  it('con dos cuentas en pesos, no acepta una que la frase no nombra', () => {
+    const parsed = parse(answer({ accountId: 'cash' }), 'gasté 500 en el súper');
+    expect(parsed?.accountId).toBeNull();
+    expect(parsed?.missing).toEqual(['account']);
+  });
+
+  it('acepta la que nombra, aunque sea con otras palabras', () => {
+    expect(parse(answer({ accountId: 'mp' }), 'gasté 500 con mercadopago')?.accountId).toBe('mp');
+  });
+
+  // "vendí 100 dólares": la de dólares es la única en su moneda; la de pesos queda para revisar.
+  it('en un cambio, acepta la única de su moneda y no la que adivinó', () => {
+    const parsed = parse(
+      answer({
+        type: 'exchange',
+        accountId: 'usd',
+        toAccountId: 'cash',
+        amount: '100',
+        toAmount: '130000',
+        currency: 'USD',
+      }),
+      'vendí $100 a 1300',
+    );
+    expect(parsed).toMatchObject({ accountId: 'usd', toAccountId: null });
+    expect(parsed?.missing).toEqual(['toAccount']);
   });
 });
 
 describe('cuenta implícita', () => {
   // "50 dólares en comida": la única cuenta en dólares.
   it('la única cuenta de la moneda nombrada', () => {
-    expect(parseAiResult(answer({ accountId: null, currency: 'USD' }), ctx)?.accountId).toBe('usd');
+    expect(parse(answer({ accountId: null, currency: 'USD' }))?.accountId).toBe('usd');
   });
 
   it('con varias posibles, ninguna', () => {
-    expect(parseAiResult(answer({ accountId: null }), ctx)?.accountId).toBeNull();
+    expect(parse(answer({ accountId: null }))?.accountId).toBeNull();
   });
 });
 
 describe('respuestas sin forma', () => {
   it.each([['no es JSON'], [null], [[1, 2]], [42]])('%s → null', (raw) => {
-    expect(parseAiResult(raw, ctx)).toBeNull();
+    expect(parse(raw)).toBeNull();
   });
 });
