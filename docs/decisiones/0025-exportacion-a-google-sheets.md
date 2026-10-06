@@ -22,6 +22,7 @@ El SRS 8.4 pide un botón "Exportar a Google Sheets" que cree una hoja en el Dri
 
 ## Decisión
 - **GIS con el scope `drive.file`** (alternativa 1, elegida por el dueño). `drive.file` solo deja tocar los archivos que creó la app: no ve el resto del Drive. Google lo considera un permiso **no sensible**, así que publicar la app (Fase 9) no requiere la verificación larga.
+  - *Nota (ADR 0029):* la app no se publica; es solo para la familia.
 - **Se reutiliza el Client ID web que creó Firebase** ("Web client (auto created by Google Service)"), en la variable `VITE_GOOGLE_CLIENT_ID`. No es un secreto: viaja a cada navegador. Sin la variable, el botón no aparece.
 - **El script de Google se precarga al mostrar la tarjeta.** El navegador solo deja abrir un popup durante el toque de un botón; si antes hubiera que esperar la descarga del script, lo bloquearía. Por la misma razón, al tocar el botón lo primero que se hace es pedir el token, sin ninguna espera antes.
 - **`login_hint` con el email de la sesión**, para que Google sugiera la misma cuenta. Con el consentimiento por partes, la persona puede destildar el permiso de Drive y Google igual devuelve un token; la app lo comprueba con `hasGrantedAllScopes`.

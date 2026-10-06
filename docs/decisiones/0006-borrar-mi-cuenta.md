@@ -18,4 +18,5 @@ Es el **único caso de borrado físico** (ver ADR 0003). Pasos:
 ## Consecuencias
 - Si se agota la cuota diaria de borrados, el proceso queda a medias hasta el día siguiente. Se avisa con un mensaje claro.
 - La política de privacidad (Fase 9) describe este proceso.
+  - *Nota (ADR 0029):* no hay política pública; lo describe la sección Privacidad de Ajustes. Se implementa en la Fase 9a.
 - Las reglas tienen que permitir el `delete` físico de los documentos propios. Eso no rompe las lápidas: la app solo lo usa en este flujo.

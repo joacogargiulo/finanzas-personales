@@ -31,3 +31,4 @@ Restricciones:
 - Como la app es offline-first, quien no tiene acceso ve la pantalla de Inicio vacía hasta que llega el rechazo del servidor (menos de un segundo con buena conexión, unos segundos con el emulador). Lo que intente cargar en ese rato queda solo en su caché, que se borra al cerrar la sesión.
 - Si se saca a alguien de la lista, sus datos siguen en Firestore (no se borran) y en la caché de su dispositivo hasta que cierre la sesión. Al volver a conectarse ve la pantalla de app privada.
 - Si en el futuro la app vuelve a abrirse al público, alcanza con sacar `isAllowed()` de `isOwner()`. Conviene sumar App Check (Fase 9).
+  - *Nota (ADR 0029):* mientras la app sea familiar, App Check queda descartado.

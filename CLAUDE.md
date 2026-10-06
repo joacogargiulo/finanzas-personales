@@ -49,7 +49,7 @@ Las dependencias van en una sola dirección: `ui → data → domain`.
 10. **Las reglas de Firestore validan el esquema completo**: es multiusuario, así que son la barrera de seguridad real.
 
 ## Cómo trabajar
-- **Por fases**, según el plan acordado: D (diseño UX/UI) → M (modelo de datos, didáctica) → 0 a 9. No empezar una fase sin que la anterior esté terminada y aprobada por el dueño.
+- **Por fases**, según el plan acordado: D (diseño UX/UI) → M (modelo de datos, didáctica) → 0 a 12 (ADR 0029). No empezar una fase sin que la anterior esté terminada y aprobada por el dueño.
 - **El modelo de datos se decide con calma**: explicar cada concepto, proponer alternativas y registrar cada decisión en un ADR.
 - **Antes de cada fase:** proponer un plan breve (archivos a crear o modificar, decisiones) y esperar aprobación.
 - **Al terminar cada fase:** correr `typecheck`, `lint` y `test`; todo tiene que pasar. Después, resumir qué se hizo, cómo probarlo a mano (qué casos TC del SRS aplican) y qué queda pendiente.
