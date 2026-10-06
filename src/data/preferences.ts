@@ -26,3 +26,12 @@ export function writeTheme(uid: string, theme: Theme): void {
     // Sin almacenamiento, el tema elegido dura hasta cerrar la app.
   }
 }
+
+/** Borra las preferencias de este usuario en el dispositivo ("Borrar mi cuenta", ADR 0030). */
+export function clearPreferences(uid: string): void {
+  try {
+    window.localStorage.removeItem(themeKey(uid));
+  } catch {
+    // Sin almacenamiento no había nada guardado.
+  }
+}

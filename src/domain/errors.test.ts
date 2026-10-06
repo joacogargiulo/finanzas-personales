@@ -51,6 +51,8 @@ describe('errorMessage', () => {
     'category.typeLocked': { code: 'category.typeLocked' },
     'restore.accountNameTaken': { code: 'restore.accountNameTaken', name: 'Efectivo' },
     'restore.categoryNameTaken': { code: 'restore.categoryNameTaken', name: 'Comida' },
+    'deletion.pendingWrites': { code: 'deletion.pendingWrites' },
+    'deletion.notSynced': { code: 'deletion.notSynced' },
   } as const satisfies { [C in DomainErrorCode]: Extract<DomainError, { code: C }> };
 
   it.each(Object.values(examples))('$code tiene texto', (error: DomainError) => {

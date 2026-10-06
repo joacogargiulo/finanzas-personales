@@ -4,6 +4,7 @@
 // El store guarda solo datos crudos. Saldos, totales y estadísticas se calculan con src/domain/.
 
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import type { DeletionFailure } from '../domain/accountDeletion';
 import type {
   Account,
   Budget,
@@ -41,11 +42,24 @@ export interface UserState {
   accessDenied: boolean;
 }
 
+/** En qué va "Borrar mi cuenta" (ADR 0030). */
+export type AccountDeletionState =
+  /** Esperando que la persona confirme su cuenta en la ventana de Google. */
+  | { phase: 'reauth' }
+  | { phase: 'deleting'; done: number; total: number }
+  | { phase: 'done' }
+  | { phase: 'error'; failure: DeletionFailure };
+
 export interface DataState extends UserState {
   /** Cotizaciones del dispositivo (SRS 4.8): no dependen del usuario y sobreviven al cambio de sesión. */
   rates: ExchangeRates | null;
   /** Hay una versión nueva de la app descargada, esperando que la persona la active (ADR 0027). */
   updateAvailable: boolean;
+  /**
+   * "Borrar mi cuenta" en curso, o `null`. No está en `UserState` porque tiene que sobrevivir al
+   * cierre de sesión que hace Firebase al borrar el usuario.
+   */
+  accountDeletion: AccountDeletionState | null;
 }
 
 export type DataStore = StoreApi<DataState>;
@@ -79,5 +93,6 @@ export function createDataStore(): DataStore {
     ...emptyState({ status: 'loading' }),
     rates: null,
     updateAvailable: false,
+    accountDeletion: null,
   }));
 }

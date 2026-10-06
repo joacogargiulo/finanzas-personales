@@ -3,17 +3,23 @@ import { expect, type Page } from '@playwright/test';
 /**
  * Inicia sesión con un usuario nuevo del emulador de Auth. No usa el popup de Google: con el
  * emulador, a veces queda colgado. La app expone `e2eSignIn` solo en el build de emulador
- * (ADR 0019). Cada test usa un usuario nuevo, así no dependen entre sí.
+ * (ADR 0019). Cada test usa un usuario nuevo, así no dependen entre sí; con `email` se vuelve
+ * a entrar con la misma cuenta de Google. Devuelve el email usado.
  */
-export async function signIn(page: Page) {
+export async function signIn(page: Page, email: string = newEmail()) {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeVisible();
-  const email = `persona-${String(Date.now())}-${String(Math.random()).slice(2, 8)}@example.com`;
   await page.evaluate(
     ([e, name]) => window.e2eSignIn?.(e ?? '', name ?? ''),
     [email, 'Persona Prueba'],
   );
   await expect(page.getByRole('heading', { name: 'Inicio' })).toBeVisible();
+  return email;
+}
+
+/** Un email @example.com que no usó ningún otro test. */
+export function newEmail(): string {
+  return `persona-${String(Date.now())}-${String(Math.random()).slice(2, 8)}@example.com`;
 }
 
 /** Crea una cuenta en pesos desde Inicio. */

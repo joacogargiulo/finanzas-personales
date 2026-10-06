@@ -2,9 +2,12 @@
 
 import { FirebaseError } from 'firebase/app';
 import {
+  deleteUser,
   getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithPopup,
+  reauthenticateWithRedirect,
   signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
@@ -14,6 +17,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { clearIndexedDbPersistence, terminate, type Firestore } from 'firebase/firestore';
+import { needsReauth } from '../domain/accountDeletion';
 
 /** Los datos del usuario de Google que muestra la app. */
 export interface SessionUser {
@@ -96,8 +100,50 @@ export async function checkRedirectResult(auth: Auth): Promise<SignInResult> {
  */
 export async function signOutAndClear(auth: Auth, db: Firestore): Promise<void> {
   await firebaseSignOut(auth);
+  await clearLocalCache(db);
+}
+
+/** Borra la caché de Firestore del dispositivo. La instancia queda inutilizable. */
+export async function clearLocalCache(db: Firestore): Promise<void> {
   await terminate(db);
   await clearIndexedDbPersistence(db);
+}
+
+/**
+ * Para borrar el usuario de Auth, Firebase exige un inicio de sesión reciente (ADR 0030).
+ * Si el último tiene más de 4 minutos, se pide de nuevo con el popup de Google y, si el navegador
+ * lo bloquea, con un redirect (ADR 0017): en ese caso devuelve `'redirecting'` y la página se va.
+ * Al volver, el inicio de sesión ya es reciente y no se vuelve a pedir.
+ */
+export async function ensureRecentLogin(
+  auth: Auth,
+  now: () => number = Date.now,
+): Promise<'ready' | 'redirecting'> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('No hay sesión');
+  const { authTime } = await user.getIdTokenResult();
+  if (!needsReauth(Date.parse(authTime), now())) return 'ready';
+
+  const provider = new GoogleAuthProvider();
+  // Sugiere la misma cuenta; si se elige otra, Firebase responde "auth/user-mismatch".
+  provider.setCustomParameters(user.email ? { login_hint: user.email } : {});
+  try {
+    await reauthenticateWithPopup(user, provider);
+    return 'ready';
+  } catch (error) {
+    const code = errorCode(error);
+    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-environment') {
+      await reauthenticateWithRedirect(user, provider);
+      return 'redirecting';
+    }
+    throw error;
+  }
+}
+
+/** Borra el usuario de Firebase Auth (no la cuenta de Google). Firebase cierra la sesión. */
+export async function deleteCurrentUser(auth: Auth): Promise<void> {
+  if (!auth.currentUser) throw new Error('No hay sesión');
+  await deleteUser(auth.currentUser);
 }
 
 /**
