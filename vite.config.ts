@@ -86,9 +86,10 @@ export default defineConfig(({ mode }) => {
           // Todo lo del build: JS, CSS, HTML, fuentes e íconos.
           globPatterns: ['**/*.{js,css,html,woff2,svg,png}'],
           // Cualquier ruta abre la app (navegación por hash, ADR 0018), salvo /__/: ahí está el
-          // handler de login de Firebase, que tiene que llegar siempre al servidor.
+          // handler de login de Firebase, que tiene que llegar siempre al servidor. Tampoco
+          // /.well-known/, donde está el assetlinks.json del APK (ADR 0028).
           navigateFallback: 'index.html',
-          navigateFallbackDenylist: [/^\/__\//],
+          navigateFallbackDenylist: [/^\/__\//, /^\/\.well-known\//],
           // Sin runtimeCaching: Bluelytics y Google se manejan en código, nunca desde la caché.
           cleanupOutdatedCaches: true,
         },

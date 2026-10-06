@@ -1,8 +1,8 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.7.1
-**Fecha:** 2026-10-05
+**Versión:** 3.8.0
+**Fecha:** 2026-10-06
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
 
@@ -10,7 +10,15 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.7.1 (Fase 7b: PWA, CSP y Hosting)
+### 0.0 Cambios de la versión 3.8.0 (Fase 8: APK)
+| Tema | v3.7.1 | v3.8.0 | ADR |
+|---|---|---|---|
+| Nombre de paquete | A definir | `ar.jtg.finanzas` | 0028 |
+| Proyecto Android | Sin especificar | `android/` en el repo, sin la clave ni los APK | 0028 |
+| Distribución | Sin especificar | Instalación manual del `.apk` (una sola huella en `assetlinks.json`) | 0028 |
+| `ignore` de Hosting | Archivos con punto excluidos | Se publican, para servir `/.well-known/` | 0028 |
+
+### 0.0.1 Cambios de la versión 3.7.1 (Fase 7b: PWA, CSP y Hosting)
 | Tema | v3.7.0 | v3.7.1 | ADR |
 |---|---|---|---|
 | Actualización de la app | Automática, avisar y recargar | La versión nueva espera; el aviso tiene "Actualizar"; se busca cada hora | 0027 |
@@ -19,14 +27,14 @@
 | Encabezados de Hosting | `no-cache` para `index.html` y el service worker | También `/` y el manifiesto; `/assets/` un año; `frame-ancestors`, `nosniff`, `Referrer-Policy` | 0027 |
 | Publicación | Sin especificar | `npm run deploy` desde la compu del dueño | 0027 |
 
-### 0.0.1 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
+### 0.0.2 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
 | Tema | v3.6.1 | v3.7.0 | ADR |
 |---|---|---|---|
 | Quién puede usar la app | Cualquier persona con cuenta de Google | Solo los emails verificados de una lista (hash SHA-256 en las reglas) | 0026 |
 | Cuenta sin acceso | Sin especificar | Pantalla "Esta app es privada" con "Usar otra cuenta" | 0026 |
 | `isOwner(uid)` en las reglas | Sesión con ese UID | Sesión con ese UID y email en la lista (`isAllowed()`) | 0026 |
 
-### 0.0.2 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
+### 0.0.3 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
 | Tema | v3.6.0 | v3.6.1 | ADR |
 |---|---|---|---|
 | Escritura en Sheets | Escribir y después limpiar las filas sobrantes | Un solo `batchUpdate`, que Google aplica entero o no aplica | 0025 |
@@ -34,7 +42,7 @@
 | Hoja borrada o en la papelera | Sin especificar | Se crea otra y se guarda su ID | 0025 |
 | Client ID de OAuth | Crear uno nuevo | Se reutiliza el que creó Firebase (`VITE_GOOGLE_CLIENT_ID`) | 0025 |
 
-### 0.0.3 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
+### 0.0.4 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
 | Tema | v3.5.1 | v3.6.0 | ADR |
 |---|---|---|---|
 | Restaurar desde JSON | Reemplaza todos los datos | Fuera de alcance: el JSON es una copia para guardar | 0024 |
@@ -42,7 +50,7 @@
 | Origen de la exportación | Sin especificar | Los datos del dispositivo (sin lecturas); aviso si no está al día | 0024 |
 | TC-23 | Exportar y restaurar | Exportar y verificar el contenido del JSON | 0024 |
 
-### 0.0.4 Cambios de la versión 3.5.1 (Fase 5b: dictado)
+### 0.0.5 Cambios de la versión 3.5.1 (Fase 5b: dictado)
 | Tema | v3.5.0 | v3.5.1 | ADR |
 |---|---|---|---|
 | Dictado | Parser de frases sin micrófono | Micrófono en el panel de movimiento (Web Speech API), solo al crear y si el navegador lo soporta; precarga y espera Guardar | 0023 |
@@ -50,7 +58,7 @@
 | Origen `voice` | Sin especificar | Si el formulario se precargó dictando, aunque después se corrija a mano | 0023 |
 | Atajo "Dictar movimiento" | Fase 5 | Fase 7 (con el manifiesto); en la 5b queda la ruta `movimiento=nuevo&dictar=1` | 0023 |
 
-### 0.0.5 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
+### 0.0.6 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
 | Tema | v3.4.0 | v3.5.0 | ADR |
 |---|---|---|---|
 | Pendientes en Inicio | Después del total y del resumen | Arriba de todo, porque piden una acción | 0022 |
@@ -58,7 +66,7 @@
 | Saltar un pendiente | Sin confirmación | Con confirmación simple | 0022 |
 | Confirmar en dos dispositivos | Mismo ID, mismo `nextDate` | Además, el rechazo del segundo lote por las reglas no se muestra como error | 0004 |
 
-### 0.0.6 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+### 0.0.7 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
 | Tema | v3.3.0 | v3.4.0 | ADR |
 |---|---|---|---|
 | Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
@@ -66,7 +74,7 @@
 | Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
 | Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
 
-### 0.0.7 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0.8 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -74,7 +82,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.8 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.9 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -635,14 +643,15 @@ Fuera de alcance (ADR 0024): reemplazar los datos rompería la sincronización d
 - Encabezado `Cache-Control: no-cache` para `/`, `index.html`, el service worker y el manifiesto; `/assets/` (con hash en el nombre) un año e `immutable`.
 - Encabezados de seguridad: `Content-Security-Policy: frame-ancestors 'self'`, `X-Content-Type-Options: nosniff` y `Referrer-Policy: strict-origin-when-cross-origin`.
 - Dominio: `finanzas-personales-jtg.web.app`. Se publica con `npm run deploy` (ADR 0027).
-- Servir `/.well-known/assetlinks.json` (ver 9.3).
+- Servir `/.well-known/assetlinks.json` (ver 9.3): el `ignore` de `firebase.json` no excluye los archivos que empiezan con punto, y el service worker no responde esa ruta con `index.html` (ADR 0028).
 
 ### 9.3 APK con Bubblewrap (Trusted Web Activity)
 - Generar con `@bubblewrap/cli` a partir de la URL del manifiesto publicado.
-- Nombre de paquete: a definir por el dueño (ej. `ar.joaco.finanzas`).
-- **Digital Asset Links:** publicar `/.well-known/assetlinks.json` con el nombre de paquete y la huella SHA-256 de la clave de firma. Sin esto, la app abre mostrando la barra de direcciones.
-- La clave de firma (keystore) y su contraseña **no se suben al repositorio** (agregar a `.gitignore`). El dueño la guarda en un gestor de contraseñas.
-- El contenido se actualiza automáticamente desde el hosting; el APK solo se regenera si cambian nombre, ícono o configuración del manifiesto.
+- Nombre de paquete: `ar.jtg.finanzas`. El proyecto generado vive en `android/` (ver `android/README.md`); se distribuye instalando el `.apk` a mano, sin Play Store (ADR 0028).
+- **Digital Asset Links:** publicar `/.well-known/assetlinks.json` (en `public/.well-known/`) con el nombre de paquete y la huella SHA-256 del certificado de firma. Sin esto, la app abre mostrando la barra de direcciones. Un test compara el paquete con el de `android/twa-manifest.json`.
+- La clave de firma (keystore) y su contraseña **no se suben al repositorio**: la clave vive fuera del repo y `.gitignore` excluye `*.keystore`, `*.jks` y los APK. `twa-manifest.json` sí se sube (solo tiene la ruta y el alias). El dueño guarda las contraseñas en un gestor de contraseñas.
+- El contenido se actualiza automáticamente desde el hosting; el APK solo se regenera si cambian nombre, ícono o configuración del manifiesto (subir `appVersionCode`, `bubblewrap update` y `bubblewrap build`).
+- Bubblewrap usa un JDK 17 de 64 bits en una ruta sin espacios (ADR 0028).
 - Verificar en el APK: login con Google, funcionamiento offline, descargas de exportación.
 
 ---
@@ -752,8 +761,8 @@ Claude Code no puede hacer estas tareas porque requieren cuentas y consolas web:
 6. ~~Copiar el UID en las reglas~~: ya no hace falta, las reglas son multiusuario (7.3). Sí hay que cargar en `firestore.rules` el hash de cada email con acceso (`npm run email-hash`) y publicarlas con `npm run deploy:rules` (ADR 0026).
 7. En Google Cloud Console (mismo proyecto): habilitar Google Sheets API y Google Drive API, agregar el scope `drive.file` a la pantalla de consentimiento OAuth (queda en producción, como la dejó Firebase para el login: pasarla a prueba limitaría el login a los usuarios de prueba), sumar los orígenes autorizados (`http://localhost:5173` y, desde la Fase 7, el de Hosting) al Client ID web que creó Firebase y copiarlo a `.env.local` como `VITE_GOOGLE_CLIENT_ID` (ADR 0025).
 8. Desde la Fase 7: en Google Cloud, sumar `https://finanzas-personales-jtg.web.app` a los orígenes autorizados y `https://finanzas-personales-jtg.web.app/__/auth/handler` a las URIs de redirección del Client ID web; poner `VITE_FIREBASE_AUTH_DOMAIN=finanzas-personales-jtg.web.app` en `.env.local` y publicar con `npm run deploy` (ADR 0027).
-9. Durante la fase 8: responder las preguntas interactivas de Bubblewrap, crear la clave de firma y guardarla en un lugar seguro.
-10. Habilitar "Instalar apps desconocidas" en el celular para instalar el APK.
+9. Durante la fase 8: correr `bubblewrap init` y `bubblewrap build` en una PowerShell fuera de VS Code (responder las preguntas, crear la clave de firma en `C:\Users\joaco\claves\`), guardar las contraseñas en un gestor y una copia del keystore en un lugar seguro (ADR 0028).
+10. Pasar el `.apk` al celular (cable o Drive), habilitar "Instalar apps desconocidas" para la app con la que se abre e instalarlo.
 
 ---
 

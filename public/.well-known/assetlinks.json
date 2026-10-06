@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ar.jtg.finanzas",
+      "sha256_cert_fingerprints": [
+        "87:B4:69:9B:B4:B0:F3:DA:37:EC:72:B7:A9:27:AD:6F:2B:AF:CB:D8:E1:43:4E:51:9C:93:52:F6:1D:30:FE:2B"
+      ]
+    }
+  }
+]

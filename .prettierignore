@@ -6,3 +6,5 @@ test-results
 package-lock.json
 docs
 CLAUDE.md
+# Proyecto Android que genera Bubblewrap: se regenera con `bubblewrap update` (ADR 0028)
+android

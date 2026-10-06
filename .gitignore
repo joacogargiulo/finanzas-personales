@@ -20,10 +20,17 @@ test-results/
 # ../finanzas-personales-referencia/; esto queda por si alguien la vuelve a copiar adentro.
 referencia/
 
-# APK: clave de firma y su configuración con contraseñas (SRS 9.3)
+# APK: la clave de firma nunca se sube (SRS 9.3, ADR 0028). twa-manifest.json sí: solo tiene
+# la ruta y el alias de la clave, no las contraseñas.
 *.keystore
 *.jks
-twa-manifest.json
+# APK: salidas del build de Android (se regeneran con `bubblewrap build`)
+*.apk
+*.aab
+*.idsig
+android/.gradle/
+android/**/build/
+android/local.properties
 
 # Firebase: caché local y logs de los emuladores
 .firebase/
