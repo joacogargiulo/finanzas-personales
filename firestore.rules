@@ -16,6 +16,7 @@ service cloud.firestore {
     // acá y publicar con `npm run deploy:rules`.
     function allowedEmailHashes() {
       return [
+        '19f47daa851353d259fd1fdd33b8b15709277606f0ca1b651b6eca67875aee5b',
         // familia@example.org: solo para los tests (example.org es un dominio reservado).
         '9be03e4d3b3ceb6e42958fea4bbf6ee32a76f52ba29e200489014f07e586503e'
       ];
