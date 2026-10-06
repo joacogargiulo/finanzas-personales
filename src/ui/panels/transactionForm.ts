@@ -101,7 +101,7 @@ export function formFromPhrase(
   const form: TransactionForm = {
     type,
     amount: parsed.amount === null ? '' : amountToInput(parsed.amount),
-    toAmount: '',
+    toAmount: parsed.toAmount === null ? '' : amountToInput(parsed.toAmount),
     date: parsed.date,
     description: parsed.description,
     accountId,
@@ -120,6 +120,7 @@ export function formFromPhrase(
   const unclear: ParsedField[] = [];
   if (parsed.type === null) unclear.push('type');
   if (parsed.amount === null) unclear.push('amount');
+  if (type === 'exchange' && parsed.toAmount === null) unclear.push('toAmount');
   if (parsed.accountId === null || currencyMismatch) unclear.push('account');
   if ((type === 'transfer' || type === 'exchange') && form.toAccountId === '') {
     unclear.push('toAccount');

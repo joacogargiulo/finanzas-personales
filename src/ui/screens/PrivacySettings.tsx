@@ -1,7 +1,6 @@
 // Sección "Privacidad" de Ajustes (SRS 7.4, ADR 0029): en lugar de una política pública, qué
 // datos salen del dispositivo y a dónde, en lenguaje simple.
-// Cuando se sume un servicio nuevo hay que agregarlo acá: Cloudflare con el dictado por IA
-// (Fase 10) y Meta con WhatsApp (Fase 11).
+// Cuando se sume un servicio nuevo hay que agregarlo acá: Meta con WhatsApp (Fase 11).
 
 interface Destination {
   name: string;
@@ -36,6 +35,13 @@ const DESTINATIONS: readonly Destination[] = [
     what:
       'El reconocimiento de voz de Chrome (Google) procesa el audio cuando tocás el micrófono. ' +
       'La app recibe solo el texto.',
+  },
+  {
+    name: 'Cloudflare (IA del dictado)',
+    what:
+      'Con conexión, el texto dictado se manda a una IA (Llama, en Cloudflare Workers AI) para ' +
+      'entenderlo, junto con los nombres de tus cuentas y categorías. Nunca montos ni saldos. ' +
+      'No se guarda, y Cloudflare no lo usa para entrenar modelos.',
   },
 ];
 

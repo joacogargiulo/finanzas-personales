@@ -13,9 +13,15 @@ const BACKGROUND = '#f6f7f5';
  * mandar datos a otro servidor. Va como `<meta>` en index.html para que valga igual en Hosting
  * y en `vite preview`, donde corren los tests E2E (si la CSP bloquea algo, fallan).
  */
-function contentSecurityPolicy(authDomain: string, emulators: boolean): string {
+function contentSecurityPolicy(
+  authDomain: string,
+  emulators: boolean,
+  dictationUrl: string | undefined,
+): string {
   // Con los emuladores, Auth y Firestore corren en esta misma compu.
   const local = emulators ? ['http://127.0.0.1:9099', 'http://127.0.0.1:8080'] : [];
+  // El Worker del dictado con IA (ADR 0031), si está configurado.
+  const dictation = dictationUrl ? [new URL(dictationUrl).origin] : [];
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
     // apis.google.com: lo carga Firebase Auth para el popup. accounts.google.com: Google
@@ -30,6 +36,7 @@ function contentSecurityPolicy(authDomain: string, emulators: boolean): string {
       'https://sheets.googleapis.com',
       'https://www.googleapis.com',
       'https://accounts.google.com',
+      ...dictation,
       ...local,
     ],
     // El iframe de Firebase Auth vive en el authDomain; el de Google, en accounts.google.com.
@@ -73,7 +80,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      cspPlugin(contentSecurityPolicy(authDomain, emulators)),
+      cspPlugin(contentSecurityPolicy(authDomain, emulators, env.VITE_DICTATION_URL)),
       // PWA (SRS 9.1, ADR 0027): service worker que guarda la app para abrir sin conexión, y
       // manifiesto para instalarla.
       VitePWA({

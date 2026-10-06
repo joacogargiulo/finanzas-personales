@@ -4,6 +4,7 @@
 import { registerSW } from 'virtual:pwa-register';
 import { startAppUpdates } from '../data/appUpdate';
 import { signInForTests } from '../data/auth';
+import { createInterpreter } from '../data/dictation';
 import { initFirebase } from '../data/firebase';
 import { startRates } from '../data/rates';
 import { startSession } from '../data/session';
@@ -17,6 +18,14 @@ export const session = startSession(services, store);
 if (import.meta.env.VITE_USE_EMULATORS === 'true') {
   window.e2eSignIn = (email, displayName) => signInForTests(services.auth, email, displayName);
 }
+
+// Dictado (ADR 0031): con conexión, la IA del Worker; si no, el parser de reglas.
+export const interpretDictation = createInterpreter({
+  url: import.meta.env.VITE_DICTATION_URL || null,
+  getToken: () => services.auth.currentUser?.getIdToken() ?? Promise.resolve(null),
+  fetch: (...args) => window.fetch(...args),
+  isOnline: () => navigator.onLine,
+});
 
 // Cotizaciones del dólar y el euro blue (SRS 5.8): no dependen de la sesión.
 startRates(store);
