@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Versión "maskable": fondo hasta el borde, porque Android lo recorta con la forma que
+       elija (círculo, gota...). El dibujo queda dentro del 80 % central, la zona segura. -->
+  <rect width="512" height="512" fill="#0f6b5f"/>
+  <g fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" transform="translate(256 256) scale(0.82) translate(-256 -256)">
+    <path d="M330 184c-18-22-44-32-74-32-42 0-70 22-70 54 0 34 28 46 72 56 46 10 74 26 74 62 0 34-30 56-76 56-36 0-64-14-82-38"/>
+    <path d="M256 112v288"/>
+  </g>
+</svg>

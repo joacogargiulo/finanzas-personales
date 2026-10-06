@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <!-- Atajo "Dictar movimiento" (ADR 0023): el micrófono de Icon.tsx sobre el acento. -->
+  <circle cx="48" cy="48" r="48" fill="#0f6b5f"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(24 24) scale(2)">
+    <rect x="9" y="3" width="6" height="11" rx="3"/>
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>
+  </g>
+</svg>
