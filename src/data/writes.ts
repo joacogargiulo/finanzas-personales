@@ -33,7 +33,7 @@ import type {
 } from '../domain/model';
 import { nextDateAfter, recalculateNextDate, recurringTransactionId } from '../domain/recurring';
 import type { BudgetDraft, RecurringFields, TransactionFields } from '../domain/validation';
-import { collectionRef, docRef, type UserCollection } from './paths';
+import { collectionRef, docRef, profileRef, type UserCollection } from './paths';
 
 export type AccountFields = Pick<Account, 'name' | 'currency' | 'initialBalance' | 'kind'>;
 export type AccountChanges = Partial<Pick<Account, 'name' | 'kind'>>;
@@ -268,6 +268,19 @@ export function createWriter(db: Firestore, uid: string, options: WriterOptions)
     /** Saltea una ocurrencia: solo avanza `nextDate`, con el mismo cálculo que confirmar. */
     skipOccurrence(recurring: Recurring, occurrenceDate: LocalDate): void {
       update('recurring', recurring.id, { nextDate: nextDateAfter(recurring, occurrenceDate) });
+    },
+
+    // ── Perfil (SRS 4.1) ─────────────────────────────────────────────────────
+    /** La hoja de la exportación a Sheets, para actualizar la misma la próxima vez (SRS 8.4). */
+    setSheetsSpreadsheetId(spreadsheetId: string): void {
+      ensureCanWrite();
+      report(
+        'editar el perfil',
+        updateDoc(profileRef(db, uid), {
+          sheetsSpreadsheetId: spreadsheetId,
+          updatedAt: serverTimestamp(),
+        }),
+      );
     },
   };
 }

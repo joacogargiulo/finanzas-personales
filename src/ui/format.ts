@@ -146,3 +146,11 @@ export function percentLabel(share: number): string {
   // Armado a mano: según el motor, Intl escribe "49%" o "49 %".
   return `${String(Math.round(share * 100))} %`;
 }
+
+/** Momento de la última exportación: "5/10/2026 a las 14:32". Armado a mano, como `percentLabel`. */
+export function exportedAtLabel(at: EpochMs): string {
+  const date = new Date(at);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${String(date.getDate())}/${String(date.getMonth() + 1)}/${String(date.getFullYear())} a las ${hours}:${minutes}`;
+}

@@ -6,16 +6,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { today } from '../../domain/dates';
 import { makeAccount, makeCategory, makeExpense } from '../../domain/testing/factories';
 import { downloadFile } from '../../data/download';
+import { GoogleError, googleClientId, requestSheetsToken } from '../../data/googleToken';
+import { exportToSheets } from '../../data/sheets';
 import { emptyState } from '../../data/store';
 import { store } from '../session';
 import { BackupSettings } from './BackupSettings';
 
-// Un store de prueba en lugar de la sesión real, y una descarga falsa que solo registra la llamada.
+// Un store de prueba en lugar de la sesión real, una descarga falsa que solo registra la llamada
+// y un Google falso: el token y la exportación a Sheets responden lo que decide cada test.
+const setSheetsSpreadsheetId = vi.fn();
 vi.mock('../session', async () => {
   const { createDataStore } = await import('../../data/store');
-  return { store: createDataStore(), session: { writer: () => null } };
+  return { store: createDataStore(), session: { writer: () => ({ setSheetsSpreadsheetId }) } };
 });
 vi.mock('../../data/download', () => ({ downloadFile: vi.fn() }));
+vi.mock('../../data/googleToken', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../data/googleToken')>()),
+  googleClientId: vi.fn(() => 'client-id'),
+  loadGoogleIdentity: vi.fn(() => Promise.resolve()),
+  requestSheetsToken: vi.fn(() => Promise.resolve('token')),
+}));
+vi.mock('../../data/sheets', () => ({ exportToSheets: vi.fn() }));
 
 const cash = makeAccount({ id: 'cash', name: 'Efectivo' });
 const food = makeCategory({ id: 'food', name: 'Comida' });
@@ -49,7 +60,7 @@ function lastDownload(): { name: string; blob: Blob } {
 }
 
 beforeEach(() => {
-  vi.mocked(downloadFile).mockClear();
+  vi.clearAllMocks();
 });
 
 // Mientras la caché no entregó todas las colecciones, exportar daría un archivo incompleto.
@@ -102,5 +113,72 @@ describe('descargas', () => {
     expect(Object.keys(files).sort()).toEqual(['categorias.csv', 'cuentas.csv', 'movimientos.csv']);
     const movements = new TextDecoder().decode(files['movimientos.csv']);
     expect(movements).toContain('Súper');
+  });
+});
+
+// Sheets (ADR 0025): necesita el Client ID, conexión y el permiso de Google.
+describe('exportar a Google Sheets', () => {
+  const button = () => screen.getByRole('button', { name: 'Exportar a Google Sheets' });
+  const profile = {
+    schemaVersion: 1,
+    seededAt: 1,
+    sheetsSpreadsheetId: null,
+    createdAt: 1,
+    updatedAt: 1,
+  };
+
+  it('sin Client ID no se ofrece', () => {
+    vi.mocked(googleClientId).mockReturnValueOnce('');
+    setData();
+    render(<BackupSettings />);
+    expect(screen.queryByRole('button', { name: /Sheets/ })).not.toBeInTheDocument();
+  });
+
+  it('sin conexión está deshabilitado', () => {
+    const offline = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    setData();
+    render(<BackupSettings />);
+    expect(button()).toBeDisabled();
+    expect(screen.getByText('Necesita conexión.')).toBeInTheDocument();
+    offline.mockRestore();
+  });
+
+  // La primera exportación crea la hoja: la pantalla muestra el enlace y guarda su ID.
+  it('muestra cuándo se exportó, el enlace y guarda el ID de la hoja', async () => {
+    vi.mocked(exportToSheets).mockResolvedValue({ spreadsheetId: 'hoja1', url: 'https://hoja' });
+    setData({ profile });
+    render(<BackupSettings />);
+    await userEvent.click(button());
+
+    expect(await screen.findByRole('link', { name: 'Abrir la hoja' })).toHaveAttribute(
+      'href',
+      'https://hoja',
+    );
+    expect(screen.getByRole('status')).toHaveTextContent(/^Exportado el /);
+    expect(vi.mocked(exportToSheets).mock.lastCall?.[2]).toBeNull();
+    expect(setSheetsSpreadsheetId).toHaveBeenCalledWith('hoja1');
+  });
+
+  it('si la hoja es la misma, no vuelve a guardar el ID', async () => {
+    vi.mocked(exportToSheets).mockResolvedValue({ spreadsheetId: 'hoja1', url: 'https://hoja' });
+    setData({ profile: { ...profile, sheetsSpreadsheetId: 'hoja1' } });
+    render(<BackupSettings />);
+    await userEvent.click(button());
+
+    await screen.findByRole('link', { name: 'Abrir la hoja' });
+    expect(vi.mocked(exportToSheets).mock.lastCall?.[2]).toBe('hoja1');
+    expect(setSheetsSpreadsheetId).not.toHaveBeenCalled();
+  });
+
+  it('si la persona no da el permiso, lo explica', async () => {
+    vi.mocked(requestSheetsToken).mockRejectedValueOnce(new GoogleError('denied'));
+    setData({ profile });
+    render(<BackupSettings />);
+    await userEvent.click(button());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Sin el permiso de Google no se puede crear la hoja.',
+    );
+    expect(exportToSheets).not.toHaveBeenCalled();
   });
 });
