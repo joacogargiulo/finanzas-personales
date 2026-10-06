@@ -28,6 +28,7 @@ import {
 } from '../../domain/validation';
 import type { SessionUser } from '../../data/auth';
 import { THEMES, type Theme } from '../../data/preferences';
+import { useHideBalances } from '../app/balanceVisibility';
 import { useData, useLedger } from '../app/hooks';
 import { openPanel } from '../app/navigation';
 import { SignOutButton } from '../app/SignOutButton';
@@ -70,6 +71,7 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
   const budgets = useData((s) => s.budgets);
   const recurring = useData((s) => s.recurring);
   const writesBlocked = useData((s) => s.writesBlocked);
+  const hideBalances = useHideBalances();
   const [dialog, setDialog] = useState<Dialog | null>(null);
 
   const activeAccounts = useMemo(() => sortAccounts(accounts.filter(isActive)), [accounts]);
@@ -136,6 +138,7 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
                 <Money
                   cents={balances.get(account.id) ?? account.initialBalance}
                   currency={account.currency}
+                  masked={hideBalances}
                 />
                 <RowMenu
                   label={`Acciones de ${account.name}`}

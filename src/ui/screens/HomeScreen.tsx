@@ -1,5 +1,6 @@
 // Inicio (SRS 6.3, diseño "Sereno"): pendientes de confirmar (arriba de todo, porque piden una
 // acción), patrimonio estimado, resumen y presupuestos del mes, cuentas y últimos movimientos.
+// El ojo del patrimonio oculta el patrimonio y los saldos de las cuentas (no los movimientos).
 
 import { useMemo, useState } from 'react';
 import { computeBudgets } from '../../domain/budgets';
@@ -11,6 +12,7 @@ import { CURRENCIES, type Account } from '../../domain/model';
 import { formatAmount } from '../../domain/money';
 import { allPendingOccurrences, recurringTransactionId } from '../../domain/recurring';
 import { computeStats, periodRange } from '../../domain/stats';
+import { setHideBalances, useHideBalances } from '../app/balanceVisibility';
 import { useData, useLedger, useNow, useToday } from '../app/hooks';
 import { goTo, openPanel } from '../app/navigation';
 import { Icon } from '../components/Icon';
@@ -31,6 +33,8 @@ export function HomeScreen() {
   const budgets = useData((s) => s.budgets);
   const recurring = useData((s) => s.recurring);
   const writesBlocked = useData((s) => s.writesBlocked);
+  const uid = useData((s) => (s.session.status === 'signedIn' ? s.session.user.uid : null));
+  const hidden = useHideBalances();
   const now = useNow();
   const today = useToday();
 
@@ -100,14 +104,34 @@ export function HomeScreen() {
 
       <div className="home-grid">
         <section className="card wealth" aria-labelledby="wealth-title">
-          <h2 id="wealth-title" className="muted small wealth-label">
-            Patrimonio estimado
-          </h2>
-          <Money cents={consolidation.totalArs} currency="ARS" className="wealth-total" />
+          <div className="wealth-header">
+            <h2 id="wealth-title" className="muted small wealth-label">
+              Patrimonio estimado
+            </h2>
+            <button
+              type="button"
+              className="icon-btn wealth-eye"
+              aria-label={hidden ? 'Mostrar saldos' : 'Ocultar saldos'}
+              disabled={uid === null}
+              onClick={() => {
+                if (uid) setHideBalances(uid, !hidden);
+              }}
+            >
+              <Icon name={hidden ? 'eye-off' : 'eye'} />
+            </button>
+          </div>
+          <Money
+            cents={consolidation.totalArs}
+            currency="ARS"
+            className="wealth-total"
+            masked={hidden}
+          />
           <RatesLine now={now} />
           {consolidation.missing.map(({ currency, amount }) => (
             <p key={currency} className="small warn-text">
-              No incluye {formatAmount(amount, currency)} por falta de cotización.
+              {hidden
+                ? `No incluye los saldos en ${currency} por falta de cotización.`
+                : `No incluye ${formatAmount(amount, currency)} por falta de cotización.`}
             </p>
           ))}
           {currencies.length > 0 && (
@@ -116,7 +140,11 @@ export function HomeScreen() {
                 <div key={currency} className="totals-row">
                   <dt>{currency}</dt>
                   <dd>
-                    <Money cents={consolidation.byCurrency[currency]} currency={currency} />
+                    <Money
+                      cents={consolidation.byCurrency[currency]}
+                      currency={currency}
+                      masked={hidden}
+                    />
                   </dd>
                 </div>
               ))}
@@ -187,6 +215,7 @@ export function HomeScreen() {
                     account.currency,
                     rates,
                   )}
+                  hidden={hidden}
                 />
               ))}
             </ul>
@@ -254,8 +283,13 @@ function RatesLine({ now }: { now: number }) {
   );
 }
 
-function AccountRow(props: { account: Account; balance: number; equivalent: number | null }) {
-  const { account, balance, equivalent } = props;
+function AccountRow(props: {
+  account: Account;
+  balance: number;
+  equivalent: number | null;
+  hidden: boolean;
+}) {
+  const { account, balance, equivalent, hidden } = props;
   // Tocar la cuenta abre su edición (nombre y tipo).
   return (
     <li>
@@ -273,8 +307,8 @@ function AccountRow(props: { account: Account; balance: number; equivalent: numb
           <span className="row-title">{account.name}</span>
         </span>
         <span className="row-end">
-          <Money cents={balance} currency={account.currency} />
-          {equivalent !== null && (
+          <Money cents={balance} currency={account.currency} masked={hidden} />
+          {equivalent !== null && !hidden && (
             <span className="num small muted">≈ {formatAmount(equivalent, 'ARS')}</span>
           )}
         </span>
