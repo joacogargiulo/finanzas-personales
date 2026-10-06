@@ -3,7 +3,7 @@
 ## Qué es este proyecto
 PWA de finanzas personales offline-first, que se usa en un celular Android (como APK) y en una computadora, con los datos sincronizados por Firebase Firestore.
 
-**Es un producto multiusuario:** cualquier persona inicia sesión con Google y ve solo sus datos (esto reemplaza al "único usuario" del SRS). Público: Argentina. Plan de Firebase: Spark (gratis), así que hay que diseñar para leer poco.
+**Es un producto multiusuario:** cada persona inicia sesión con Google y ve solo sus datos (esto reemplaza al "único usuario" del SRS). Por ahora el acceso se limita a una lista de emails de la familia (ADR 0026). Público: Argentina. Plan de Firebase: Spark (gratis), así que hay que diseñar para leer poco.
 
 **La especificación completa está en `docs/SRS.md`. Leela antes de implementar cualquier cosa.** Si algo no está claro o el SRS parece contradecirse, preguntá antes de decidir por tu cuenta. Las decisiones que modifican el SRS quedan registradas en `docs/decisiones/` (ADRs); ante una diferencia, manda el ADR más reciente.
 
