@@ -15,6 +15,8 @@ Es el **único caso de borrado físico** (ver ADR 0003). Pasos:
 3. Borrar el documento de perfil al final, después el usuario de Firebase Auth (`user.delete()`) y por último la caché local (`terminate()` + `clearIndexedDbPersistence()`).
 4. **Reanudable:** si se corta (sin señal, cuota agotada), volver a ejecutarlo sigue con lo que queda. Mientras el perfil exista, la cuenta sigue siendo usable.
 
+*Nota (ADR 0030):* los detalles de la implementación (inicio de sesión reciente, condiciones para empezar, orden y pantalla) están en el ADR 0030.
+
 ## Consecuencias
 - Si se agota la cuota diaria de borrados, el proceso queda a medias hasta el día siguiente. Se avisa con un mensaje claro.
 - La política de privacidad (Fase 9) describe este proceso.

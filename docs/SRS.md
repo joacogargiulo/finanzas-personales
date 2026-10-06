@@ -532,6 +532,13 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 - Si hay escrituras pendientes de sincronizar, advertir: *"Tenés cambios que todavía no se subieron. Si cerrás sesión ahora, se van a perder. ¿Querés esperar a tener conexión?"*
 - Al cerrar sesión: detener listeners, `terminate()` de Firestore, `clearIndexedDbPersistence()`, limpiar el store y volver a la pantalla de login.
 
+### 7.2.1 Borrar mi cuenta (ADR 0006 y 0030)
+- En Ajustes, al final. Se habilita solo con el dispositivo al día con el servidor y sin cambios pendientes; si no, dice por qué.
+- Confirmación reforzada escribiendo `BORRAR`. Avisa que no se puede deshacer, que no se borran la cuenta de Google ni la hoja de Sheets, y sugiere descargar antes el respaldo JSON.
+- Si el último inicio de sesión tiene 4 minutos o más, pide confirmar la cuenta de Google (popup; si está bloqueado, redirect).
+- Borra en lotes de hasta 500 con una pantalla de progreso; después el perfil, el usuario de Auth, el tema guardado y la caché local. Termina en "Tu cuenta se borró".
+- Si se corta, volver a ejecutarlo sigue desde donde quedó.
+
 ### 7.3 Reglas de seguridad de Firestore (multiusuario, ADR 0010)
 **Principio:** las reglas rechazan solo lo que la app legítima nunca podría producir. Validan cada documento por separado, sin `get()`. La coherencia entre documentos la valida el dominio (5.3).
 
@@ -739,6 +746,9 @@ Según 7.3, con un grupo por colección:
 | TC-26 | Confirmar la ocurrencia de hoy de un recurrente mensual y después cambiarle la frecuencia a semanal | La ocurrencia de hoy no vuelve a quedar pendiente |
 | TC-27 | Renombrar "Comida" en el celular y después iniciar sesión por primera vez en la compu | La compu muestra el nombre nuevo; la siembra no lo pisa |
 | TC-28 | Abrir la app 5 veces en el día con 1.000 movimientos | En la consola de Firebase, las lecturas del día son decenas, no miles |
+| TC-29 | Borrar mi cuenta con datos y volver a entrar con la misma cuenta de Google | Muestra "Tu cuenta se borró"; al volver a entrar, la app está vacía (solo las categorías iniciales) |
+| TC-30 | Cortar la conexión mientras se borra la cuenta | El progreso se detiene y sigue al volver la señal; si se cierra la app, repetir el borrado termina lo que falta |
+| TC-31 | Borrar mi cuenta habiendo iniciado sesión hace más de 5 minutos | Pide confirmar la cuenta de Google antes de borrar; si se elige otra cuenta, avisa y no borra nada |
 
 ---
 
