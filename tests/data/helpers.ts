@@ -25,8 +25,20 @@ const EMULATOR_URL = `http://${EMULATOR}:${String(PORT)}`;
 let counter = 0;
 let apps: FirebaseApp[] = [];
 
-/** Un dispositivo nuevo, sin nada en la caché. */
-export function createClient(uid: string): Firestore {
+/** Datos del token de Google que leen las reglas de acceso (ADR 0026). */
+export interface TokenClaims {
+  email: string;
+  email_verified: boolean;
+}
+
+/**
+ * Un dispositivo nuevo, sin nada en la caché. Por defecto con un email @example.com, que las
+ * reglas siempre dejan entrar (dominio reservado, ADR 0026).
+ */
+export function createClient(
+  uid: string,
+  claims: TokenClaims = { email: `${uid}@example.com`, email_verified: true },
+): Firestore {
   const app = initializeApp(
     { projectId: PROJECT_ID, apiKey: 'demo-key' },
     `cliente-${String(++counter)}`,
@@ -39,7 +51,9 @@ export function createClient(uid: string): Firestore {
       garbageCollector: memoryLruGarbageCollector({ cacheSizeBytes: 100 * 1024 * 1024 }),
     }),
   });
-  connectFirestoreEmulator(db, EMULATOR, PORT, { mockUserToken: { sub: uid, user_id: uid } });
+  connectFirestoreEmulator(db, EMULATOR, PORT, {
+    mockUserToken: { sub: uid, user_id: uid, ...claims },
+  });
   return db;
 }
 
