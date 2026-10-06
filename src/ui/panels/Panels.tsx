@@ -19,7 +19,7 @@ import { changedFields, type AccountChanges, type CategoryChanges } from '../../
 import { useData, useLedger, useToday } from '../app/hooks';
 import { closePanel, openPanel } from '../app/navigation';
 import type { Panel } from '../app/route';
-import { session } from '../session';
+import { interpretDictation, session } from '../session';
 import { AccountSheet } from './AccountSheet';
 import { BudgetSheet } from './BudgetSheet';
 import { CategorySheet } from './CategorySheet';
@@ -212,6 +212,7 @@ export function Panels({ panel }: { panel: Panel | null }) {
       original={original}
       lockedReason={lockedReason}
       autoDictate={panel.dictate === true}
+      interpret={interpretDictation}
       onClose={closePanel}
       onCreateAccount={() => {
         openPanel({ kind: 'account', id: null });

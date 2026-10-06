@@ -13,7 +13,13 @@ describe('sección Privacidad', () => {
       .setup()
       .click(screen.getByText('Qué datos salen de este dispositivo y a dónde'));
 
-    for (const name of ['Firebase (Google)', 'Bluelytics', 'Google Sheets', 'Dictado por voz']) {
+    for (const name of [
+      'Firebase (Google)',
+      'Bluelytics',
+      'Google Sheets',
+      'Dictado por voz',
+      'Cloudflare (IA del dictado)',
+    ]) {
       expect(screen.getByText(name)).toBeVisible();
     }
   });

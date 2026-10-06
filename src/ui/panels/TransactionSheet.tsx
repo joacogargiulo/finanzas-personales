@@ -5,7 +5,7 @@
 // Es un componente "de presentación": recibe los datos y avisa con `onSave` qué guardar. No
 // conoce Firestore ni el store, así se puede testear con Testing Library sin emuladores.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   amountKeyFromKeyboard,
   formatAmountInput,
@@ -27,7 +27,8 @@ import type {
 } from '../../domain/model';
 import { currencySymbol, MINUS } from '../../domain/money';
 import type { TransactionDraft, TransactionFields } from '../../domain/validation';
-import { parsePhrase, type ParsedField } from '../../domain/voice/parsePhrase';
+import type { ParsedField } from '../../domain/voice/parsePhrase';
+import { rulesOnly, type Interpreter, type RulesReason } from '../../data/dictation';
 import type { CategoryFields } from '../../data/writes';
 import { CategoryChips } from '../components/CategoryChips';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -74,6 +75,8 @@ export interface TransactionSheetProps {
   lockedReason?: string | null;
   /** Empezar a dictar al abrir (`dictar=1`, ADR 0023). */
   autoDictate?: boolean;
+  /** Interpreta lo dictado: la IA con conexión y, si no, el parser (ADR 0031). */
+  interpret?: Interpreter;
   /** `source` es `'voice'` si el formulario se precargó dictando. */
   onSave: (fields: TransactionFields, source: TransactionSource) => void;
   onClose: () => void;
@@ -102,6 +105,7 @@ function Unclear({ show }: { show: boolean }) {
 /** Qué marca de "no se entendió" se borra cuando el usuario cambia cada campo. */
 const UNCLEAR_FIELD: Partial<Record<keyof TransactionFormErrors, ParsedField>> = {
   amount: 'amount',
+  toAmount: 'toAmount',
   accountId: 'account',
   toAccountId: 'toAccount',
   categoryId: 'category',
@@ -111,9 +115,21 @@ const UNCLEAR_FIELD: Partial<Record<keyof TransactionFormErrors, ParsedField>> =
 interface Dictation {
   heard: string;
   unclear: ParsedField[];
-  /** Sonaba a un cambio de moneda, que no se puede dictar (ADR 0015). */
+  /** Sonaba a un cambio de moneda y no se pudo usar la IA: el parser no los entiende (ADR 0015). */
   exchange: boolean;
+  /** Esperando la respuesta de la IA. */
+  pending: boolean;
+  /** Se usó el parser de reglas teniendo que avisar por qué (ADR 0031). */
+  rulesReason: RulesReason | null;
 }
+
+/** Por qué se interpretó sin IA. Sin Worker configurado no hay nada que avisar. */
+const RULES_NOTES: Record<RulesReason, string | null> = {
+  notConfigured: null,
+  offline: 'Sin conexión: se interpretó sin IA. Revisá los campos.',
+  quota: 'Llegaste al límite de dictados con IA de hoy: se interpretó sin IA. Revisá los campos.',
+  failed: 'La IA no respondió: se interpretó sin IA. Revisá los campos.',
+};
 
 function accountLabel(account: Account): string {
   return `${account.name} · ${account.currency}`;
@@ -135,6 +151,7 @@ export function TransactionSheet({
   typeLocked = false,
   lockedReason = null,
   autoDictate = false,
+  interpret = rulesOnly,
   onSave,
   onClose,
   onCreateAccount,
@@ -162,19 +179,46 @@ export function TransactionSheet({
   /** El formulario se precargó dictando: el movimiento se guarda con origen `voice`. */
   const [dictated, setDictated] = useState(false);
 
+  /** Número del último dictado: si llega la respuesta de uno anterior, se descarta. */
+  const lastRequest = useRef(0);
+  const latestForm = useRef(form);
+  useEffect(() => {
+    latestForm.current = form;
+  }, [form]);
+  useEffect(
+    () => () => {
+      // Al cerrar el panel, ninguna respuesta pendiente toca el formulario.
+      lastRequest.current = -1;
+    },
+    [],
+  );
+
   // Nunca guarda solo (ADR 0015): precarga y espera a que el usuario toque Guardar.
   const speech = useSpeech((text) => {
-    const parsed = parsePhrase(text, { accounts, categories, today });
-    if (parsed.unsupported === 'exchange') {
-      setDictation({ heard: text, unclear: [], exchange: true });
-      return;
-    }
-    const result = formFromPhrase(parsed, form, accounts);
-    setForm(result.form);
-    setErrors({});
-    setTarget('amount');
-    setDictated(true);
-    setDictation({ heard: text, unclear: result.unclear, exchange: false });
+    const request = ++lastRequest.current;
+    setDictation({ heard: text, unclear: [], exchange: false, pending: true, rulesReason: null });
+    void interpret(text, { accounts, categories, today }).then((result) => {
+      if (request !== lastRequest.current) return;
+      const parsed = result.phrase;
+      const rulesReason = result.via === 'rules' ? result.reason : null;
+      if (parsed.unsupported === 'exchange') {
+        setDictation({ heard: text, unclear: [], exchange: true, pending: false, rulesReason });
+        return;
+      }
+      // El formulario de ahora, no el de cuando se empezó a dictar: la respuesta tarda.
+      const filled = formFromPhrase(parsed, latestForm.current, accounts);
+      setForm(filled.form);
+      setDictation({
+        heard: text,
+        unclear: filled.unclear,
+        exchange: false,
+        pending: false,
+        rulesReason,
+      });
+      setErrors({});
+      setTarget('amount');
+      setDictated(true);
+    });
   });
   const canDictate = speech.supported && !original && !typeLocked && origins.length > 0;
   const { start: startDictation } = speech;
@@ -303,12 +347,26 @@ export function TransactionSheet({
         <div className="notice" role="alert">
           <Icon name="warning" />
           <div className="notice-body">
-            Los cambios de moneda todavía no se pueden dictar. Elegí «Cambio» y cargalo a mano.
+            Los cambios de moneda se dictan con la IA, que ahora no está disponible. Elegí «Cambio»
+            y cargalo a mano.
           </div>
         </div>
       )}
       {dictation && !dictation.exchange && (
-        <p className="voice-heard">Escuché: «{dictation.heard}»</p>
+        <p className="voice-heard">
+          Escuché: «{dictation.heard}»
+          {dictation.pending && (
+            <span role="status" className="voice-pending">
+              {' '}
+              · Interpretando…
+            </span>
+          )}
+        </p>
+      )}
+      {dictation && !dictation.exchange && dictation.rulesReason && (
+        <p className="field-hint" role="status">
+          {RULES_NOTES[dictation.rulesReason]}
+        </p>
       )}
 
       {!typeLocked && (
@@ -364,6 +422,9 @@ export function TransactionSheet({
           </button>
           <FieldError error={errors.amount} id="error-amount" />
           <FieldError error={errors.toAmount} id="error-toAmount" />
+          <Unclear
+            show={!errors.amount && !errors.toAmount && (unclear('amount') || unclear('toAmount'))}
+          />
           <p className="field-hint exchange-rate" aria-live="polite">
             {rate ? rate.label : 'Escribí los dos montos para ver la cotización.'}
           </p>
@@ -506,7 +567,7 @@ export function TransactionSheet({
       <button
         type="button"
         className="btn btn-primary btn-block"
-        disabled={lockedReason !== null}
+        disabled={lockedReason !== null || dictation?.pending === true}
         onClick={submit}
       >
         {typeInfo?.save}

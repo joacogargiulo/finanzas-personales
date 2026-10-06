@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeAccount, makeCategory, makeExpense } from '../../domain/testing/factories';
+import type { ParsedPhrase } from '../../domain/voice/parsePhrase';
+import { rulesOnly, type Interpretation, type Interpreter } from '../../data/dictation';
 import { TransactionSheet, type TransactionSheetProps } from './TransactionSheet';
 
 const bank = makeAccount({ id: 'bank', name: 'Banco', currency: 'ARS' });
@@ -287,7 +289,46 @@ describe('dictado', () => {
     await result.user.click(screen.getByRole('button', { name: 'Dictar movimiento' }));
     expect(recognition().lang).toBe('es-AR');
     recognition().say(text);
+    await waitInterpretation();
     return result;
+  }
+
+  /** La interpretación es asincrónica (ADR 0031): espera a que termine. */
+  async function waitInterpretation() {
+    await waitFor(() => {
+      expect(screen.queryByText(/Interpretando/)).not.toBeInTheDocument();
+    });
+  }
+
+  /** Lo que respondería la IA: un ParsedPhrase completo con lo que cambia cada test. */
+  function aiPhrase(overrides: Partial<ParsedPhrase>): Interpretation {
+    return {
+      via: 'ai',
+      phrase: {
+        type: 'expense',
+        amount: null,
+        toAmount: null,
+        currency: null,
+        date: '2026-10-03',
+        accountId: null,
+        toAccountId: null,
+        categoryId: null,
+        description: '',
+        missing: [],
+        unsupported: null,
+        ...overrides,
+      },
+    };
+  }
+
+  /** Un intérprete que responde cuando el test lo decide. */
+  function deferredInterpreter() {
+    const pending: ((result: Interpretation) => void)[] = [];
+    const interpret: Interpreter = () =>
+      new Promise((resolve) => {
+        pending.push(resolve);
+      });
+    return { interpret, pending };
   }
 
   it('el botón aparece solo si el navegador sabe dictar, y solo al crear', () => {
@@ -340,13 +381,87 @@ describe('dictado', () => {
     expect(screen.queryByText('No se entendió, revisalo.')).not.toBeInTheDocument();
   });
 
-  it('un cambio de moneda no se dicta: avisa y no toca el formulario', async () => {
+  // Sin IA, el parser no entiende los cambios de moneda (ADR 0015): avisa y no toca nada.
+  it('sin IA, un cambio de moneda no se dicta: avisa y no toca el formulario', async () => {
     await dictate('compré 100 dólares');
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Los cambios de moneda todavía no se pueden dictar',
+      'Los cambios de moneda se dictan con la IA',
     );
     expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 0');
+  });
+
+  // Con la IA sí (ADR 0031): precarga los dos montos y las dos cuentas (TC-32).
+  it('con la IA, precarga un cambio de moneda', async () => {
+    const interpret: Interpreter = () =>
+      Promise.resolve(
+        aiPhrase({
+          type: 'exchange',
+          amount: 13_000_000,
+          toAmount: 10_000,
+          currency: 'ARS',
+          accountId: 'cash',
+          toAccountId: 'usd',
+        }),
+      );
+    await dictate('compré 100 dólares a 1300', { interpret });
+
+    expect(screen.getByRole('button', { name: 'Cambio' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /^Sale/ })).toHaveTextContent('$ 130.000');
+    expect(screen.getByRole('button', { name: /^Entra/ })).toHaveTextContent('US$ 100');
+    expect(screen.getByRole('combobox', { name: 'Desde' })).toHaveValue('cash');
+    expect(screen.getByRole('combobox', { name: 'Hacia' })).toHaveValue('usd');
+    expect(screen.queryByText('No se entendió, revisalo.')).not.toBeInTheDocument();
+  });
+
+  // Mientras la IA piensa, no se puede guardar algo a medio precargar.
+  it('mientras interpreta, avisa y no deja guardar', async () => {
+    const { interpret, pending } = deferredInterpreter();
+    withSpeech();
+    const { user } = setup({ categories: [seedFood, salary], interpret });
+    await user.click(screen.getByRole('button', { name: 'Dictar movimiento' }));
+    recognition().say('gasté 500 en el súper');
+
+    expect(screen.getByText(/Interpretando/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar gasto' })).toBeDisabled();
+
+    act(() => {
+      pending[0]?.(aiPhrase({ amount: 50_000, accountId: 'cash', categoryId: 'seed_comida' }));
+    });
+    await waitInterpretation();
+    expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 500');
+    expect(screen.getByRole('button', { name: 'Guardar gasto' })).toBeEnabled();
+  });
+
+  // Si se vuelve a dictar antes de que llegue la respuesta, la vieja no pisa la nueva.
+  it('descarta la respuesta de un dictado anterior', async () => {
+    const { interpret, pending } = deferredInterpreter();
+    withSpeech();
+    const { user } = setup({ categories: [seedFood, salary], interpret });
+    await user.click(screen.getByRole('button', { name: 'Dictar movimiento' }));
+    recognition().say('gasté 500');
+    await user.click(screen.getByRole('button', { name: 'Dictar movimiento' }));
+    recognition().say('gasté 700');
+
+    act(() => {
+      pending[1]?.(aiPhrase({ amount: 70_000, accountId: 'cash' }));
+    });
+    await waitInterpretation();
+    act(() => {
+      pending[0]?.(aiPhrase({ amount: 50_000, accountId: 'cash' }));
+    });
+    await waitInterpretation();
+    expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 700');
+  });
+
+  // Con el límite diario agotado se usa el parser y se avisa por qué (TC-34).
+  it('avisa cuando se interpretó sin IA', async () => {
+    const interpret: Interpreter = (text, ctx) =>
+      rulesOnly(text, ctx).then((r) => ({ phrase: r.phrase, via: 'rules', reason: 'quota' }));
+    await dictate('gasté 500 en el súper con efectivo', { interpret });
+
+    expect(screen.getByText(/límite de dictados con IA de hoy/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Monto:/)).toHaveTextContent('$ 500');
   });
 
   it('explica en castellano si el micrófono no está permitido', async () => {
