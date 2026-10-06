@@ -41,6 +41,7 @@ describe('csvField', () => {
 describe('toCsv', () => {
   const table: Table = {
     name: 'prueba',
+    title: 'Prueba',
     headers: ['Fecha', 'Descripción', 'Monto'],
     rows: [
       [

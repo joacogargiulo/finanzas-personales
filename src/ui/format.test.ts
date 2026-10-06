@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   dayHeading,
   dayMonth,
+  exportedAtLabel,
   initials,
   monthShort,
   percentLabel,
@@ -99,5 +100,12 @@ describe('percentLabel', () => {
     [0.004, '< 1 %'],
   ])('%f → %s', (share, label) => {
     expect(percentLabel(share)).toBe(label);
+  });
+});
+
+describe('exportedAtLabel', () => {
+  // Hora local del dispositivo, con los minutos siempre en dos cifras.
+  it('muestra la fecha y la hora local', () => {
+    expect(exportedAtLabel(new Date(2026, 9, 5, 9, 5).getTime())).toBe('5/10/2026 a las 09:05');
   });
 });
