@@ -1,7 +1,7 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.7.0
+**Versión:** 3.7.1
 **Fecha:** 2026-10-05
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
@@ -10,14 +10,23 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
+### 0.0 Cambios de la versión 3.7.1 (Fase 7b: PWA, CSP y Hosting)
+| Tema | v3.7.0 | v3.7.1 | ADR |
+|---|---|---|---|
+| Actualización de la app | Automática, avisar y recargar | La versión nueva espera; el aviso tiene "Actualizar"; se busca cada hora | 0027 |
+| `theme_color` | `#1a73e8` | `#0f6b5f` (acento de "Sereno") | 0027 |
+| Content-Security-Policy | Sin especificar | `<meta>` generada en el build, probada por los E2E | 0027 |
+| Encabezados de Hosting | `no-cache` para `index.html` y el service worker | También `/` y el manifiesto; `/assets/` un año; `frame-ancestors`, `nosniff`, `Referrer-Policy` | 0027 |
+| Publicación | Sin especificar | `npm run deploy` desde la compu del dueño | 0027 |
+
+### 0.0.1 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
 | Tema | v3.6.1 | v3.7.0 | ADR |
 |---|---|---|---|
 | Quién puede usar la app | Cualquier persona con cuenta de Google | Solo los emails verificados de una lista (hash SHA-256 en las reglas) | 0026 |
 | Cuenta sin acceso | Sin especificar | Pantalla "Esta app es privada" con "Usar otra cuenta" | 0026 |
 | `isOwner(uid)` en las reglas | Sesión con ese UID | Sesión con ese UID y email en la lista (`isAllowed()`) | 0026 |
 
-### 0.0.1 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
+### 0.0.2 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
 | Tema | v3.6.0 | v3.6.1 | ADR |
 |---|---|---|---|
 | Escritura en Sheets | Escribir y después limpiar las filas sobrantes | Un solo `batchUpdate`, que Google aplica entero o no aplica | 0025 |
@@ -25,7 +34,7 @@
 | Hoja borrada o en la papelera | Sin especificar | Se crea otra y se guarda su ID | 0025 |
 | Client ID de OAuth | Crear uno nuevo | Se reutiliza el que creó Firebase (`VITE_GOOGLE_CLIENT_ID`) | 0025 |
 
-### 0.0.2 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
+### 0.0.3 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
 | Tema | v3.5.1 | v3.6.0 | ADR |
 |---|---|---|---|
 | Restaurar desde JSON | Reemplaza todos los datos | Fuera de alcance: el JSON es una copia para guardar | 0024 |
@@ -33,7 +42,7 @@
 | Origen de la exportación | Sin especificar | Los datos del dispositivo (sin lecturas); aviso si no está al día | 0024 |
 | TC-23 | Exportar y restaurar | Exportar y verificar el contenido del JSON | 0024 |
 
-### 0.0.3 Cambios de la versión 3.5.1 (Fase 5b: dictado)
+### 0.0.4 Cambios de la versión 3.5.1 (Fase 5b: dictado)
 | Tema | v3.5.0 | v3.5.1 | ADR |
 |---|---|---|---|
 | Dictado | Parser de frases sin micrófono | Micrófono en el panel de movimiento (Web Speech API), solo al crear y si el navegador lo soporta; precarga y espera Guardar | 0023 |
@@ -41,7 +50,7 @@
 | Origen `voice` | Sin especificar | Si el formulario se precargó dictando, aunque después se corrija a mano | 0023 |
 | Atajo "Dictar movimiento" | Fase 5 | Fase 7 (con el manifiesto); en la 5b queda la ruta `movimiento=nuevo&dictar=1` | 0023 |
 
-### 0.0.4 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
+### 0.0.5 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
 | Tema | v3.4.0 | v3.5.0 | ADR |
 |---|---|---|---|
 | Pendientes en Inicio | Después del total y del resumen | Arriba de todo, porque piden una acción | 0022 |
@@ -49,7 +58,7 @@
 | Saltar un pendiente | Sin confirmación | Con confirmación simple | 0022 |
 | Confirmar en dos dispositivos | Mismo ID, mismo `nextDate` | Además, el rechazo del segundo lote por las reglas no se muestra como error | 0004 |
 
-### 0.0.5 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+### 0.0.6 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
 | Tema | v3.3.0 | v3.4.0 | ADR |
 |---|---|---|---|
 | Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
@@ -57,7 +66,7 @@
 | Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
 | Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
 
-### 0.0.6 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0.7 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -65,7 +74,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.7 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.8 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -616,13 +625,16 @@ Fuera de alcance (ADR 0024): reemplazar los datos rompería la sincronización d
 ## 9. PWA, HOSTING Y APK ANDROID
 
 ### 9.1 PWA
-- `vite-plugin-pwa` con precache de todos los assets estáticos y actualización automática del service worker (avisar "Hay una versión nueva" y recargar).
-- Manifiesto: `name` "Control de Finanzas", `short_name` "Finanzas", `display: standalone`, `orientation: portrait-primary`, `theme_color: #1a73e8`, `background_color`, `start_url: "/"`, íconos 192 y 512 px, incluido un ícono `maskable` de 512 px.
-- Las peticiones a Bluelytics y Google no se cachean con el service worker (se manejan en código).
+- `vite-plugin-pwa` con precache de todos los assets estáticos. Una versión nueva queda esperando: la app avisa "Hay una versión nueva de la app." con el botón "Actualizar", que la activa y recarga. Con la app abierta, se busca una versión nueva cada hora (ADR 0027).
+- Manifiesto: `name` "Control de Finanzas", `short_name` "Finanzas", `display: standalone`, `orientation: portrait-primary`, `theme_color: #0f6b5f`, `background_color: #f6f7f5`, `start_url: "/"`, íconos 192 y 512 px, incluido un ícono `maskable` de 512 px, y el atajo "Dictar movimiento" a `/#/inicio?movimiento=nuevo&dictar=1` (ADR 0023).
+- Las peticiones a Bluelytics y Google no se cachean con el service worker (se manejan en código). Las navegaciones a `/__/` (handler de login de Firebase) tampoco.
+- Content-Security-Policy como `<meta>` en `index.html`, generada en `vite.config.ts`; los E2E fallan si bloquea algo (ADR 0027).
 
 ### 9.2 Firebase Hosting
 - `firebase.json` con rewrite de todas las rutas a `/index.html` (SPA).
-- Encabezado `Cache-Control: no-cache` para `index.html` y el service worker.
+- Encabezado `Cache-Control: no-cache` para `/`, `index.html`, el service worker y el manifiesto; `/assets/` (con hash en el nombre) un año e `immutable`.
+- Encabezados de seguridad: `Content-Security-Policy: frame-ancestors 'self'`, `X-Content-Type-Options: nosniff` y `Referrer-Policy: strict-origin-when-cross-origin`.
+- Dominio: `finanzas-personales-jtg.web.app`. Se publica con `npm run deploy` (ADR 0027).
 - Servir `/.well-known/assetlinks.json` (ver 9.3).
 
 ### 9.3 APK con Bubblewrap (Trusted Web Activity)
@@ -739,8 +751,9 @@ Claude Code no puede hacer estas tareas porque requieren cuentas y consolas web:
 5. Instalar Firebase CLI (`npm install -g firebase-tools`) y ejecutar `firebase login`.
 6. ~~Copiar el UID en las reglas~~: ya no hace falta, las reglas son multiusuario (7.3). Sí hay que cargar en `firestore.rules` el hash de cada email con acceso (`npm run email-hash`) y publicarlas con `npm run deploy:rules` (ADR 0026).
 7. En Google Cloud Console (mismo proyecto): habilitar Google Sheets API y Google Drive API, agregar el scope `drive.file` a la pantalla de consentimiento OAuth (queda en producción, como la dejó Firebase para el login: pasarla a prueba limitaría el login a los usuarios de prueba), sumar los orígenes autorizados (`http://localhost:5173` y, desde la Fase 7, el de Hosting) al Client ID web que creó Firebase y copiarlo a `.env.local` como `VITE_GOOGLE_CLIENT_ID` (ADR 0025).
-8. Durante la fase 8: responder las preguntas interactivas de Bubblewrap, crear la clave de firma y guardarla en un lugar seguro.
-9. Habilitar "Instalar apps desconocidas" en el celular para instalar el APK.
+8. Desde la Fase 7: en Google Cloud, sumar `https://finanzas-personales-jtg.web.app` a los orígenes autorizados y `https://finanzas-personales-jtg.web.app/__/auth/handler` a las URIs de redirección del Client ID web; poner `VITE_FIREBASE_AUTH_DOMAIN=finanzas-personales-jtg.web.app` en `.env.local` y publicar con `npm run deploy` (ADR 0027).
+9. Durante la fase 8: responder las preguntas interactivas de Bubblewrap, crear la clave de firma y guardarla en un lugar seguro.
+10. Habilitar "Instalar apps desconocidas" en el celular para instalar el APK.
 
 ---
 

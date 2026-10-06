@@ -1,14 +1,27 @@
-// Avisos generales arriba del contenido: versión nueva de la app (ADR 0011) y escrituras que
-// el servidor rechazó.
+// Avisos generales arriba del contenido: versión nueva de la app (ADR 0027), otro dispositivo con
+// un esquema más nuevo (ADR 0011) y escrituras que el servidor rechazó.
 
 import { Icon } from '../components/Icon';
-import { store } from '../session';
+import { appUpdates, store } from '../session';
 import { useData } from './hooks';
 
 export function Notices() {
   const writesBlocked = useData((s) => s.writesBlocked);
   const writeErrors = useData((s) => s.writeErrors.length);
-  if (!writesBlocked && writeErrors === 0) return null;
+  const updateAvailable = useData((s) => s.updateAvailable);
+  if (!writesBlocked && writeErrors === 0 && !updateAvailable) return null;
+
+  const updateButton = (
+    <button
+      type="button"
+      className="btn"
+      onClick={() => {
+        appUpdates.apply();
+      }}
+    >
+      Actualizar
+    </button>
+  );
 
   return (
     <div className="notices">
@@ -17,6 +30,16 @@ export function Notices() {
           <Icon name="warning" />
           <div className="notice-body">
             Hay una versión nueva de la app. Actualizala para seguir cargando movimientos.
+            {updateAvailable && updateButton}
+          </div>
+        </div>
+      )}
+      {updateAvailable && !writesBlocked && (
+        <div className="notice" role="status">
+          <Icon name="repeat" />
+          <div className="notice-body">
+            Hay una versión nueva de la app.
+            {updateButton}
           </div>
         </div>
       )}

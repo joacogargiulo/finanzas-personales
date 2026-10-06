@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/vanillajs" />
 
 // Variables de entorno que usa la app (ver .env.example). Vite solo expone las que empiezan con VITE_.
 interface ImportMetaEnv {

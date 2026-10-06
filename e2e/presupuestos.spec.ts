@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { addExpense, createAccount, signIn } from './helpers';
 
 // Presupuestos (SRS 5.9): se crean en Ajustes y en Inicio muestran cuánto se gastó en el mes,

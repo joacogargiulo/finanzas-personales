@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { addExpense, createAccount, signIn } from './helpers';
 
 // Archivar cuentas desde Ajustes (SRS 5.5): con saldo se bloquea (TC-06); con saldo 0 se

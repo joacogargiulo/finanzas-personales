@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { createAccount, signIn } from './helpers';
 
 // Recurrentes (SRS 5.10): se crean en Ajustes, aparecen en Inicio cuando llega la fecha y no

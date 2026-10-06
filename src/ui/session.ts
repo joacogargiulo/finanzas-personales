@@ -1,5 +1,8 @@
-// Instancias únicas de la app: Firebase, el store y la sesión. La UI las importa desde acá.
+// Instancias únicas de la app: Firebase, el store, la sesión y las actualizaciones. La UI las
+// importa desde acá.
 
+import { registerSW } from 'virtual:pwa-register';
+import { startAppUpdates } from '../data/appUpdate';
 import { signInForTests } from '../data/auth';
 import { initFirebase } from '../data/firebase';
 import { startRates } from '../data/rates';
@@ -17,3 +20,6 @@ if (import.meta.env.VITE_USE_EMULATORS === 'true') {
 
 // Cotizaciones del dólar y el euro blue (SRS 5.8): no dependen de la sesión.
 startRates(store);
+
+// Service worker: la app abre sin conexión y avisa cuando hay una versión nueva (ADR 0027).
+export const appUpdates = startAppUpdates(store, registerSW);

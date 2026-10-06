@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { createAccount, signIn } from './helpers';
 
 // Dictado (ADR 0023). El navegador de los tests no tiene micrófono: antes de cargar la página se

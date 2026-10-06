@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // La app es privada (ADR 0026): una cuenta de Google fuera de la lista no ve errores de
 // permisos sino un aviso claro, y puede volver a elegir cuenta.

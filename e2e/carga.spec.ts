@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { signIn } from './helpers';
 
 // Flujo completo contra los emuladores de Auth y Firestore (ADR 0019): una persona nueva entra,
