@@ -738,7 +738,7 @@ Según 7.3, con un grupo por colección:
 | TC-16 | Abrir modal a las 23:30 hora Argentina | Fecha por defecto = hoy, no mañana |
 | TC-17 | Montos "1500,50", "1.500", "0" | Válido; rechazado; rechazado |
 | TC-18 | Buscar "credito" | Encuentra movimientos con "Crédito" |
-| TC-19 | Otro usuario de Google inicia sesión | Usa la app normalmente con sus propios datos; no ve ni puede escribir los datos de otros |
+| TC-19 | Otro usuario de Google inicia sesión | Usa la app normalmente con sus propios datos; no ve ni puede escribir los datos de otros. Probado en producción el 2026-10-08 con una segunda cuenta del dueño (ADR 0029) |
 | TC-20 | Cerrar sesión con cambios pendientes | Muestra advertencia |
 | TC-21 | Abrir el APK | Pantalla completa, sin barra de direcciones; login funciona |
 | TC-22 | Exportar CSV y abrir en Excel | Columnas separadas, acentos y decimales correctos |
@@ -748,7 +748,7 @@ Según 7.3, con un grupo por colección:
 | TC-26 | Confirmar la ocurrencia de hoy de un recurrente mensual y después cambiarle la frecuencia a semanal | La ocurrencia de hoy no vuelve a quedar pendiente |
 | TC-27 | Renombrar "Comida" en el celular y después iniciar sesión por primera vez en la compu | La compu muestra el nombre nuevo; la siembra no lo pisa |
 | TC-28 | Abrir la app 5 veces en el día con 1.000 movimientos | En la consola de Firebase, las lecturas del día son decenas, no miles |
-| TC-29 | Borrar mi cuenta con datos y volver a entrar con la misma cuenta de Google | Muestra "Tu cuenta se borró"; al volver a entrar, la app está vacía (solo las categorías iniciales) |
+| TC-29 | Borrar mi cuenta con datos y volver a entrar con la misma cuenta de Google | Muestra "Tu cuenta se borró"; al volver a entrar, la app está vacía (solo las categorías iniciales). Probado en producción el 2026-10-08 (ADR 0030) |
 | TC-30 | Cortar la conexión mientras se borra la cuenta | El progreso se detiene y sigue al volver la señal; si se cierra la app, repetir el borrado termina lo que falta |
 | TC-31 | Borrar mi cuenta habiendo iniciado sesión hace más de 5 minutos | Pide confirmar la cuenta de Google antes de borrar; si se elige otra cuenta, avisa y no borra nada |
 | TC-32 | Con conexión, dictar "compré 100 dólares a 1300" (y "vendí…") | Precarga un cambio: salen $ 130.000 de la cuenta en pesos y entran US$ 100 en la de dólares (al vender, al revés); no guarda solo. Probado en el APK el 2026-10-06 (ADR 0031) |
