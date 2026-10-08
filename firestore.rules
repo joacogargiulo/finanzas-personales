@@ -17,6 +17,8 @@ service cloud.firestore {
     function allowedEmailHashes() {
       return [
         '19f47daa851353d259fd1fdd33b8b15709277606f0ca1b651b6eca67875aee5b',
+        // Cuenta de prueba del dueño (para probar Borrar mi cuenta y TC-19).
+        '9e7dd704577b523a2f17e30242eed3d0eba82875cf20bc8f43f863c3f0fe23b0',
         // familia@example.org: solo para los tests (example.org es un dominio reservado).
         '9be03e4d3b3ceb6e42958fea4bbf6ee32a76f52ba29e200489014f07e586503e'
       ];
