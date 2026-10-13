@@ -14,6 +14,8 @@ interface ImportMetaEnv {
   readonly VITE_GOOGLE_CLIENT_ID?: string;
   /** `/interpretar` del Worker del dictado con IA (ADR 0031). Sin ella, se usa solo el parser. */
   readonly VITE_DICTATION_URL?: string;
+  /** Número del bot de WhatsApp, con código de país (ADR 0033). Sin él, no se ofrece vincular. */
+  readonly VITE_WHATSAPP_NUMBER?: string;
 }
 
 interface ImportMeta {

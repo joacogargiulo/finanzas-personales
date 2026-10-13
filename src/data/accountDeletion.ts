@@ -9,6 +9,7 @@ import { FirebaseError } from 'firebase/app';
 import { deleteDoc, writeBatch, type Firestore } from 'firebase/firestore';
 import type { DeletionFailure, DocKey } from '../domain/accountDeletion';
 import { docRef, profileRef, type UserCollection } from './paths';
+import { WhatsAppLinkError } from './whatsappLink';
 
 /**
  * Borra los lotes en orden. Después de cada uno avisa cuántos documentos van borrados.
@@ -49,6 +50,7 @@ export function isCancelledByUser(error: unknown): boolean {
 
 /** Traduce el error de Firebase al motivo que muestra la pantalla. */
 export function deletionFailure(error: unknown): DeletionFailure {
+  if (error instanceof WhatsAppLinkError) return 'whatsapp';
   if (!(error instanceof FirebaseError)) return 'unknown';
   switch (error.code) {
     case 'resource-exhausted':
