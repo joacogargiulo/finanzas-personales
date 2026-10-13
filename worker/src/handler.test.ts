@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InvalidTokenError } from './auth';
-import { handleRequest, ROUTE, type HandlerDeps } from './handler';
+import { fakeStore, type FakeStore } from './fakeStore';
+import { handleRequest, LINK_CODE_ROUTE, LINK_ROUTE, ROUTE, type HandlerDeps } from './handler';
 
 // El handler del Worker con todo falso (token, lista, KV e IA): se prueba cada control en orden
-// (ADR 0031) sin Cloudflare ni Google.
+// (ADR 0031 y 0033) sin Cloudflare ni Google.
 
 const APP = 'https://finanzas-personales-jtg.web.app';
 const input = {
@@ -15,9 +16,11 @@ const input = {
 
 let deps: HandlerDeps;
 let counters: Map<string, string>;
+let links: FakeStore;
 
 beforeEach(() => {
   counters = new Map();
+  links = fakeStore();
   deps = {
     verifyToken: vi.fn((token: string) =>
       token === 'bueno'
@@ -35,6 +38,7 @@ beforeEach(() => {
     dailyLimit: 2,
     allowedOrigins: [APP],
     interpret: vi.fn(() => Promise.resolve({ type: 'expense', amount: '500' })),
+    links,
     now: () => new Date('2026-10-06T15:00:00Z'),
   };
 });
@@ -119,5 +123,73 @@ describe('respuesta', () => {
   it('otra ruta, 404', async () => {
     const response = await handleRequest(new Request('https://dictado.example/otra'), deps);
     expect(response.status).toBe(404);
+  });
+
+  it('otro método, 405', async () => {
+    const response = await handleRequest(
+      new Request(`https://dictado.example${ROUTE}`, { headers: { Origin: APP } }),
+      deps,
+    );
+    expect(response.status).toBe(405);
+  });
+});
+
+/** Un pedido de la app a una ruta de vinculación, con el token de Ana. */
+function linkRequest(method: string, path: string, token = 'bueno') {
+  return handleRequest(
+    new Request(`https://dictado.example${path}`, {
+      method,
+      headers: { Origin: APP, Authorization: `Bearer ${token}` },
+    }),
+    deps,
+  );
+}
+
+// Las rutas para vincular WhatsApp (ADR 0033): los mismos controles que el dictado, y cada
+// persona solo ve y toca su propio vínculo (el uid sale del token, nunca del pedido).
+describe('vincular WhatsApp', () => {
+  it('crea un código para quien pide', async () => {
+    const response = await linkRequest('POST', LINK_CODE_ROUTE);
+    expect(response.status).toBe(200);
+    const body = await response.json<{ code: string; expiresAt: number }>();
+    expect(body.code).toMatch(/^\d{6}$/);
+    expect(body.expiresAt).toBe(Date.parse('2026-10-06T15:10:00Z'));
+    expect(links.data.get(`codigo:${body.code}`)).toBe('ana');
+  });
+
+  it('sin token válido no crea nada', async () => {
+    expect((await linkRequest('POST', LINK_CODE_ROUTE, 'malo')).status).toBe(401);
+    expect(links.data.size).toBe(0);
+  });
+
+  it('fuera de la lista, 403', async () => {
+    vi.mocked(deps.isAllowed).mockResolvedValue(false);
+    expect((await linkRequest('POST', LINK_CODE_ROUTE)).status).toBe(403);
+    expect(links.data.size).toBe(0);
+  });
+
+  it('muestra el número vinculado con el medio oculto', async () => {
+    expect(await (await linkRequest('GET', LINK_ROUTE)).json()).toEqual({ phone: null });
+    links.data.set('uid:ana', '5491123456789');
+    expect(await (await linkRequest('GET', LINK_ROUTE)).json()).toEqual({ phone: '+54 ••• 6789' });
+  });
+
+  it('desvincula', async () => {
+    links.data.set('uid:ana', '5491123456789');
+    links.data.set('tel:5491123456789', 'ana');
+    const response = await linkRequest('DELETE', LINK_ROUTE);
+    expect(response.status).toBe(200);
+    expect(links.data.size).toBe(0);
+  });
+
+  it('el preflight permite GET y DELETE', async () => {
+    const response = await handleRequest(
+      new Request(`https://dictado.example${LINK_ROUTE}`, {
+        method: 'OPTIONS',
+        headers: { Origin: APP },
+      }),
+      deps,
+    );
+    expect(response.headers.get('Access-Control-Allow-Methods')).toContain('DELETE');
   });
 });

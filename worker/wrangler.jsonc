@@ -1,4 +1,8 @@
-// Configuración del Worker del dictado con IA (ADR 0031). Publicar: `npm run deploy:worker`.
+// Configuración del Worker del dictado con IA (ADR 0031) y del bot de WhatsApp (ADR 0032 y
+// 0033). Publicar: `npm run deploy:worker`.
+//
+// Secretos (se cargan una vez con `npx wrangler secret put <NOMBRE> -c worker/wrangler.jsonc`;
+// nunca van al repo): WHATSAPP_TOKEN, WHATSAPP_APP_SECRET y WHATSAPP_VERIFY_TOKEN.
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "finanzas-dictado",
@@ -12,13 +16,22 @@
       // Lo da `npx wrangler kv namespace create QUOTA`. No es un secreto.
       "id": "e1fcfaeb08824cc785d637f8aa3e10d9",
     },
+    {
+      "binding": "WHATSAPP",
+      // Los vínculos de WhatsApp (ADR 0033). Lo da `npx wrangler kv namespace create WHATSAPP`.
+      "id": "PENDIENTE",
+    },
   ],
   "vars": {
     "FIREBASE_PROJECT_ID": "finanzas-personales-jtg",
     "ALLOWED_ORIGINS": "https://finanzas-personales-jtg.web.app,http://localhost:5173",
     "MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     "DAILY_LIMIT": "40",
+    // El "Phone number ID" del número del bot, en Meta → WhatsApp → Configuración de la API.
+    // No es un secreto: sin el token no sirve para nada.
+    "WHATSAPP_PHONE_NUMBER_ID": "PENDIENTE",
+    "GRAPH_API_VERSION": "v23.0",
   },
-  // Sin registro de pedidos: no se guarda nada de lo dictado.
+  // Sin registro de pedidos: no se guarda nada de lo dictado ni de los mensajes.
   "observability": { "enabled": false },
 }
