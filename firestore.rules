@@ -262,10 +262,6 @@ service cloud.firestore {
       }
     }
 
-    // Vínculos de WhatsApp (Fase 11): solo los usa el servidor con su cuenta de servicio,
-    // que no pasa por estas reglas. Desde la app, nadie.
-    match /whatsappLinks/{phone} {
-      allow read, write: if false;
-    }
+    // Los vínculos de WhatsApp no están en Firestore: viven en el KV del Worker (ADR 0033).
   }
 }

@@ -120,7 +120,8 @@ describe('lo que no está permitido explícitamente queda denegado', () => {
     await assertFails(setDoc(doc(owner(), 'transactions/tx1'), validExpense()));
   });
 
-  // Solo la escribe el servidor (Fase 11); la app no puede ni leerla.
+  // Lo que las reglas no nombran queda cerrado. whatsappLinks estaba reservada para la Fase 11,
+  // pero los vínculos terminaron en el KV del Worker (ADR 0033).
   it('whatsappLinks no se puede leer ni escribir', async () => {
     await seed('whatsappLinks/5491100000000', { uid: OWNER });
     await assertFails(getDoc(doc(owner(), 'whatsappLinks/5491100000000')));

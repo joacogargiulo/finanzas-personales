@@ -329,7 +329,7 @@ La transacción necesita conexión, y el primer inicio de sesión siempre la tie
 - **Preferencias de cada dispositivo** (ADR 0008), en `localStorage` con el `uid` en la clave: el tema (claro, oscuro o automático) y el orden manual de las cuentas (opcional; una lista de IDs, con orden por defecto por moneda y nombre).
 
 ### 4.9 Colecciones del servidor
-- `whatsappLinks/{telefono}` (Fase 11): vínculos entre números de WhatsApp y usuarios. Solo la escribe y lee el servidor; las reglas niegan todo acceso desde el cliente.
+Ninguna. Los vínculos entre números de WhatsApp y usuarios (Fase 11) no están en Firestore: viven en el KV `WHATSAPP` del Worker, que es el único que los lee y escribe (ADR 0033).
 
 ### 4.10 Índices
 No hay índices compuestos. La única consulta al servidor (`updatedAt > cursor`) usa un índice automático de un solo campo. Opcional: excluir `description` y `name` de la indexación (ADR 0012).
@@ -538,6 +538,7 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 - En Ajustes, al final. Se habilita solo con el dispositivo al día con el servidor y sin cambios pendientes; si no, dice por qué.
 - Confirmación reforzada escribiendo `BORRAR`. Avisa que no se puede deshacer, que no se borran la cuenta de Google ni la hoja de Sheets, y sugiere descargar antes el respaldo JSON.
 - Si el último inicio de sesión tiene 4 minutos o más, pide confirmar la cuenta de Google (popup; si está bloqueado, redirect).
+- Antes de borrar nada, desvincula el número de WhatsApp a través del Worker. Si no puede, se corta sin borrar (ADR 0033).
 - Borra en lotes de hasta 500 con una pantalla de progreso; después el perfil, el usuario de Auth, el tema guardado y la caché local. Termina en "Tu cuenta se borró".
 - Si se corta, volver a ejecutarlo sigue desde donde quedó.
 
@@ -581,10 +582,6 @@ service cloud.firestore {
       // transactions: hasOnly/hasAll según type; unchanged(['createdAt', 'source'])
       // budgets: id == categoryId + '_' + currency; unchanged(['createdAt', 'categoryId', 'currency'])
       // recurring: hasOnly/hasAll según type; unchanged(['createdAt'])
-    }
-
-    match /whatsappLinks/{phone} {
-      allow read, write: if false;   // solo el servidor (Fase 11)
     }
   }
 }
@@ -710,7 +707,7 @@ Según 7.3, con un grupo por colección:
 - Campos que sobran o faltan, por cada tipo de movimiento y de recurrente.
 - Campos que no se pueden cambiar, `updatedAt == request.time` y `schemaVersion` que no baja.
 - ID del presupuesto distinto de `{categoryId}_{currency}`.
-- `whatsappLinks` inaccesible desde el cliente.
+- Una colección raíz que no está en las reglas (por ejemplo, la vieja `whatsappLinks`, ADR 0033) es inaccesible desde el cliente.
 
 ### 11.2.1 Tests de la capa data (Firebase Emulator)
 - Sincronización incremental: cursor con margen de solapamiento, lápidas que llegan al otro cliente y descarga completa sin caché.
