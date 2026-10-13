@@ -1,6 +1,6 @@
 # ADR 0032 — Carga por WhatsApp: API oficial o Baileys
 
-- **Estado:** propuesta
+- **Estado:** aceptada
 - **Fecha:** 2026-10-13
 - **Fase:** 11a (análisis de WhatsApp)
 - **Modifica:** nada todavía; la 11b va a modificar el SRS 4.9 y la sección Privacidad
@@ -55,12 +55,12 @@ Baileys se conecta a WhatsApp como si fuera un **dispositivo vinculado** (igual 
 | Mantenimiento | Bajo | Alto (cambios de protocolo, sesiones que se cierran) |
 | Qué se aprende | Webhooks, firmas HMAC, APIs de terceros | WebSockets, procesos persistentes, hosting |
 
-## Decisión (propuesta)
+## Decisión
 **WhatsApp Cloud API con el número de prueba de Meta**, con el webhook en el Worker de Cloudflare que ya existe. Pesa más que no haya que mantener un servidor, que el uso esté permitido y que no se arriesgue ningún número. A favor de Baileys quedan el número argentino y que Meta no vea los mensajes. El número argentino se puede tener igual con una segunda SIM en la Cloud API, si el de prueba molesta.
 
-**El dueño decide.** Si elige Baileys, este ADR se reescribe con el plan de hosting antes de la 11b.
+**El dueño eligió la API oficial** el 2026-10-13.
 
-### Plan preliminar de la 11b (si se aprueba)
+### Plan preliminar de la 11b
 1. **Prueba de factibilidad primero:** con `wrangler dev` (usa la IA remota), mandarle a Whisper un audio real de WhatsApp en OGG/Opus. La documentación no dice qué formatos acepta. Si no acepta OGG, el bot pide que el mensaje se mande escrito, y el audio queda para más adelante.
 2. **Vincular el número:** en Ajustes, "Vincular WhatsApp" le pide al Worker (con el token de Firebase y la lista de emails, igual que el dictado) un código de 6 cifras que vence a los 10 minutos y se guarda en KV. La persona le manda "vincular 123456" al bot, y el Worker guarda `whatsappLinks/{telefono} = { uid }`. Un número que no está vinculado no puede cargar nada. "Desvincular" y "Borrar mi cuenta" tienen que borrar ese vínculo a través del Worker, porque el cliente no puede.
 3. **Webhook `POST /whatsapp`:** verificar la firma; responder 200 enseguida y hacer el trabajo con `ctx.waitUntil`, porque Meta reintenta si la respuesta tarda. `GET /whatsapp` contesta el desafío de verificación de Meta.
@@ -69,7 +69,7 @@ Baileys se conecta a WhatsApp como si fuera un **dispositivo vinculado** (igual 
 6. **Escribir en Firestore por REST** con una **cuenta de servicio** (no hace falta Cloud Functions). El token de Google se firma con `jose` y se guarda en KV mientras dura (1 hora). Antes de escribir, el movimiento se valida con `src/domain/`. Se escribe con `source: 'whatsapp'` y `updatedAt` = hora del servidor (`REQUEST_TIME`), porque es el cursor de la sincronización. Así la app lo recibe por su listener, como si viniera de otro dispositivo.
 7. **Secretos con `wrangler secret`:** el token de Meta, el *app secret*, el token de verificación del webhook y la clave de la cuenta de servicio. Nunca van al repo.
 8. **Privacidad:** sumar a Meta (WhatsApp) en la sección y avisar que Meta ve los mensajes que recibe el bot.
-9. **Pasos manuales del dueño:** crear la app en Meta y el token permanente, verificar los números de la familia, crear la cuenta de servicio en Google Cloud con el rol mínimo de Firestore, y cargar los secretos.
+9. **Pasos manuales del dueño:** crear la app en Meta y el token permanente, verificar los números de la familia, crear la cuenta de servicio en Google Cloud con el rol mínimo de Firestore, y cargar los secretos. La configuración en Meta (cuenta, números, webhook y mensaje de prueba) se puede hacer con el **WhatsApp Business Tools MCP**, el servidor MCP oficial que Meta lanzó en septiembre de 2026, conectado a Claude Code. Ese MCP solo configura: no recibe ni responde mensajes, y el token permanente se crea igual a mano. No usar MCPs de WhatsApp de terceros.
 
 ## Consecuencias
 - **El Worker pasa a escribir en Firestore** con una cuenta de servicio que saltea las reglas. Por eso valida con el dominio, y sus tests tienen que cubrir que rechaza lo inválido. La clave de la cuenta de servicio es el secreto más sensible del proyecto.
