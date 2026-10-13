@@ -19,7 +19,7 @@
     {
       "binding": "WHATSAPP",
       // Los vínculos de WhatsApp (ADR 0033). Lo da `npx wrangler kv namespace create WHATSAPP`.
-      "id": "PENDIENTE",
+      "id": "235e1a67a8424e80af8f1da1c93d66af",
     },
   ],
   "vars": {
