@@ -3,7 +3,7 @@
 - **Estado:** aceptada
 - **Fecha:** 2026-10-13
 - **Fase:** 11a (análisis de WhatsApp)
-- **Modifica:** nada todavía; la 11b va a modificar el SRS 4.9 y la sección Privacidad
+- **Modifica:** nada todavía; la 11e va a modificar el SRS 4.9 y la sección Privacidad (la 11b se dividió en 11b a 11e)
 
 ## Contexto
 Según el ADR 0029, la familia tiene que poder cargar movimientos mandando un mensaje de WhatsApp, de texto o de audio ("gasté 18 mil en el súper"). El bot responde con un resumen y guarda el movimiento recién cuando la persona confirma. Antes de programarlo hay que elegir cómo conectarse a WhatsApp. Hay dos caminos:
@@ -77,4 +77,21 @@ Baileys se conecta a WhatsApp como si fuera un **dispositivo vinculado** (igual 
 - **Hasta 5 números** con el número de prueba. Para sumar más hace falta registrar un número propio.
 - **Sumar un familiar** suma un paso: verificar su número en Meta, además de los hashes (ADR 0026 y 0031).
 - **Meta ve los mensajes** que recibe el bot. Lo dice la sección Privacidad.
-- **El SRS 4.9 se actualiza en la 11b** con el detalle de `whatsappLinks` y el flujo de vinculación.
+- **El SRS 4.9 se actualiza en la 11e** con el detalle de `whatsappLinks` y el flujo de vinculación.
+
+## Nota (prueba de Whisper, 2026-10-13)
+El paso 1 del plan, la prueba de factibilidad de la 11b. Se usó un Worker de prueba, que no se publicó, con `wrangler dev` (la IA es la remota) y `@cf/openai/whisper-large-v3-turbo`. Se probaron cuatro audios reales bajados de WhatsApp Web. Los primeros bytes de los cuatro confirmaron que son OGG/Opus (`OggS` y `OpusHead`), el mismo formato que entrega la Cloud API.
+
+| Audio | Duración | Transcripción | Demora |
+|---|---|---|---|
+| Nota de voz | 4,3 s | "gasté 18 mil pesos en el super" | 2,8 s |
+| Nota de voz | 3,5 s | "Compré 100 dólares a 1300" | 0,9 a 3,8 s |
+| Nota de voz | 5,6 s | "Gasté 18 mil pesos en el super con la tarjeta" | 1,1 a 2,3 s |
+| Audio de una conversación | 26 s | 61 palabras, bien transcriptas | 2,8 s |
+
+- **Whisper acepta OGG/Opus**, así que el bot va a entender audios desde la 11d.
+- **Las dos formas de `audio` funcionan:** el texto en base64 y el objeto `{ body, contentType }`. El `contentType` puede ser `audio/ogg` o `audio/ogg; codecs=opus`. **Se usa el objeto:** el audio que se baja de Meta se le pasa directo a Whisper como *stream*, sin convertirlo a base64. Eso ahorra CPU, que en el plan gratis es de 10 ms por pedido.
+- **No hace falta forzar el idioma:** sin `language`, Whisper detectó español con una probabilidad de más de 0,99 en todos los audios, y con `language: 'es'` el texto fue el mismo. Igual se va a mandar `language: 'es'`, para que un audio corto o con ruido no se detecte en otro idioma.
+- **Los montos llegan como palabras y números** ("18 mil pesos", "100 dólares a 1300"). Es el mismo tipo de frase que interpreta la IA del dictado, así que la transcripción pasa sin cambios por `buildAiMessages` y `parseAiResult`. Se va a comprobar con el modelo real en la 11d.
+- **Costo:** unas 47 neuronas por minuto de audio. Una nota de 5 segundos gasta unas 4, mucho menos que las 40 de la interpretación con Llama.
+- **Demora:** entre 1 y 4 segundos, que se suman a los 3 a 5 de la interpretación. Como el webhook responde 200 enseguida y hace el trabajo con `ctx.waitUntil`, no hay riesgo de que Meta reintente. La respuesta del bot va a tardar entre 5 y 10 segundos.
