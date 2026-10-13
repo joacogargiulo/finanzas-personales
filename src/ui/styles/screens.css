@@ -838,6 +838,15 @@ body:has(dialog[open]) {
   gap: 4px;
 }
 
+/* ── WhatsApp ────────────────────────────────────────────────────────────── */
+
+.link-code {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+}
+
 /* ── Borrar mi cuenta ────────────────────────────────────────────────────── */
 
 .deletion-progress {

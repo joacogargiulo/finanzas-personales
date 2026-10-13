@@ -74,6 +74,7 @@ export type DeletionFailure =
   | 'userMismatch' // al volver a iniciar sesión se eligió otra cuenta de Google
   | 'recentLogin' // venció el inicio de sesión reciente antes de borrar el usuario
   | 'offline' // sin conexión al hablar con Google
+  | 'whatsapp' // no se pudo desvincular WhatsApp (ADR 0033)
   | 'unknown';
 
 export function deletionFailureMessage(failure: DeletionFailure): string {
@@ -86,6 +87,8 @@ export function deletionFailureMessage(failure: DeletionFailure): string {
       return 'Pasó demasiado tiempo desde que confirmaste tu cuenta. Volvé a intentarlo: sigue desde donde quedó.';
     case 'offline':
       return 'No hay conexión. Volvé a intentarlo cuando tengas señal: sigue desde donde quedó.';
+    case 'whatsapp':
+      return 'No se pudo desvincular tu WhatsApp. Volvé a intentarlo en un rato: todavía no se borró nada.';
     case 'unknown':
       return 'No se pudo terminar de borrar la cuenta. Volvé a intentarlo: sigue desde donde quedó.';
   }

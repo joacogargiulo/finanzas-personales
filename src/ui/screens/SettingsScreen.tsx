@@ -46,6 +46,7 @@ import { BudgetsSettings } from './BudgetsSettings';
 import { DeleteAccountSettings } from './DeleteAccountSettings';
 import { PrivacySettings } from './PrivacySettings';
 import { RecurringSettings } from './RecurringSettings';
+import { WhatsAppSettings } from './WhatsAppSettings';
 
 const THEME_LABELS: Record<Theme, string> = {
   auto: 'Automático',
@@ -322,6 +323,8 @@ export function SettingsScreen({ user }: { user: SessionUser }) {
           Automático sigue la configuración del dispositivo. Se guarda solo en este dispositivo.
         </p>
       </section>
+
+      <WhatsAppSettings />
 
       <PrivacySettings />
 

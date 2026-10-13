@@ -92,6 +92,7 @@ describe('deletionFailureMessage', () => {
     'userMismatch',
     'recentLogin',
     'offline',
+    'whatsapp',
     'unknown',
   ];
 

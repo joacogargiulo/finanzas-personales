@@ -4,7 +4,8 @@
 // perfil no existe o no está sembrado, siembra las categorías (ADR 0004). Si el perfil tiene un
 // schemaVersion mayor que el de esta app, bloquea las escrituras (ADR 0011). Si el servidor
 // rechaza las lecturas, la cuenta no está en la lista de acceso: se detiene todo (ADR 0026).
-// "Borrar mi cuenta" también se orquesta acá, porque necesita detener la sincronización (ADR 0030).
+// "Borrar mi cuenta" también se orquesta acá, porque necesita detener la sincronización (ADR 0030),
+// y desvincula WhatsApp por el Worker antes de borrar los datos (ADR 0033).
 
 import type { Unsubscribe } from 'firebase/firestore';
 import { canStartDeletion, deletionPlan } from '../domain/accountDeletion';
@@ -49,7 +50,16 @@ export interface Session {
   deleteAccount: () => Promise<void>;
 }
 
-export function startSession({ auth, db }: FirebaseServices, store: DataStore): Session {
+export interface SessionOptions {
+  /** Borra el vínculo de WhatsApp en el Worker. Sin Worker configurado, no hay. */
+  unlinkWhatsApp?: (() => Promise<void>) | undefined;
+}
+
+export function startSession(
+  { auth, db }: FirebaseServices,
+  store: DataStore,
+  options: SessionOptions = {},
+): Session {
   let stopSync: Unsubscribe | null = null;
   let writer: Writer | null = null;
   let currentUid: string | null = null;
@@ -142,6 +152,10 @@ export function startSession({ auth, db }: FirebaseServices, store: DataStore): 
       try {
         // Antes de borrar nada: si se pidiera a mitad, podrían quedar los datos a medias.
         if ((await ensureRecentLogin(auth)) === 'redirecting') return;
+
+        // Primero el vínculo de WhatsApp: si quedara, el bot podría seguir escribiendo en una
+        // cuenta borrada. Necesita el token, así que va antes de borrar el usuario de Auth.
+        await options.unlinkWhatsApp?.();
 
         // Los IDs salen del store, que tiene todo lo de la caché, lápidas incluidas: sin lecturas.
         const current = store.getState();
