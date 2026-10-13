@@ -64,3 +64,22 @@ El webhook (`GET` y `POST /whatsapp`) se programa en esta fase, para poder vincu
 - **Un KV más** que crear a mano (`npx wrangler kv namespace create WHATSAPP`), con su ID en `worker/wrangler.jsonc`.
 - **Tres secretos nuevos** en el Worker: `WHATSAPP_TOKEN`, `WHATSAPP_APP_SECRET` y `WHATSAPP_VERIFY_TOKEN`.
 - La sección Privacidad y el detalle del SRS 4.9 se completan en la 11e.
+
+## Nota (prueba en producción, 2026-10-13)
+Se configuró la app de Meta con el número de prueba, se publicó el Worker y se probó desde el celular del dueño, con la app corriendo en `localhost` contra el Firebase real.
+
+| Prueba | Resultado |
+|---|---|
+| Verificación de la URL (`GET /whatsapp`), token equivocado, firma falsa y pedido de código sin sesión | Desafío devuelto, 403, 401 y 401 |
+| "hola" desde un número sin vincular | Responde "no está vinculado" |
+| Vincular con el código de Ajustes | Responde "¡Listo!" y Ajustes muestra el número enmascarado |
+| "hola" desde el número vinculado | Responde "todavía no sé cargar movimientos" |
+| Desvincular y volver a escribir | Responde "no está vinculado" |
+| Vincular con la cuenta de prueba y borrarla | Termina en "Tu cuenta se borró" y el bot responde "no está vinculado" |
+
+Lo que se aprendió al configurar Meta:
+- **Hacen falta dos suscripciones.** Configurar el webhook en el panel suscribe la *app* a los campos (entre ellos `messages`), pero la *cuenta de WhatsApp Business* también tiene que suscribirse a la app: `POST /{id de la cuenta}/subscribed_apps` con el token. Sin eso, el botón "Probar" del panel llega al Worker, pero los mensajes reales no.
+- **El token del Worker es el de un usuario del sistema** (rol Empleado, caducidad "Nunca", permisos `whatsapp_business_messaging` y `whatsapp_business_management`). El del "Paso 1. Pruébalo" vence a las 24 horas.
+- **El panel usa la Graph API v25.0** para WhatsApp. Se fijó esa versión en `GRAPH_API_VERSION`.
+- **El 9 de Argentina no dio problemas:** las respuestas llegaron sin errores en los logs. El reintento sin el 9 queda por si hace falta con otro número.
+- El MCP oficial de Meta (`whatsapp_business_tools`) se agregó a Claude Code, pero no llegó a usarse: necesita el inicio de sesión con `/mcp`, y todo se pudo hacer desde el panel.
