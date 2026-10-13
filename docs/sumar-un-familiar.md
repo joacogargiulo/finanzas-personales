@@ -70,4 +70,4 @@ Para confirmar que cada persona ve solo lo suyo:
 2. El dueño, en su app, confirma que no aparece nada del familiar.
 3. El familiar confirma que no ve nada del dueño.
 
-Resultado: *pendiente* (se completa al hacer la prueba).
+Resultado: **pasó** el 2026-10-08, en producción. Se hizo con una segunda cuenta de Google del dueño en lugar de un familiar: para Firebase son dos usuarios distintos, así que la prueba vale igual. Con esa misma cuenta se probó Borrar mi cuenta (TC-29).
