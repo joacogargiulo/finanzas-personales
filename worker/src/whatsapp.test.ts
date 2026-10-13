@@ -188,7 +188,7 @@ describe('extractMessages', () => {
 
 // Cómo se le responde a Meta, con un `fetch` falso.
 describe('metaSender', () => {
-  const config = { token: 'tok', phoneNumberId: '123', apiVersion: 'v23.0' };
+  const config = { token: 'tok', phoneNumberId: '123', apiVersion: 'v25.0' };
   const notAllowed = () =>
     Response.json(
       { error: { code: 131030, message: 'Recipient not in allowed list' } },
@@ -202,7 +202,7 @@ describe('metaSender', () => {
     await metaSender({ ...config, fetch })(ANA, 'hola');
 
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('https://graph.facebook.com/v23.0/123/messages');
+    expect(url).toBe('https://graph.facebook.com/v25.0/123/messages');
     expect(init.headers).toMatchObject({ Authorization: 'Bearer tok' });
     expect(JSON.parse(init.body as string)).toMatchObject({ to: ANA, text: { body: 'hola' } });
   });

@@ -29,8 +29,8 @@
     "DAILY_LIMIT": "40",
     // El "Phone number ID" del número del bot, en Meta → WhatsApp → Configuración de la API.
     // No es un secreto: sin el token no sirve para nada.
-    "WHATSAPP_PHONE_NUMBER_ID": "PENDIENTE",
-    "GRAPH_API_VERSION": "v23.0",
+    "WHATSAPP_PHONE_NUMBER_ID": "1411523705375693",
+    "GRAPH_API_VERSION": "v25.0",
   },
   // Sin registro de pedidos: no se guarda nada de lo dictado ni de los mensajes.
   "observability": { "enabled": false },

@@ -160,7 +160,7 @@ async function processMessage(message: IncomingMessage, deps: WebhookDeps): Prom
 export interface MetaConfig {
   token: string;
   phoneNumberId: string;
-  /** Versión de la Graph API, por ejemplo "v23.0". */
+  /** Versión de la Graph API, por ejemplo "v25.0". */
   apiVersion: string;
   fetch: typeof fetch;
 }
