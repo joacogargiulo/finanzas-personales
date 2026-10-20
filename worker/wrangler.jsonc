@@ -2,7 +2,8 @@
 // 0033). Publicar: `npm run deploy:worker`.
 //
 // Secretos (se cargan una vez con `npx wrangler secret put <NOMBRE> -c worker/wrangler.jsonc`;
-// nunca van al repo): WHATSAPP_TOKEN, WHATSAPP_APP_SECRET y WHATSAPP_VERIFY_TOKEN.
+// nunca van al repo): WHATSAPP_TOKEN, WHATSAPP_APP_SECRET, WHATSAPP_VERIFY_TOKEN y
+// FIREBASE_SERVICE_ACCOUNT (el JSON de la cuenta de servicio whatsapp-bot, sin roles; ADR 0034).
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "finanzas-dictado",
@@ -24,6 +25,8 @@
   ],
   "vars": {
     "FIREBASE_PROJECT_ID": "finanzas-personales-jtg",
+    // La API key web de Firebase: no es un secreto, va en el código de la app (ADR 0034).
+    "FIREBASE_API_KEY": "AIzaSyD1JzPOEuUEty2F1St-qROeQqXx6Iqy0v0",
     "ALLOWED_ORIGINS": "https://finanzas-personales-jtg.web.app,http://localhost:5173",
     "MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     "DAILY_LIMIT": "40",
