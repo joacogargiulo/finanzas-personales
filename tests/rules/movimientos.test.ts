@@ -8,6 +8,8 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { describe, it } from 'vitest';
+import type { TransactionFields } from '../../src/domain/validation';
+import { whatsappTransactionDoc } from '../../src/domain/whatsapp';
 import {
   NOW,
   OWNER,
@@ -194,5 +196,66 @@ describe('editar un movimiento', () => {
   it('rechaza una edición que no actualiza updatedAt', async () => {
     await seed(path, validExpense());
     await assertFails(updateDoc(doc(owner(), path), { amount: 70_000 }));
+  });
+});
+
+// El bot de WhatsApp (ADR 0034) escribe como la persona: su documento tiene que pasar las mismas
+// reglas que el de la app. Se arma con la misma función que usa el Worker; `updatedAt` lo pone el
+// servidor (en la REST es `REQUEST_TIME`, en este test `serverTimestamp()`).
+describe('movimientos cargados por WhatsApp', () => {
+  const fields = (overrides: Partial<TransactionFields> = {}): TransactionFields =>
+    ({
+      type: 'expense',
+      amount: 1_800_000,
+      date: '2026-10-14',
+      description: 'Súper',
+      accountId: 'acc_efectivo',
+      categoryId: 'seed_comida',
+      ...overrides,
+    }) as TransactionFields;
+  const whatsappDoc = (f: TransactionFields): DocumentData => ({
+    ...whatsappTransactionDoc(f, NOW),
+    updatedAt: serverTimestamp(),
+  });
+
+  it('acepta un gasto con el ID fijo wa_…', async () => {
+    const ref = doc(owner(), `users/${OWNER}/transactions/wa_0123456789abcdef0123`);
+    await assertSucceeds(setDoc(ref, whatsappDoc(fields())));
+  });
+
+  it('acepta un ingreso, una transferencia y un cambio', async () => {
+    const cases: TransactionFields[] = [
+      fields({ type: 'income', categoryId: 'seed_salario' }),
+      {
+        type: 'transfer',
+        amount: 100_000,
+        date: '2026-10-14',
+        description: '',
+        accountId: 'acc_efectivo',
+        toAccountId: 'acc_banco',
+      },
+      {
+        type: 'exchange',
+        amount: 100_000,
+        toAmount: 100,
+        date: '2026-10-14',
+        description: '',
+        accountId: 'acc_efectivo',
+        toAccountId: 'acc_usd',
+      },
+    ];
+    for (const [i, f] of cases.entries()) {
+      await assertSucceeds(
+        setDoc(doc(owner(), `users/${OWNER}/transactions/wa_caso${String(i)}`), whatsappDoc(f)),
+      );
+    }
+  });
+
+  it('el origen queda fijo: whatsapp', async () => {
+    const data = whatsappDoc(fields());
+    await assertSucceeds(setDoc(doc(owner(), `users/${OWNER}/transactions/wa_a`), data));
+    await assertFails(
+      updateDoc(doc(owner(), `users/${OWNER}/transactions/wa_a`), { source: 'app' }),
+    );
   });
 });
