@@ -136,7 +136,7 @@ async function createLinkCode(
   json: Json,
 ): Promise<Response> {
   const now = (deps.now?.() ?? new Date()).getTime();
-  return json(200, await createCode(deps.links, user.uid, now));
+  return json(200, await createCode(deps.links, user.uid, user.email, now));
 }
 
 async function readLink(

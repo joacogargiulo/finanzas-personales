@@ -5,6 +5,7 @@
 //   tel:{número}     → uid      de quién es el número (lo usa el bot)
 //   uid:{uid}        → número   qué número tiene la persona (lo usa Ajustes)
 //   fallos:{número}  → cantidad códigos equivocados en la última hora
+//   email:{uid}      → email    el de la cuenta, para controlar la lista de acceso (ADR 0034)
 // Un usuario tiene como mucho un número, y un número es de un solo usuario.
 //
 // KV no es transaccional y un cambio tarda hasta 60 segundos en verse en todos lados. Para una
@@ -37,10 +38,14 @@ export function randomCodeNumber(): number {
   }
 }
 
-/** Crea un código para el usuario. Devuelve el código y cuándo vence (en ms). */
+/**
+ * Crea un código para el usuario. Devuelve el código y cuándo vence (en ms). También guarda el
+ * email de la cuenta: el bot lo necesita para controlar la lista de acceso sin pedirle un token.
+ */
 export async function createCode(
   store: LinkStore,
   uid: string,
+  email: string,
   now: number,
   random: () => number = randomCodeNumber,
 ): Promise<{ code: string; expiresAt: number }> {
@@ -49,6 +54,7 @@ export async function createCode(
     const code = formatLinkCode(random());
     if ((await store.get(`codigo:${code}`)) !== null) continue;
     await store.put(`codigo:${code}`, uid, { expirationTtl: LINK_CODE_TTL_SECONDS });
+    await store.put(`email:${uid}`, email);
     return { code, expiresAt: now + LINK_CODE_TTL_SECONDS * 1000 };
   }
   throw new Error('No se encontró un código libre');
@@ -95,6 +101,11 @@ export function linkedPhone(store: LinkStore, uid: string): Promise<string | nul
   return store.get(`uid:${uid}`);
 }
 
+/** El email guardado al pedir el código, o `null` (vínculos de la 11c, que no lo tienen). */
+export function linkedEmail(store: LinkStore, uid: string): Promise<string | null> {
+  return store.get(`email:${uid}`);
+}
+
 /** Desvincula el número del usuario, si tiene uno. Repetirlo no hace nada. */
 export async function unlink(store: LinkStore, uid: string): Promise<void> {
   const phone = await store.get(`uid:${uid}`);
@@ -102,4 +113,5 @@ export async function unlink(store: LinkStore, uid: string): Promise<void> {
     await store.delete(`tel:${phone}`);
   }
   await store.delete(`uid:${uid}`);
+  await store.delete(`email:${uid}`);
 }
