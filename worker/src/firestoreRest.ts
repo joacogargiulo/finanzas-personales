@@ -90,7 +90,7 @@ export interface UserContext {
 
 const PAGE_SIZE = 300;
 
-function base(config: FirestoreConfig): string {
+export function base(config: FirestoreConfig): string {
   return `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/(default)/documents`;
 }
 
@@ -143,6 +143,7 @@ export async function readUserContext(
       'name',
       'currency',
       'kind',
+      'initialBalance',
       'archivedAt',
       'deletedAt',
     ]),

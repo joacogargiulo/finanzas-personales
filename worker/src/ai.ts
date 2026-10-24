@@ -3,6 +3,11 @@
 // mínimo (no el binding entero de Cloudflare) para poder reemplazarlo en los tests.
 
 import { AI_RESPONSE_SCHEMA, buildAiMessages, type AiInput } from '../../src/domain/voice/aiPrompt';
+import {
+  BOT_RESPONSE_SCHEMA,
+  buildBotMessages,
+  type BotAiInput,
+} from '../../src/domain/voice/botPrompt';
 
 /** Lo que se usa del binding `AI` de Cloudflare. */
 export type AiRun = (model: string, input: unknown) => Promise<unknown>;
@@ -15,6 +20,20 @@ export async function interpret(run: AiRun, model: string, input: AiInput): Prom
     messages: buildAiMessages(input),
     response_format: { type: 'json_schema', json_schema: AI_RESPONSE_SCHEMA },
     max_tokens: 300,
+    temperature: 0,
+  })) as { response?: unknown };
+  return output.response;
+}
+
+/**
+ * Pide a Llama que entienda un mensaje de WhatsApp (ADR 0035): primero qué es (movimiento,
+ * consulta, saludo...) y después sus datos. Devuelve la respuesta cruda (la valida el dominio).
+ */
+export async function interpretBot(run: AiRun, model: string, input: BotAiInput): Promise<unknown> {
+  const output = (await run(model, {
+    messages: buildBotMessages(input),
+    response_format: { type: 'json_schema', json_schema: BOT_RESPONSE_SCHEMA },
+    max_tokens: 400,
     temperature: 0,
   })) as { response?: unknown };
   return output.response;
