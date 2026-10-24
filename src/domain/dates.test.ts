@@ -10,6 +10,7 @@ import {
   isLeapYear,
   isValidLocalDate,
   monthsBetween,
+  startOfWeek,
   today,
 } from './dates';
 
@@ -97,5 +98,25 @@ describe('formato', () => {
   it('formatDisplayDate y endOfMonth', () => {
     expect(formatDisplayDate('2026-10-03')).toBe('03/10/2026');
     expect(endOfMonth('2028-02-10')).toBe('2028-02-29');
+  });
+});
+
+describe('startOfWeek', () => {
+  it('el lunes es el inicio de su propia semana', () => {
+    expect(startOfWeek('2026-10-19')).toBe('2026-10-19');
+  });
+
+  it('de martes a sábado vuelve al lunes anterior', () => {
+    expect(startOfWeek('2026-10-20')).toBe('2026-10-19');
+    expect(startOfWeek('2026-10-24')).toBe('2026-10-19');
+  });
+
+  it('el domingo todavía es de la semana que empezó el lunes anterior', () => {
+    expect(startOfWeek('2026-10-25')).toBe('2026-10-19');
+  });
+
+  it('cruza el cambio de mes y de año', () => {
+    expect(startOfWeek('2026-11-01')).toBe('2026-10-26');
+    expect(startOfWeek('2027-01-01')).toBe('2026-12-28');
   });
 });

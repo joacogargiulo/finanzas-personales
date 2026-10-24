@@ -78,15 +78,14 @@ export function validateAiInput(body: unknown): AiInput | null {
 
 const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-function weekday(date: LocalDate): string {
+export function weekday(date: LocalDate): string {
   const parts = parseLocalDate(date);
   if (!parts) return '';
   return WEEKDAYS[new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()] ?? '';
 }
 
-const SYSTEM_PROMPT = `Interpretás UN movimiento de dinero dictado en español rioplatense, para una app de finanzas personales de Argentina. Respondé solo con el JSON pedido.
-
-Tipos:
+/** Las reglas para entender un movimiento: las comparten el dictado de la app y el bot (ADR 0035). */
+export const MOVEMENT_RULES = `Tipos:
 - "expense" (gasto): gasté, pagué, compré algo, me cobraron, salió.
 - "income" (ingreso): cobré, me pagaron, me depositaron, vendí algo, me regalaron.
 - "transfer": pasé o transferí plata entre dos cuentas propias de la MISMA moneda.
@@ -118,6 +117,10 @@ Fecha:
 
 Descripción:
 - Corta, con lo que fue (por ejemplo "Súper", "Almuerzo con Juan"). Sin el monto, la cuenta ni la fecha. Si no queda nada, "".`;
+
+const SYSTEM_PROMPT = `Interpretás UN movimiento de dinero dictado en español rioplatense, para una app de finanzas personales de Argentina. Respondé solo con el JSON pedido.
+
+${MOVEMENT_RULES}`;
 
 /** Los mensajes para el modelo. Los datos van como JSON, separados de las instrucciones. */
 export function buildAiMessages(input: AiInput): { role: 'system' | 'user'; content: string }[] {
