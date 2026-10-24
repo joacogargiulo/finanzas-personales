@@ -115,22 +115,38 @@ function periodIn(normalized: string): QueryPeriod {
   return 'month';
 }
 
-/**
- * Lo que se entiende sin IA: saludos, agradecimientos, ayuda, las consultas más comunes y, si no
- * es nada de eso, el parser de movimientos. Frases que cuentan un gasto ("gasté 500") no se
- * confunden con consultas ("cuánto gasté"): estas siempre empiezan por "cuánto" o similares.
- */
-export function rulesIntent(text: string, ctx: PhraseContext): BotIntent {
-  const normalized = normalizeText(text)
+function normalizeForRules(text: string): string {
+  return normalizeText(text)
     .replace(/[¿?¡!.,]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Saludo, agradecimiento o pedido de ayuda, sin cuentas ni IA: se reconocen solo con el texto.
+ * El bot los contesta enseguida, sin gastar cuota ni leer datos. `null` si es otra cosa.
+ */
+export function quickIntent(text: string): BotIntent | null {
+  const normalized = normalizeForRules(text);
   const words = normalized === '' ? 0 : normalized.split(' ').length;
   const hasDigits = /\d/.test(normalized);
 
   if (GREETING.test(normalized) && words <= 5 && !hasDigits) return { kind: 'greeting' };
   if (THANKS.test(normalized) && words <= 6 && !hasDigits) return { kind: 'thanks' };
   if (HELP.test(normalized) && !hasDigits) return { kind: 'help' };
+  return null;
+}
+
+/**
+ * Lo que se entiende sin IA: saludos, agradecimientos, ayuda, las consultas más comunes y, si no
+ * es nada de eso, el parser de movimientos. Frases que cuentan un gasto ("gasté 500") no se
+ * confunden con consultas ("cuánto gasté"): estas siempre empiezan por "cuánto" o similares.
+ */
+export function rulesIntent(text: string, ctx: PhraseContext): BotIntent {
+  const quick = quickIntent(text);
+  if (quick) return quick;
+  const normalized = normalizeForRules(text);
+  const hasDigits = /\d/.test(normalized);
 
   const norms = tokenize(text).map((t) => t.norm);
   const period = periodIn(normalized);

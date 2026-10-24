@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SEED_CATEGORIES } from '../seed';
 import { makeAccount, makeCategory } from '../testing/factories';
 import { BOT_RESPONSE_SCHEMA, buildBotMessages } from './botPrompt';
-import { parseBotIntent, rulesIntent } from './botIntent';
+import { parseBotIntent, quickIntent, rulesIntent } from './botIntent';
 
 // La IA clasifica el mensaje (ADR 0035) y el dominio revisa todo lo que dice: una intención que no
 // existe, un ID ajeno o una charla con cifras no pasan. Sin IA, `rulesIntent` cubre lo básico.
@@ -262,5 +262,23 @@ describe('buildBotMessages', () => {
     expect(BOT_RESPONSE_SCHEMA.required).toHaveLength(
       Object.keys(BOT_RESPONSE_SCHEMA.properties).length,
     );
+  });
+});
+
+describe('quickIntent', () => {
+  it('reconoce saludo, gracias y ayuda sin necesitar cuentas', () => {
+    expect(quickIntent('hola')).toEqual({ kind: 'greeting' });
+    expect(quickIntent('gracias!')).toEqual({ kind: 'thanks' });
+    expect(quickIntent('qué podés hacer')).toEqual({ kind: 'help' });
+  });
+
+  // Si hay un monto, es un movimiento aunque empiece con un saludo.
+  it('un saludo con un gasto no es un saludo', () => {
+    expect(quickIntent('hola, gasté 500 en comida')).toBeNull();
+  });
+
+  it('una consulta o un movimiento no son "rápidos"', () => {
+    expect(quickIntent('cuánta plata tengo')).toBeNull();
+    expect(quickIntent('gasté 500')).toBeNull();
   });
 });

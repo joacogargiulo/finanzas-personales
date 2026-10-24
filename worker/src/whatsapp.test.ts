@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BOT_REPLIES } from '../../src/domain/whatsapp';
-import { botKit, ANA as LINKED, type BotKit } from './botTestKit';
+import { makeAccount } from '../../src/domain/testing/factories';
+import { aiAnswer, anaContext, botKit, ANA as LINKED, type BotKit } from './botTestKit';
 import type { FakeStore } from './fakeStore';
 import {
   alternateRecipient,
@@ -9,6 +10,7 @@ import {
   isValidSignature,
   metaAudioDownloader,
   metaButtonSender,
+  metaListSender,
   metaSender,
   MAX_AUDIO_BYTES,
   MetaError,
@@ -37,6 +39,7 @@ beforeEach(() => {
     verifyToken: 'token-de-verificacion',
     send: vi.fn(() => Promise.resolve()),
     sendButtons: vi.fn(() => Promise.resolve()),
+    sendList: vi.fn(() => Promise.resolve()),
     bot: kit.deps,
   };
 });
@@ -149,7 +152,7 @@ describe('mensajes', () => {
 
   // El resumen del movimiento viaja con los botones Guardar y Cancelar.
   it('un gasto de un número vinculado se responde con botones', async () => {
-    await post(webhookBody([textMessage('gasté 18 mil en el súper')]));
+    await post(webhookBody([textMessage('gasté 18 mil en el súper con efectivo')]));
     expect(deps.send).not.toHaveBeenCalled();
     const [to, text, buttons] = vi.mocked(deps.sendButtons).mock.calls[0] ?? [];
     expect(to).toBe(ANA);
@@ -160,7 +163,7 @@ describe('mensajes', () => {
   });
 
   it('tocar un botón llega al bot como una confirmación', async () => {
-    await post(webhookBody([textMessage('gasté 18 mil en el súper')]));
+    await post(webhookBody([textMessage('gasté 18 mil en el súper con efectivo')]));
     const save = vi.mocked(deps.sendButtons).mock.calls[0]?.[2][0]?.id ?? '';
     await post(
       webhookBody([
@@ -219,13 +222,20 @@ describe('extractMessages', () => {
           type: 'interactive',
           interactive: { button_reply: { id: 'guardar:wa_1', title: 'Guardar' } },
         },
+        {
+          id: 'l',
+          from: ANA,
+          type: 'interactive',
+          interactive: { list_reply: { id: 'elegir:account:cash', title: 'Efectivo' } },
+        },
         { id: 'a', from: ANA, type: 'audio', audio: { id: 'media1', mime_type: 'audio/ogg' } },
         { id: 'i', from: ANA, type: 'image', image: { id: 'media2' } },
       ]),
     ) as unknown;
     expect(extractMessages(payload)).toEqual([
       { id: 'wamid.1', from: ANA, kind: 'text', text: 'hola' },
-      { id: 'b', from: ANA, kind: 'button', buttonId: 'guardar:wa_1' },
+      { id: 'b', from: ANA, kind: 'choice', choiceId: 'guardar:wa_1' },
+      { id: 'l', from: ANA, kind: 'choice', choiceId: 'elegir:account:cash' },
       { id: 'a', from: ANA, kind: 'audio', mediaId: 'media1' },
       { id: 'i', from: ANA, kind: 'other' },
     ]);
@@ -359,5 +369,75 @@ describe('metaAudioDownloader', () => {
     await expect(metaAudioDownloader({ ...config, fetch })('media1')).rejects.toBeInstanceOf(
       MetaError,
     );
+  });
+});
+
+describe('metaListSender', () => {
+  it('manda un mensaje interactivo con una lista de opciones', async () => {
+    const fetch = vi.fn(() => Promise.resolve(Response.json({ messages: [{ id: 'x' }] })));
+    await metaListSender({ token: 'tok', phoneNumberId: '123', apiVersion: 'v25.0', fetch })(
+      ANA,
+      'Gasto de $ 500,00. ¿De qué cuenta?',
+      'Elegir',
+      [
+        { id: 'elegir:account:a', title: 'Efectivo' },
+        { id: 'elegir:account:b', title: 'Banco' },
+      ],
+    );
+    const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      to: ANA,
+      type: 'interactive',
+      interactive: {
+        type: 'list',
+        body: { text: 'Gasto de $ 500,00. ¿De qué cuenta?' },
+        action: {
+          button: 'Elegir',
+          sections: [
+            {
+              rows: [
+                { id: 'elegir:account:a', title: 'Efectivo' },
+                { id: 'elegir:account:b', title: 'Banco' },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  });
+});
+
+describe('preguntas por el webhook', () => {
+  it('con muchas cuentas, la pregunta sale como lista y la elección vuelve al bot', async () => {
+    const accounts = ['Efectivo', 'Banco', 'Mercado Pago', 'Naranja X'].map((name, i) =>
+      makeAccount({ id: `a${String(i)}`, name }),
+    );
+    kit.mocks.readContext.mockResolvedValue(anaContext({ accounts }));
+    kit.mocks.interpret.mockResolvedValue(aiAnswer({ accountId: null }));
+    await post(webhookBody([textMessage('gasté 18 mil en el súper')]));
+
+    expect(deps.sendList).toHaveBeenCalledTimes(1);
+    const [to, text, label, rows] = vi.mocked(deps.sendList).mock.calls[0] ?? [];
+    expect(to).toBe(ANA);
+    expect(text).toContain('¿De qué cuenta?');
+    expect(label).toBe('Elegir');
+    expect(rows).toHaveLength(4);
+
+    // Elegir una fila llega como `list_reply` y completa el movimiento.
+    await post(
+      webhookBody([
+        {
+          id: 'wamid.2',
+          from: ANA,
+          type: 'interactive',
+          interactive: {
+            type: 'list_reply',
+            list_reply: { id: 'elegir:account:a1', title: 'Banco' },
+          },
+        },
+      ]),
+    );
+    const [, summary] = vi.mocked(deps.sendButtons).mock.calls[0] ?? [];
+    expect(summary).toContain('Cuenta (desde): Banco');
   });
 });

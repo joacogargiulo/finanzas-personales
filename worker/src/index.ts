@@ -1,19 +1,21 @@
-// Punto de entrada del Worker de Cloudflare (ADR 0031, 0033 y 0034): conecta los handlers con lo
+// Punto de entrada del Worker de Cloudflare (ADR 0031, 0033, 0034 y 0035): conecta los handlers con lo
 // que da Cloudflare (la IA, los KV, las variables de `wrangler.jsonc` y los secretos).
 //   /whatsapp  → el webhook de Meta (whatsapp.ts) y el bot (bot.ts)
 //   lo demás   → las rutas de la app (handler.ts)
 
 import { isAllowedEmail } from './access';
-import { interpret, transcribe, type AiRun } from './ai';
+import { interpret, interpretBot, transcribe, type AiRun } from './ai';
 import { firebaseTokenVerifier } from './auth';
 import type { BotDeps } from './bot';
 import { parseServiceAccount, userIdToken, type ServiceAccount } from './firebaseUser';
+import { listTransactionsInRange, sumTransactions } from './firestoreQueries';
 import { createTransaction, readUserContext } from './firestoreRest';
 import { handleRequest } from './handler';
 import {
   handleWebhook,
   metaAudioDownloader,
   metaButtonSender,
+  metaListSender,
   metaSender,
   WEBHOOK_ROUTE,
 } from './whatsapp';
@@ -77,7 +79,7 @@ function botDeps(env: Env): BotDeps {
     dailyLimit: Number(env.DAILY_LIMIT),
     isAllowed: isAllowedEmail,
     // El nombre del modelo viene de la configuración, así se cambia sin tocar el código.
-    interpret: (input) => interpret(run, env.MODEL, input),
+    interpret: (input) => interpretBot(run, env.MODEL, input),
     transcribe: async (mediaId) => {
       const audio = await download(mediaId);
       return audio === 'tooLong' ? null : transcribe(run, audio);
@@ -85,6 +87,10 @@ function botDeps(env: Env): BotDeps {
     readContext: async (uid) => readUserContext(firestore, uid, await token(uid)),
     createTransaction: async (uid, id, doc) =>
       createTransaction(firestore, uid, await token(uid), id, doc),
+    sumTransactions: async (uid, filters, field) =>
+      sumTransactions(firestore, uid, await token(uid), filters, field),
+    readTransactions: async (uid, range) =>
+      listTransactionsInRange(firestore, uid, await token(uid), range),
   };
 }
 
@@ -104,6 +110,7 @@ export default {
           verifyToken: env.WHATSAPP_VERIFY_TOKEN ?? '',
           send: metaSender(meta),
           sendButtons: metaButtonSender(meta),
+          sendList: metaListSender(meta),
           bot: botDeps(env),
         },
         (work) => {
