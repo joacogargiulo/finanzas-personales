@@ -1,35 +1,36 @@
-// Webhook de la WhatsApp Cloud API (ADR 0032 y 0033): Meta llama a `/whatsapp` cada vez que
+// Webhook de la WhatsApp Cloud API (ADR 0032, 0033 y 0034): Meta llama a `/whatsapp` cada vez que
 // alguien le escribe al bot.
 //   GET  /whatsapp  Meta comprueba que la URL es nuestra: si el token de verificación coincide,
 //                   se le devuelve el número de desafío que mandó.
 //   POST /whatsapp  Un mensaje nuevo. Se verifica la firma, se responde 200 enseguida (si
 //                   tarda, Meta reintenta) y el trabajo sigue con `waitUntil`.
-// Por ahora el bot solo entiende "vincular 123456"; cargar movimientos llega en la 11d.
+// Qué se responde lo decide bot.ts; acá viven el protocolo de Meta (firma, mensajes, envío).
 // Nunca se escribe el texto de un mensaje en los logs.
 
-import { BOT_REPLIES, isWhatsAppNumber, parseLinkCommand } from '../../src/domain/whatsapp';
-import { linkedUid, redeemCode, type LinkStore } from './links';
+import { isWhatsAppNumber } from '../../src/domain/whatsapp';
+import { replyTo, type BotDeps, type IncomingMessage, type ReplyButton } from './bot';
 
 export const WEBHOOK_ROUTE = '/whatsapp';
 
 /** Manda un mensaje de texto a un número. */
 export type SendText = (to: string, text: string) => Promise<void>;
 
+/** Manda un mensaje con botones de respuesta rápida. */
+export type SendButtons = (
+  to: string,
+  text: string,
+  buttons: readonly ReplyButton[],
+) => Promise<void>;
+
 export interface WebhookDeps {
   /** El "app secret" de la app de Meta: con él firma cada webhook. */
   appSecret: string;
   /** El texto que se carga en Meta al configurar el webhook. */
   verifyToken: string;
-  store: LinkStore;
   send: SendText;
-}
-
-/** Un mensaje recibido, con lo que se usa de él. */
-export interface IncomingMessage {
-  id: string;
-  from: string;
-  /** El texto, o `null` si no es un mensaje de texto (audio, foto, etc.). */
-  text: string | null;
+  sendButtons: SendButtons;
+  /** Lo que usa el bot para decidir qué responder (bot.ts). */
+  bot: BotDeps;
 }
 
 /** Un mensaje se procesa una sola vez aunque Meta lo mande de nuevo (lo recuerda un día). */
@@ -113,6 +114,28 @@ function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+type MessageContent =
+  | { kind: 'text'; text: string }
+  | { kind: 'button'; buttonId: string }
+  | { kind: 'audio'; mediaId: string }
+  | { kind: 'other' };
+
+/** Qué trae un mensaje según su tipo: texto, respuesta a un botón, audio u otra cosa. */
+function messageContent(message: Record<string, unknown>): MessageContent {
+  const { type, text, interactive, audio } = message;
+  if (type === 'text' && isRecord(text) && typeof text['body'] === 'string') {
+    return { kind: 'text', text: text['body'] };
+  }
+  if (type === 'interactive' && isRecord(interactive) && isRecord(interactive['button_reply'])) {
+    const id = interactive['button_reply']['id'];
+    if (typeof id === 'string') return { kind: 'button', buttonId: id };
+  }
+  if (type === 'audio' && isRecord(audio) && typeof audio['id'] === 'string') {
+    return { kind: 'audio', mediaId: audio['id'] };
+  }
+  return { kind: 'other' };
+}
+
 /**
  * Los mensajes de un webhook: `entry[].changes[].value.messages[]`. Los avisos de entrega y
  * lectura (`statuses`) no traen mensajes y se ignoran.
@@ -126,31 +149,23 @@ export function extractMessages(payload: unknown): IncomingMessage[] {
       if (!isRecord(change) || !isRecord(change['value'])) continue;
       for (const message of list(change['value']['messages'])) {
         if (!isRecord(message)) continue;
-        const { id, from, type, text } = message;
+        const { id, from } = message;
         if (typeof id !== 'string' || typeof from !== 'string' || !isWhatsAppNumber(from)) continue;
-        const body = type === 'text' && isRecord(text) ? text['body'] : null;
-        messages.push({ id, from, text: typeof body === 'string' ? body : null });
+        messages.push({ id, from, ...messageContent(message) });
       }
     }
   }
   return messages;
 }
 
-/** Decide qué responder a un mensaje. */
-export async function replyTo(message: IncomingMessage, store: LinkStore): Promise<string> {
-  const code = message.text === null ? null : parseLinkCommand(message.text);
-  if (code !== null) return BOT_REPLIES[await redeemCode(store, message.from, code)];
-  return (await linkedUid(store, message.from)) === null
-    ? BOT_REPLIES.notLinked
-    : BOT_REPLIES.notYet;
-}
-
 async function processMessage(message: IncomingMessage, deps: WebhookDeps): Promise<void> {
   try {
     const seenKey = `msg:${message.id}`;
-    if ((await deps.store.get(seenKey)) !== null) return;
-    await deps.store.put(seenKey, '1', { expirationTtl: SEEN_TTL_SECONDS });
-    await deps.send(message.from, await replyTo(message, deps.store));
+    if ((await deps.bot.store.get(seenKey)) !== null) return;
+    await deps.bot.store.put(seenKey, '1', { expirationTtl: SEEN_TTL_SECONDS });
+    const reply = await replyTo(message, deps.bot);
+    if (reply.buttons) await deps.sendButtons(message.from, reply.text, reply.buttons);
+    else await deps.send(message.from, reply.text);
   } catch (error) {
     // Solo el tipo de error: ni el número ni el texto.
     console.error('Falló un mensaje de WhatsApp', error instanceof Error ? error.message : '');
@@ -190,19 +205,21 @@ export function alternateRecipient(waId: string): string | null {
   return null;
 }
 
-/** Manda mensajes de texto con la API de Meta (Graph API). */
-export function metaSender(config: MetaConfig): SendText {
+/** Hasta cuántos bytes se baja de un audio: son unos 2 minutos de nota de voz. */
+export const MAX_AUDIO_BYTES = 1024 * 1024;
+
+/** Manda un mensaje a Meta y, si el número de prueba no lo acepta, lo reintenta sin el 9. */
+async function postMessage(config: MetaConfig, to: string, content: object): Promise<void> {
   const url = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
-  const sendTo = async (to: string, text: string): Promise<void> => {
+  const sendTo = async (recipient: string): Promise<void> => {
     const response = await config.fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
         recipient_type: 'individual',
-        to,
-        type: 'text',
-        text: { body: text, preview_url: false },
+        to: recipient,
+        ...content,
       }),
     });
     if (response.ok) return;
@@ -216,15 +233,75 @@ export function metaSender(config: MetaConfig): SendText {
     throw new MetaError(response.status, code);
   };
 
-  return async (to, text) => {
-    try {
-      await sendTo(to, text);
-    } catch (error) {
-      const alternate = alternateRecipient(to);
-      if (!(error instanceof MetaError && error.code === NOT_ALLOWED_RECIPIENT && alternate)) {
-        throw error;
-      }
-      await sendTo(alternate, text);
+  try {
+    await sendTo(to);
+  } catch (error) {
+    const alternate = alternateRecipient(to);
+    if (!(error instanceof MetaError && error.code === NOT_ALLOWED_RECIPIENT && alternate)) {
+      throw error;
     }
+    await sendTo(alternate);
+  }
+}
+
+/** Manda mensajes de texto con la API de Meta (Graph API). */
+export function metaSender(config: MetaConfig): SendText {
+  return (to, text) =>
+    postMessage(config, to, { type: 'text', text: { body: text, preview_url: false } });
+}
+
+/** Manda mensajes con botones de respuesta rápida (hasta 3, de hasta 20 caracteres). */
+export function metaButtonSender(config: MetaConfig): SendButtons {
+  return (to, text, buttons) =>
+    postMessage(config, to, {
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        body: { text },
+        action: {
+          buttons: buttons.map(({ id, title }) => ({ type: 'reply', reply: { id, title } })),
+        },
+      },
+    });
+}
+
+/** Un audio bajado de Meta, listo para pasárselo a Whisper. */
+export interface DownloadedAudio {
+  body: ReadableStream<Uint8Array>;
+  contentType: string;
+}
+
+/**
+ * Baja un audio de WhatsApp: primero se pide la URL del archivo (vence a los 5 minutos) y después
+ * se descarga con el mismo token. Devuelve `'tooLong'` sin descargar si pasa el tope de tamaño.
+ */
+export function metaAudioDownloader(
+  config: MetaConfig,
+): (mediaId: string) => Promise<DownloadedAudio | 'tooLong'> {
+  const headers = { Authorization: `Bearer ${config.token}` };
+  return async (mediaId) => {
+    const info = await config.fetch(
+      `https://graph.facebook.com/${config.apiVersion}/${encodeURIComponent(mediaId)}`,
+      { headers },
+    );
+    if (!info.ok) throw new MetaError(info.status, null);
+    const { url, file_size, mime_type } = await info.json<{
+      url?: unknown;
+      file_size?: unknown;
+      mime_type?: unknown;
+    }>();
+    if (typeof url !== 'string') throw new MetaError(info.status, null);
+    if (typeof file_size === 'number' && file_size > MAX_AUDIO_BYTES) return 'tooLong';
+
+    const file = await config.fetch(url, { headers });
+    if (!file.ok || !file.body) throw new MetaError(file.status, null);
+    if (Number(file.headers.get('Content-Length')) > MAX_AUDIO_BYTES) {
+      await file.body.cancel();
+      return 'tooLong';
+    }
+    return {
+      body: file.body as ReadableStream<Uint8Array>,
+      contentType: typeof mime_type === 'string' ? mime_type : 'audio/ogg',
+    };
   };
 }

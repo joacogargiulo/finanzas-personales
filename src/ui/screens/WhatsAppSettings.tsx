@@ -179,6 +179,10 @@ function WhatsAppCard() {
           <p>
             Vinculado con <strong>{view.phone}</strong>.
           </p>
+          <p className="field-hint">
+            Mandale al bot un gasto escrito o en un audio, por ejemplo «gasté 18 mil en el súper», y
+            confirmá con el botón Guardar.
+          </p>
           <button
             type="button"
             className="btn btn-danger-text"

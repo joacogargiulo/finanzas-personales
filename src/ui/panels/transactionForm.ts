@@ -14,6 +14,7 @@ import type {
 } from '../../domain/model';
 import { err, type Result } from '../../domain/result';
 import type { ParsedField, ParsedPhrase } from '../../domain/voice/parsePhrase';
+import { unclearFields } from '../../domain/voice/phraseFields';
 import {
   validateTransaction,
   type FieldErrors,
@@ -113,19 +114,10 @@ export function formFromPhrase(
     form.toAccountId = parsed.toAccountId ?? '';
   }
 
-  // "50 dólares" en una cuenta en pesos: el monto se entendió, pero la cuenta no cuadra.
-  const account = accounts.find((a) => a.id === accountId);
-  const currencyMismatch = parsed.currency !== null && account?.currency !== parsed.currency;
-
-  const unclear: ParsedField[] = [];
-  if (parsed.type === null) unclear.push('type');
-  if (parsed.amount === null) unclear.push('amount');
-  if (type === 'exchange' && parsed.toAmount === null) unclear.push('toAmount');
-  if (parsed.accountId === null || currencyMismatch) unclear.push('account');
-  if ((type === 'transfer' || type === 'exchange') && form.toAccountId === '') {
-    unclear.push('toAccount');
-  }
-  if ((type === 'income' || type === 'expense') && form.categoryId === '') unclear.push('category');
+  const unclear = unclearFields(parsed, accounts, {
+    type: current.type,
+    accountId: current.accountId,
+  });
   return { form, unclear };
 }
 

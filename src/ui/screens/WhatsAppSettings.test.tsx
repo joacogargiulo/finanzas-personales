@@ -71,6 +71,8 @@ describe('vinculado', () => {
     const user = userEvent.setup();
     render(<WhatsAppSettings />);
 
+    // Ya vinculado, la pantalla explica cómo cargar un movimiento.
+    expect(await screen.findByText(/gasté 18 mil en el súper/)).toBeVisible();
     await user.click(await screen.findByRole('button', { name: 'Desvincular' }));
     expect(whatsappLink.unlink).not.toHaveBeenCalled();
     await user.click(screen.getAllByRole('button', { name: 'Desvincular' }).at(-1) as HTMLElement);

@@ -1,17 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { fakeStore } from './fakeStore';
-import { createCode, linkedPhone, linkedUid, randomCodeNumber, redeemCode, unlink } from './links';
+import {
+  createCode,
+  linkedEmail,
+  linkedPhone,
+  linkedUid,
+  randomCodeNumber,
+  redeemCode,
+  unlink,
+} from './links';
 
 // El vínculo número ↔ usuario en KV (ADR 0033), con un KV falso en memoria.
 
 const NOW = Date.UTC(2026, 9, 13, 18, 0);
 const ANA = '5491111111111';
 const BETO = '5491122222222';
+const EMAIL = 'ana@example.org';
 
 describe('crear un código', () => {
   it('guarda el código con vencimiento de 10 minutos', async () => {
     const store = fakeStore();
-    const result = await createCode(store, 'ana', NOW, () => 42);
+    const result = await createCode(store, 'ana', EMAIL, NOW, () => 42);
 
     expect(result).toEqual({ code: '000042', expiresAt: NOW + 10 * 60_000 });
     expect(store.data.get('codigo:000042')).toBe('ana');
@@ -19,10 +28,17 @@ describe('crear un código', () => {
   });
 
   // Dos personas no pueden tener el mismo código vivo a la vez.
+  // El bot controla la lista de acceso con este email, sin pedirle un token a la persona.
+  it('guarda el email de la cuenta', async () => {
+    const store = fakeStore();
+    await createCode(store, 'ana', EMAIL, NOW, () => 42);
+    expect(await linkedEmail(store, 'ana')).toBe(EMAIL);
+  });
+
   it('si el código ya está en uso, sortea otro', async () => {
     const store = fakeStore({ 'codigo:000001': 'beto' });
     const numbers = [1, 2];
-    const result = await createCode(store, 'ana', NOW, () => numbers.shift() ?? 0);
+    const result = await createCode(store, 'ana', EMAIL, NOW, () => numbers.shift() ?? 0);
     expect(result.code).toBe('000002');
     expect(store.data.get('codigo:000001')).toBe('beto');
   });
@@ -95,6 +111,12 @@ describe('volver a vincular', () => {
 describe('desvincular', () => {
   it('borra las dos claves', async () => {
     const store = fakeStore({ [`tel:${ANA}`]: 'ana', 'uid:ana': ANA });
+    await unlink(store, 'ana');
+    expect(store.data.size).toBe(0);
+  });
+
+  it('borra también el email', async () => {
+    const store = fakeStore({ [`tel:${ANA}`]: 'ana', 'uid:ana': ANA, 'email:ana': EMAIL });
     await unlink(store, 'ana');
     expect(store.data.size).toBe(0);
   });
