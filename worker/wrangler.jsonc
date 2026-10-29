@@ -29,7 +29,7 @@
     "FIREBASE_API_KEY": "AIzaSyD1JzPOEuUEty2F1St-qROeQqXx6Iqy0v0",
     "ALLOWED_ORIGINS": "https://finanzas-personales-jtg.web.app,http://localhost:5173",
     "MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-    "DAILY_LIMIT": "40",
+    "DAILY_LIMIT": "100",
     // El "Phone number ID" del número del bot, en Meta → WhatsApp → Configuración de la API.
     // No es un secreto: sin el token no sirve para nada.
     "WHATSAPP_PHONE_NUMBER_ID": "1411523705375693",

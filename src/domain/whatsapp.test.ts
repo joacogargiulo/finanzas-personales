@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { makeAccount, makeCategory } from './testing/factories';
 import {
   BOT_REPLIES,
+  greetingReply,
+  HELP_REPLY,
+  thanksReply,
   formatLinkCode,
   invalidReply,
   missingReply,
@@ -209,5 +212,34 @@ describe('whatsappTransactionDoc', () => {
       deletedAt: null,
     });
     expect(doc).not.toHaveProperty('updatedAt');
+  });
+});
+
+// ── Charla (ADR 0035) ─────────────────────────────────────────────────────────
+
+describe('saludos y agradecimientos', () => {
+  it('con la misma semilla dan siempre la misma frase', () => {
+    expect(greetingReply('wamid.abc')).toBe(greetingReply('wamid.abc'));
+    expect(thanksReply('wamid.abc')).toBe(thanksReply('wamid.abc'));
+  });
+
+  it('con distintas semillas aparecen distintas frases', () => {
+    const greetings = new Set(
+      Array.from({ length: 30 }, (_, i) => greetingReply(`wamid.${String(i)}`)),
+    );
+    expect(greetings.size).toBeGreaterThan(1);
+  });
+
+  it('el saludo no pone cifras ni datos de la persona', () => {
+    expect(greetingReply('x')).not.toMatch(/\d|\$/);
+    expect(thanksReply('x')).not.toMatch(/\d|\$/);
+  });
+});
+
+describe('HELP_REPLY', () => {
+  it('muestra ejemplos de cargar y de consultar', () => {
+    expect(HELP_REPLY).toContain('gasté 18 mil en el súper');
+    expect(HELP_REPLY).toContain('cuánta plata tengo');
+    expect(HELP_REPLY).toContain('\n');
   });
 });

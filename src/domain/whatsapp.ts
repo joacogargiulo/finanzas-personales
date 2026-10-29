@@ -98,6 +98,12 @@ export const BOT_REPLIES = {
   writesBlocked:
     'Hay una versión más nueva de la app y no puedo guardar con seguridad. Actualizá la app y probá de nuevo.',
   example: 'No entendí el movimiento. Probá así: «gasté 18 mil en el súper con efectivo».',
+  tooManyAccounts:
+    'Tenés muchas cuentas para mostrarlas todas juntas. Preguntame por una: «cuánto tengo en Efectivo».',
+  periodTooBig:
+    'Ese período tiene demasiados movimientos para calcularlo por acá. Probá con uno más corto o mirá la app.',
+  offTopic:
+    'De eso no te puedo ayudar, pero sí con tus finanzas: cargar gastos e ingresos y consultar tus cuentas. Escribí «ayuda» y te muestro ejemplos.',
 } as const satisfies Record<string, string>;
 
 // ── Confirmación del movimiento (ADR 0034) ────────────────────────────────────
@@ -216,3 +222,46 @@ export function invalidReply(errors: FieldErrors<TransactionField>): string {
 export function whatsappTransactionDoc(fields: TransactionFields, createdAt: number) {
   return { ...fields, source: 'whatsapp' as const, createdAt, deletedAt: null };
 }
+
+// ── Charla (ADR 0035): textos fijos, para que el bot no invente nada ──────────
+
+const GREETINGS = [
+  '¡Hola! 👋 ¿Qué querés cargar o consultar?',
+  '¡Hola! Contame un gasto o preguntame por tus cuentas.',
+  '¡Buenas! ¿En qué te ayudo con tus finanzas?',
+] as const;
+
+const THANKS = [
+  '¡De nada! Cuando quieras cargar algo, acá estoy.',
+  '¡Un gusto! Escribime cuando necesites.',
+  '¡Listo! Acá estoy para lo que necesites.',
+] as const;
+
+/** Qué sabe hacer el bot, con ejemplos. */
+export const HELP_REPLY = [
+  'Puedo ayudarte con tus finanzas.',
+  '',
+  '📝 Cargar movimientos, escritos o en un audio:',
+  '• «gasté 18 mil en el súper con efectivo»',
+  '• «cobré 500 mil de sueldo»',
+  '• «pasé 20 mil de Efectivo a Banco»',
+  '• «compré 100 dólares a 1300»',
+  '',
+  '📊 Consultar:',
+  '• «cuánta plata tengo»',
+  '• «cuánto gasté hoy» o «este mes»',
+  '• «en qué gasté más este mes»',
+  '• «cuáles son mis cuentas»',
+  '',
+  'Antes de guardar te muestro un resumen y vos confirmás.',
+].join('\n');
+
+/** Una de las frases según una semilla (el ID del mensaje): varía sin ser al azar. */
+function pickBySeed<T>(options: readonly T[], seed: string): T {
+  let hash = 0;
+  for (const char of seed) hash = (hash * 31 + (char.codePointAt(0) ?? 0)) % 1_000_003;
+  return options[hash % options.length] as T;
+}
+
+export const greetingReply = (seed: string): string => pickBySeed(GREETINGS, seed);
+export const thanksReply = (seed: string): string => pickBySeed(THANKS, seed);

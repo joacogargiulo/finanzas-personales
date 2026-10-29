@@ -130,3 +130,10 @@ export function formatDisplayDate(date: LocalDate): string {
 export function maxDate(a: LocalDate, b: LocalDate): LocalDate {
   return a > b ? a : b;
 }
+
+/** El lunes de la semana de `date` (la semana empieza el lunes, como en Argentina). */
+export function startOfWeek(date: LocalDate): LocalDate {
+  const { year, month, day } = partsOf(date);
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay(); // 0 = domingo
+  return addDays(date, -((weekday + 6) % 7));
+}

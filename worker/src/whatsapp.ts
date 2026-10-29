@@ -15,6 +15,14 @@ export const WEBHOOK_ROUTE = '/whatsapp';
 /** Manda un mensaje de texto a un número. */
 export type SendText = (to: string, text: string) => Promise<void>;
 
+/** Manda un mensaje con una lista desplegable de opciones (hasta 10). */
+export type SendList = (
+  to: string,
+  text: string,
+  buttonLabel: string,
+  rows: readonly ReplyButton[],
+) => Promise<void>;
+
 /** Manda un mensaje con botones de respuesta rápida. */
 export type SendButtons = (
   to: string,
@@ -29,6 +37,7 @@ export interface WebhookDeps {
   verifyToken: string;
   send: SendText;
   sendButtons: SendButtons;
+  sendList: SendList;
   /** Lo que usa el bot para decidir qué responder (bot.ts). */
   bot: BotDeps;
 }
@@ -116,19 +125,20 @@ function list(value: unknown): unknown[] {
 
 type MessageContent =
   | { kind: 'text'; text: string }
-  | { kind: 'button'; buttonId: string }
+  | { kind: 'choice'; choiceId: string }
   | { kind: 'audio'; mediaId: string }
   | { kind: 'other' };
 
-/** Qué trae un mensaje según su tipo: texto, respuesta a un botón, audio u otra cosa. */
+/** Qué trae un mensaje según su tipo: texto, respuesta a un botón o a una lista, audio u otra cosa. */
 function messageContent(message: Record<string, unknown>): MessageContent {
   const { type, text, interactive, audio } = message;
   if (type === 'text' && isRecord(text) && typeof text['body'] === 'string') {
     return { kind: 'text', text: text['body'] };
   }
-  if (type === 'interactive' && isRecord(interactive) && isRecord(interactive['button_reply'])) {
-    const id = interactive['button_reply']['id'];
-    if (typeof id === 'string') return { kind: 'button', buttonId: id };
+  if (type === 'interactive' && isRecord(interactive)) {
+    const reply = interactive['button_reply'] ?? interactive['list_reply'];
+    const id = isRecord(reply) ? reply['id'] : undefined;
+    if (typeof id === 'string') return { kind: 'choice', choiceId: id };
   }
   if (type === 'audio' && isRecord(audio) && typeof audio['id'] === 'string') {
     return { kind: 'audio', mediaId: audio['id'] };
@@ -164,8 +174,13 @@ async function processMessage(message: IncomingMessage, deps: WebhookDeps): Prom
     if ((await deps.bot.store.get(seenKey)) !== null) return;
     await deps.bot.store.put(seenKey, '1', { expirationTtl: SEEN_TTL_SECONDS });
     const reply = await replyTo(message, deps.bot);
-    if (reply.buttons) await deps.sendButtons(message.from, reply.text, reply.buttons);
-    else await deps.send(message.from, reply.text);
+    if (reply.list) {
+      await deps.sendList(message.from, reply.text, reply.list.buttonLabel, reply.list.rows);
+    } else if (reply.buttons) {
+      await deps.sendButtons(message.from, reply.text, reply.buttons);
+    } else {
+      await deps.send(message.from, reply.text);
+    }
   } catch (error) {
     // Solo el tipo de error: ni el número ni el texto.
     console.error('Falló un mensaje de WhatsApp', error instanceof Error ? error.message : '');
@@ -260,6 +275,22 @@ export function metaButtonSender(config: MetaConfig): SendButtons {
         body: { text },
         action: {
           buttons: buttons.map(({ id, title }) => ({ type: 'reply', reply: { id, title } })),
+        },
+      },
+    });
+}
+
+/** Manda mensajes con una lista desplegable: un botón "Elegir" que abre hasta 10 filas. */
+export function metaListSender(config: MetaConfig): SendList {
+  return (to, text, buttonLabel, rows) =>
+    postMessage(config, to, {
+      type: 'interactive',
+      interactive: {
+        type: 'list',
+        body: { text },
+        action: {
+          button: buttonLabel,
+          sections: [{ rows: rows.map(({ id, title }) => ({ id, title })) }],
         },
       },
     });
