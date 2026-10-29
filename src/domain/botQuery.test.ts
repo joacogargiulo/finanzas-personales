@@ -4,6 +4,7 @@ import {
   balancesReply,
   periodReply,
   queryRange,
+  totalsReply,
   usesPeriod,
   type BotQuery,
   type CurrencyStats,
@@ -192,6 +193,27 @@ describe('periodReply', () => {
     );
     expect(periodReply(query({ kind: 'income' }), empty, categories, noScope)).toBe(
       'No tenés ingresos este mes.',
+    );
+  });
+});
+
+describe('totalsReply', () => {
+  it('muestra el total de cada moneda e invita a preguntar por una cuenta', () => {
+    const text = totalsReply(
+      new Map([
+        ['ARS', 1_010_000],
+        ['USD', 2_500],
+      ]),
+      8,
+    );
+    expect(text).toBe(
+      [
+        'Tenés 8 cuentas, demasiadas para mostrarlas todas juntas. En total:',
+        '• Total en pesos: $ 10.100,00',
+        '• Total en dólares: US$ 25,00',
+        '',
+        'Para ver una en particular, preguntame por ella: «cuánto tengo en Efectivo».',
+      ].join('\n'),
     );
   });
 });

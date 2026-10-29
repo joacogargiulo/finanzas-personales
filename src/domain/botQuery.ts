@@ -113,6 +113,22 @@ export function balancesReply(rows: readonly AccountBalance[]): string {
   return [...lines, ...(totalLines.length > 0 ? ['', ...totalLines] : [])].join('\n');
 }
 
+/**
+ * El total de cada moneda, cuando hay demasiadas cuentas para mostrar el saldo de cada una.
+ * Invita a preguntar por una cuenta para ver el detalle.
+ */
+export function totalsReply(totals: ReadonlyMap<Currency, Cents>, accountCount: number): string {
+  const lines = [...totals].map(
+    ([currency, total]) => `• Total en ${CURRENCY_NAMES[currency]}: ${money(total, currency)}`,
+  );
+  return [
+    `Tenés ${String(accountCount)} cuentas, demasiadas para mostrarlas todas juntas. En total:`,
+    ...lines,
+    '',
+    'Para ver una en particular, preguntame por ella: «cuánto tengo en Efectivo».',
+  ].join('\n');
+}
+
 /** Los totales de un período en una moneda. */
 export interface CurrencyStats {
   currency: Currency;

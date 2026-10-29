@@ -17,6 +17,17 @@ export interface EqualFilter {
   equals: string;
 }
 
+/** Un filtro "el campo es uno de estos valores" (Firestore admite hasta 30). */
+export interface OneOfFilter {
+  field: string;
+  oneOf: readonly string[];
+}
+
+export type SumFilter = EqualFilter | OneOfFilter;
+
+/** Cuántos valores admite Firestore en un filtro `IN`. */
+export const MAX_IN_VALUES = 30;
+
 const NOT_DELETED = { unaryFilter: { op: 'IS_NULL', field: { fieldPath: 'deletedAt' } } };
 
 async function failure(response: Response): Promise<FirestoreError> {
@@ -40,7 +51,7 @@ export async function sumTransactions(
   config: FirestoreConfig,
   uid: string,
   idToken: string,
-  filters: readonly EqualFilter[],
+  filters: readonly SumFilter[],
   field: 'amount' | 'toAmount',
 ): Promise<number> {
   const response = await config.fetch(`${base(config)}/users/${uid}:runAggregationQuery`, {
@@ -58,8 +69,14 @@ export async function sumTransactions(
                 ...filters.map((f) => ({
                   fieldFilter: {
                     field: { fieldPath: f.field },
-                    op: 'EQUAL',
-                    value: { stringValue: f.equals },
+                    ...('oneOf' in f
+                      ? {
+                          op: 'IN',
+                          value: {
+                            arrayValue: { values: f.oneOf.map((v) => ({ stringValue: v })) },
+                          },
+                        }
+                      : { op: 'EQUAL', value: { stringValue: f.equals } }),
                   },
                 })),
               ],

@@ -59,6 +59,23 @@ describe('sumTransactions', () => {
     ]);
   });
 
+  it('un filtro "uno de" se manda como IN con la lista de valores', async () => {
+    const fetch = vi.fn(() =>
+      Promise.resolve(Response.json([{ result: { aggregateFields: {} } }])),
+    );
+    await sumTransactions(
+      config(fetch),
+      'ana',
+      't',
+      [{ field: 'accountId', oneOf: ['a', 'b'] }],
+      'amount',
+    );
+    const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.body as string).toContain(
+      '"op":"IN","value":{"arrayValue":{"values":[{"stringValue":"a"},{"stringValue":"b"}]}}',
+    );
+  });
+
   // Firestore no devuelve el campo si no hay documentos que sumar.
   it('sin movimientos, la suma es 0', async () => {
     const fetch = vi.fn(() =>

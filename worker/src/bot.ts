@@ -15,7 +15,12 @@
 // Los montos nunca van a la IA. Nunca se escribe el texto de un mensaje en los logs. Las
 // dependencias llegan por parámetro: los tests las reemplazan por versiones falsas.
 
-import { accountBalances, MAX_BALANCE_ACCOUNTS, type SumTransactions } from './accountBalances';
+import {
+  accountBalances,
+  currencyTotals,
+  MAX_BALANCE_ACCOUNTS,
+  type SumTransactions,
+} from './accountBalances';
 import {
   applyChoice,
   joinPhrases,
@@ -29,6 +34,7 @@ import {
   balancesReply,
   periodReply,
   queryRange,
+  totalsReply,
   usesPeriod,
   type BotQuery,
   type CurrencyStats,
@@ -169,6 +175,11 @@ export async function replyTo(message: IncomingMessage, deps: BotDeps): Promise<
           const pending = await getPending(deps.store, message.from);
           if (pending !== null) {
             return await confirm(uid, message.from, pending.txId, answer, deps, now);
+          }
+          // "Cancelá" mientras el bot espera una respuesta descarta el borrador.
+          if (answer === 'cancel' && (await getDraft(deps.store, message.from)) !== null) {
+            await clearDraft(deps.store, message.from);
+            return text(BOT_REPLIES.cancelled);
           }
         }
         return await converse(uid, message, message.text, true, deps, now);
@@ -361,8 +372,12 @@ async function answerQuery(
 
   if (query.kind === 'balance') {
     const chosen = query.accountId ? accounts.filter((a) => a.id === query.accountId) : accounts;
-    if (chosen.length > MAX_BALANCE_ACCOUNTS) return text(BOT_REPLIES.tooManyAccounts);
     const sum: SumTransactions = (filters, field) => deps.sumTransactions(uid, filters, field);
+    // Con demasiadas cuentas no alcanzan los subpedidos para pedir una por una: se da el total
+    // de cada moneda (sumando todas juntas) y se invita a preguntar por una.
+    if (chosen.length > MAX_BALANCE_ACCOUNTS) {
+      return text(totalsReply(await currencyTotals(chosen, sum), chosen.length));
+    }
     const balances = await accountBalances(chosen, sum);
     return text(
       balancesReply(chosen.map((account) => ({ account, balance: balances.get(account.id) ?? 0 }))),

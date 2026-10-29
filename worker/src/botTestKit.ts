@@ -12,7 +12,7 @@ import {
   makeIncome,
 } from '../../src/domain/testing/factories';
 import type { BotDeps } from './bot';
-import type { TransactionsInRange } from './firestoreQueries';
+import type { SumFilter, TransactionsInRange } from './firestoreQueries';
 import type { UserContext } from './firestoreRest';
 import { fakeStore, type FakeStore } from './fakeStore';
 
@@ -124,15 +124,17 @@ export function botKit(): BotKit {
     createTransaction: vi.fn((): Promise<'created' | 'exists'> => Promise.resolve('created')),
     // Una "suma de Firestore" sobre la lista, como la haría una consulta de agregación.
     sumTransactions: vi.fn(
-      (
-        _uid: string,
-        filters: readonly { field: string; equals: string }[],
-        name: 'amount' | 'toAmount',
-      ): Promise<number> =>
+      (_uid: string, filters: readonly SumFilter[], name: 'amount' | 'toAmount'): Promise<number> =>
         Promise.resolve(
           transactions
             .filter((tx) => tx.deletedAt === null)
-            .filter((tx) => filters.every((f) => field(tx, f.field) === f.equals))
+            .filter((tx) =>
+              filters.every((f) =>
+                'oneOf' in f
+                  ? f.oneOf.includes(field(tx, f.field) as string)
+                  : field(tx, f.field) === f.equals,
+              ),
+            )
             .reduce((sum, tx) => sum + Number(field(tx, name) ?? 0), 0),
         ),
     ),

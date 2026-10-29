@@ -296,6 +296,19 @@ describe('seguir el hilo', () => {
     expect(completed.text).toContain('Cuenta (desde): Mercado Pago');
   });
 
+  // "Cancelá" mientras el bot espera una respuesta tiene que descartar la pregunta.
+  it('"cancelá" con una pregunta esperando descarta el borrador', async () => {
+    await askAccount();
+    const callsBefore = kit.mocks.interpret.mock.calls.length;
+    const response = await reply(text('Cancelá'));
+
+    expect(response.text).toBe(BOT_REPLIES.cancelled);
+    expect(kit.store.data.has(`borrador:${ANA}`)).toBe(false);
+    expect(kit.mocks.interpret).toHaveBeenCalledTimes(callsBefore);
+    // Y el botón del mensaje anterior ya no sirve.
+    expect((await reply(choice('elegir:account:cash'))).text).toBe(BOT_REPLIES.expired);
+  });
+
   it('un movimiento completo nuevo reemplaza al borrador', async () => {
     await askAccount();
     kit.mocks.interpret.mockResolvedValue(aiAnswer({ amount: '5000' }));
@@ -360,14 +373,25 @@ describe('consultas', () => {
     expect(kit.mocks.sumTransactions).toHaveBeenCalledTimes(6);
   });
 
-  it('con demasiadas cuentas, pide que pregunte por una', async () => {
-    const accounts = Array.from({ length: 7 }, (_, i) =>
-      makeAccount({ id: `a${String(i)}`, name: `Cuenta ${String(i)}` }),
-    );
+  // Con muchas cuentas no alcanzan los subpedidos para pedir una por una: se da el total por moneda.
+  it('con demasiadas cuentas, da el total de cada moneda y no el detalle', async () => {
+    const accounts = [
+      makeAccount({ id: 'cash', name: 'Efectivo', initialBalance: 100_000 }),
+      ...Array.from({ length: 6 }, (_, i) =>
+        makeAccount({ id: `a${String(i)}`, name: `Cuenta ${String(i)}` }),
+      ),
+      makeAccount({ id: 'usd', name: 'Caja USD', currency: 'USD', initialBalance: 5_000 }),
+    ];
     kit.mocks.readContext.mockResolvedValue(anaContext({ accounts }));
     kit.mocks.interpret.mockResolvedValue(queryAnswer('balance'));
-    expect((await reply(text('cuánta plata tengo'))).text).toBe(BOT_REPLIES.tooManyAccounts);
-    expect(kit.mocks.sumTransactions).not.toHaveBeenCalled();
+    const response = await reply(text('cuánta plata tengo'));
+
+    expect(response.text).toContain('Tenés 8 cuentas');
+    expect(response.text).toContain('• Total en pesos: $ 10.100,00');
+    expect(response.text).toContain('• Total en dólares: US$ 25,00');
+    expect(response.text).toContain('«cuánto tengo en Efectivo»');
+    // Seis sumas por moneda, no seis por cuenta.
+    expect(kit.mocks.sumTransactions).toHaveBeenCalledTimes(12);
   });
 
   it('cuánto gasté hoy', async () => {

@@ -64,7 +64,7 @@ Un solo contador por persona (`uso:{uid}:{día}`) compartido con el dictado de l
 ## Consecuencias
 - **Tres índices compuestos nuevos** en `firestore.indexes.json` (`accountId`/`toAccountId`, `deletedAt`, `type` y `amount`/`toAmount`). Las sumas fallan sin ellos. Se publican con `npx firebase deploy --only firestore:indexes --project prod`.
 - **Los saldos viajan por WhatsApp**, es decir, Meta los ve. La sección Privacidad se actualiza en la 11f.
-- **Límites del plan gratis de Workers:** 6 cuentas por respuesta de saldos (36 sumas más el resto de los subpedidos, contra el límite de 50). Con más cuentas, el bot pide preguntar por una.
+- **Límites del plan gratis de Workers:** el saldo de cada cuenta son 6 sumas, así que hasta 6 cuentas por respuesta (36 sumas más el resto de los subpedidos, contra el límite de 50). Con más cuentas, el bot da el **total de cada moneda** sumando todas juntas con filtros `IN` (6 sumas por moneda, hasta 30 cuentas por consulta) e invita a preguntar por una cuenta. Se verificó contra Firestore real: los totales coinciden con la suma de saldos de la app.
 - **Lecturas de Firestore:** una consulta de período lee un documento por movimiento del período (un mes son unos cientos). Los saldos casi no cuestan.
 - **El respaldo por reglas es más limitado que la IA** (no entiende cualquier frase), pero cubre saludos, ayuda, cuentas, saldos y los períodos más comunes.
 - **Variables:** `DAILY_LIMIT` pasa a 100 en `wrangler.jsonc`. No hay secretos nuevos.
