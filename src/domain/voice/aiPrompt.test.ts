@@ -75,4 +75,11 @@ describe('buildAiMessages', () => {
     expect(user?.content).toContain('"gasté 500 el lunes"');
     expect(user?.content).not.toContain('999999');
   });
+
+  // La IA había puesto "nafta" en Comida (ADR 0035, nota): el prompt le da pistas por rubro.
+  it('le da pistas para elegir la categoría por rubro', () => {
+    const [system] = buildAiMessages(aiInput('cargué 20 lucas de nafta', ctx));
+    expect(system?.content).toContain('nafta, combustible, SUBE');
+    expect(system?.content).toContain('son transporte (no comida)');
+  });
 });
