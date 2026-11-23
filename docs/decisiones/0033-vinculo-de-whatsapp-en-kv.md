@@ -83,3 +83,7 @@ Lo que se aprendió al configurar Meta:
 - **El panel usa la Graph API v25.0** para WhatsApp. Se fijó esa versión en `GRAPH_API_VERSION`.
 - **El 9 de Argentina no dio problemas:** las respuestas llegaron sin errores en los logs. El reintento sin el 9 queda por si hace falta con otro número.
 - El MCP oficial de Meta (`whatsapp_business_tools`) se agregó a Claude Code, pero no llegó a usarse: necesita el inicio de sesión con `/mcp`, y todo se pudo hacer desde el panel.
+
+
+## Nota (cierre de la Fase 11, 2026-11-23)
+Lo que este ADR dejaba para la 11e (la sección Privacidad y el detalle del SRS 4.9) se hizo en la **11f**: Ajustes → Privacidad dice qué ve Meta y qué guarda el Worker, y el SRS v3.9.0 describe el KV `WHATSAPP` (4.9), los índices (4.10) y el bot (6.8).

@@ -31,7 +31,8 @@ La app es privada: solo entran las cuentas de Google de una lista (ADR 0026). Ca
    npm run deploy:rules
    npm run deploy:worker
    ```
-   Hasta publicar las reglas, la persona ve "Esta app es privada". Sin publicar el Worker, entra pero el dictado no usa la IA.
+   Hasta publicar las reglas, la persona ve "Esta app es privada". Sin publicar el Worker, entra pero el dictado no usa la IA y el bot de WhatsApp no le responde.
+7. **Si va a usar el bot de WhatsApp:** sumá su número a los destinatarios del número de prueba de Meta (ADR 0032). En [Meta for Developers](https://developers.facebook.com/apps) → la app "Control de Finanzas Bot" → WhatsApp → Configuración de la API → "Para" → Administrar la lista de números. Meta le manda un código por WhatsApp al familiar y hay que cargarlo ahí. El número de prueba acepta hasta 5 destinatarios.
 
 ## 2. Lo que hace el familiar
 
@@ -45,12 +46,15 @@ La app es privada: solo entran las cuentas de Google de una lista (ADR 0026). Ca
 2. Al abrirlo, Android pide permiso para instalar apps de esa fuente: **Configuración → Permitir de esta fuente**. Ese permiso se da solo a esa app (WhatsApp, Archivos, etc.).
 3. Instalar, abrir y entrar con Google. Si ya tenía la sesión abierta en Chrome, el APK la usa.
 
+**Para usar el bot de WhatsApp** (después del paso 7 del dueño): Ajustes → WhatsApp → **Vincular WhatsApp**, tocar **Abrir WhatsApp** y mandar el mensaje con el código. Cuando el bot conteste, tocar **Ya lo mandé**.
+
 **La primera vez** ve la app vacía, con las 6 categorías iniciales. El primer paso es **Crear mi primera cuenta** (por ejemplo, "Efectivo" con lo que tiene en la billetera). En **Ajustes → Privacidad** se explica qué datos salen del dispositivo y a dónde.
 
 ## 3. Sacar a alguien
 
 1. **Pedile que antes use Ajustes → Borrar mi cuenta.** Así sus datos se borran del servidor.
-2. Quitá su hash de `firestore.rules` y de `worker/src/access.ts` (PR y merge), y publicá con `npm run deploy:rules` y `npm run deploy:worker`.
+2. Quitá su hash de `firestore.rules` y de `worker/src/access.ts` (PR y merge), y publicá con `npm run deploy:rules` y `npm run deploy:worker`. Sin el hash en el Worker, el bot tampoco le responde, aunque su número siga vinculado.
+3. Si usaba el bot, sacá su número de los destinatarios de Meta (la misma pantalla del paso 7).
 
 Si se quita el hash sin que la persona borre su cuenta, sus datos quedan en Firestore: las reglas ya no la dejan leerlos, pero siguen ocupando lugar. Se pueden borrar a mano desde la consola de Firebase (`users/{uid}`).
 
@@ -61,6 +65,8 @@ Si se quita el hash sin que la persona borre su cuenta, sus datos quedan en Fire
 | "Esta app es privada" | Las reglas no están publicadas, el hash se copió mal o es de otro email | Revisar el email exacto, volver a calcular el hash y correr `npm run deploy:rules` desde `main` |
 | Entró con otra cuenta de Google | Chrome eligió la cuenta que tenía abierta | En "Esta app es privada", tocar **Usar otra cuenta** |
 | No aparece el micrófono | El dictado necesita Chrome (Firefox no lo soporta) | Usar Chrome o el APK |
+| El bot no contesta | El número no está entre los destinatarios de Meta, o el Worker no tiene su hash | Revisar el paso 7 y que `worker/src/access.ts` esté publicado |
+| El bot dice que el número no está vinculado | Falta vincular, o el código venció (dura 10 minutos) | Ajustes → WhatsApp → Vincular WhatsApp, y mandar el código nuevo |
 | El APK abre con la barra de direcciones | Chrome no verificó el sitio | Ver `android/README.md` (huella de `assetlinks.json`) |
 
 ## 5. Prueba con un familiar (TC-19)

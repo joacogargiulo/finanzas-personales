@@ -69,3 +69,7 @@ Antes de programar se comprobó, con un script descartable y la clave de `whatsa
 - `GET users/{uid}` por REST con ese token **devolvió 200**: las reglas dejaron leer a la cuenta de servicio como si fuera la persona, sin ningún rol de IAM.
 - `sign_in_provider` es `custom`.
 - La API key web no tiene restricciones, así que sirve desde el Worker (no manda *referrer*).
+
+
+## Nota (cierre de la Fase 11, 2026-11-23)
+Lo que este ADR dejaba para la 11e (la sección Privacidad y el detalle del SRS 4.9) se hizo en la **11f**: Ajustes → Privacidad dice qué ve Meta y qué guarda el Worker, y el SRS v3.9.0 describe el KV `WHATSAPP` (4.9), los índices (4.10) y el bot (6.8).
