@@ -79,3 +79,9 @@ Antes de publicar se probó el prompt contra Llama 3.3 70B real, con 25 mensajes
 - **Cuenta no nombrada:** con dos cuentas en pesos, "gasté 18 mil en el súper" quedó sin cuenta y el bot pregunta (la defensa de `parseAiResult` sigue funcionando).
 - Un caso mejorable, que no cambia con este ADR: la IA puso "nafta" en Comida y no en Transporte. Se ve en el resumen antes de guardar.
 - **Paso 0:** las sumas de agregación coinciden con los saldos de la app en las 8 cuentas del dueño. Hizo falta crear los índices compuestos.
+
+
+## Nota (cierre de la Fase 11, 2026-11-23)
+- Privacidad y SRS: hechos en la 11f (SRS v3.9.0, secciones 4.9, 4.10, 6.8 y 7.4).
+- "Nafta" en Comida: en la 11f se agregaron pistas por rubro a `MOVEMENT_RULES` (nafta, SUBE, peaje, Uber → transporte; súper, delivery → comida; luz, gas, internet → servicios). Con Llama real, 14 mensajes de prueba: 12 bien con el prompt anterior (además, "SUBE 5000" salía como ingreso) y 14 con el nuevo.
+- Queda un caso a mejorar, que ya pasaba: en "compré 100 dólares a 1300", con varias cuentas en pesos, la IA elige una en lugar de dejarla vacía. Se ve en el resumen antes de guardar.

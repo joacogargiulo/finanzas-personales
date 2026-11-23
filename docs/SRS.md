@@ -1,8 +1,8 @@
 # ESPECIFICACIÓN DE REQUISITOS DE SOFTWARE (SRS)
 ## Control de Finanzas Personales — Offline-First con Sincronización Multi-Dispositivo
 
-**Versión:** 3.8.1
-**Fecha:** 2026-10-06
+**Versión:** 3.9.0
+**Fecha:** 2026-11-23
 **Reemplaza a:** SRS v3.0.0 (y este, a la v2.0.0, generada desde la app de Google AI Studio)
 **Destinatario principal:** Claude Code (implementación) y el dueño del proyecto (revisión)
 
@@ -10,7 +10,21 @@
 
 ## 0. CAMBIOS
 
-### 0.0 Cambios de la versión 3.8.1 (replanificación de las fases 9 a 12)
+### 0.0 Cambios de la versión 3.9.0 (Fase 11: carga por WhatsApp)
+| Tema | v3.8.1 | v3.9.0 | ADR |
+|---|---|---|---|
+| Canal de WhatsApp | A decidir (API oficial o Baileys) | WhatsApp Cloud API con el número de prueba de Meta; webhook en el Worker de Cloudflare | 0032 |
+| Audios | Sin especificar | Whisper de Workers AI acepta OGG/Opus tal cual, con `language: 'es'` | 0032 |
+| Vínculo número ↔ usuario | Colección `whatsappLinks/{telefono}` cerrada al cliente | KV `WHATSAPP` del Worker, con un código de 6 cifras desde Ajustes; `whatsappLinks` sale de las reglas | 0033 |
+| Escritura del bot | Cuenta de servicio con permisos de Firestore | Como el usuario: custom token → ID token → REST, con las mismas reglas; la cuenta de servicio no tiene roles | 0034 |
+| Confirmación | Sin especificar | Resumen con los botones Guardar y Cancelar; ID fijo (`wa_…`) para no duplicar | 0034 |
+| Conversación | Un mensaje, un movimiento | La IA clasifica la intención; el bot pregunta lo que falta, responde consultas y charla solo de lo suyo | 0035 |
+| Cuota diaria de IA | 40 dictados | 100 usos por persona, compartidos entre el dictado y el bot | 0035 |
+| Índices | Ninguno compuesto | Tres en `transactions`, para las sumas de saldos del bot | 0035 |
+| Privacidad | Meta "desde la Fase 11" | Dice qué ve Meta (mensajes, saldos) y qué guarda el Worker | 0032, 0035 |
+| Categoría en la IA | Sin pistas | Pistas por rubro (nafta, SUBE, peaje → transporte) en las reglas del dictado y del bot | — |
+
+### 0.0.1 Cambios de la versión 3.8.1 (replanificación de las fases 9 a 12)
 | Tema | v3.8.0 | v3.8.1 | ADR |
 |---|---|---|---|
 | Fases | Plan detallado hasta la 8 | Fases 9 a 12: familia y privacidad, dictado con IA, WhatsApp, cierre y v1.0.0 | 0029 |
@@ -18,7 +32,7 @@
 | Política de privacidad y términos | Fase 9 | Sección "Privacidad" en Ajustes | 0029 |
 | IA en el dictado | Respaldo del parser | Siempre que haya conexión (se detalla en la Fase 10) | 0029 |
 
-### 0.0.1 Cambios de la versión 3.8.0 (Fase 8: APK)
+### 0.0.2 Cambios de la versión 3.8.0 (Fase 8: APK)
 | Tema | v3.7.1 | v3.8.0 | ADR |
 |---|---|---|---|
 | Nombre de paquete | A definir | `ar.jtg.finanzas` | 0028 |
@@ -26,7 +40,7 @@
 | Distribución | Sin especificar | Instalación manual del `.apk` (una sola huella en `assetlinks.json`) | 0028 |
 | `ignore` de Hosting | Archivos con punto excluidos | Se publican, para servir `/.well-known/` | 0028 |
 
-### 0.0.2 Cambios de la versión 3.7.1 (Fase 7b: PWA, CSP y Hosting)
+### 0.0.3 Cambios de la versión 3.7.1 (Fase 7b: PWA, CSP y Hosting)
 | Tema | v3.7.0 | v3.7.1 | ADR |
 |---|---|---|---|
 | Actualización de la app | Automática, avisar y recargar | La versión nueva espera; el aviso tiene "Actualizar"; se busca cada hora | 0027 |
@@ -35,14 +49,14 @@
 | Encabezados de Hosting | `no-cache` para `index.html` y el service worker | También `/` y el manifiesto; `/assets/` un año; `frame-ancestors`, `nosniff`, `Referrer-Policy` | 0027 |
 | Publicación | Sin especificar | `npm run deploy` desde la compu del dueño | 0027 |
 
-### 0.0.3 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
+### 0.0.4 Cambios de la versión 3.7.0 (Fase 7a: acceso solo para la familia)
 | Tema | v3.6.1 | v3.7.0 | ADR |
 |---|---|---|---|
 | Quién puede usar la app | Cualquier persona con cuenta de Google | Solo los emails verificados de una lista (hash SHA-256 en las reglas) | 0026 |
 | Cuenta sin acceso | Sin especificar | Pantalla "Esta app es privada" con "Usar otra cuenta" | 0026 |
 | `isOwner(uid)` en las reglas | Sesión con ese UID | Sesión con ese UID y email en la lista (`isAllowed()`) | 0026 |
 
-### 0.0.4 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
+### 0.0.5 Cambios de la versión 3.6.1 (Fase 6b: Google Sheets)
 | Tema | v3.6.0 | v3.6.1 | ADR |
 |---|---|---|---|
 | Escritura en Sheets | Escribir y después limpiar las filas sobrantes | Un solo `batchUpdate`, que Google aplica entero o no aplica | 0025 |
@@ -50,7 +64,7 @@
 | Hoja borrada o en la papelera | Sin especificar | Se crea otra y se guarda su ID | 0025 |
 | Client ID de OAuth | Crear uno nuevo | Se reutiliza el que creó Firebase (`VITE_GOOGLE_CLIENT_ID`) | 0025 |
 
-### 0.0.5 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
+### 0.0.6 Cambios de la versión 3.6.0 (Fase 6a: exportar JSON y CSV)
 | Tema | v3.5.1 | v3.6.0 | ADR |
 |---|---|---|---|
 | Restaurar desde JSON | Reemplaza todos los datos | Fuera de alcance: el JSON es una copia para guardar | 0024 |
@@ -58,7 +72,7 @@
 | Origen de la exportación | Sin especificar | Los datos del dispositivo (sin lecturas); aviso si no está al día | 0024 |
 | TC-23 | Exportar y restaurar | Exportar y verificar el contenido del JSON | 0024 |
 
-### 0.0.6 Cambios de la versión 3.5.1 (Fase 5b: dictado)
+### 0.0.7 Cambios de la versión 3.5.1 (Fase 5b: dictado)
 | Tema | v3.5.0 | v3.5.1 | ADR |
 |---|---|---|---|
 | Dictado | Parser de frases sin micrófono | Micrófono en el panel de movimiento (Web Speech API), solo al crear y si el navegador lo soporta; precarga y espera Guardar | 0023 |
@@ -66,7 +80,7 @@
 | Origen `voice` | Sin especificar | Si el formulario se precargó dictando, aunque después se corrija a mano | 0023 |
 | Atajo "Dictar movimiento" | Fase 5 | Fase 7 (con el manifiesto); en la 5b queda la ruta `movimiento=nuevo&dictar=1` | 0023 |
 
-### 0.0.7 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
+### 0.0.8 Cambios de la versión 3.5.0 (Fase 5a: presupuestos y recurrentes)
 | Tema | v3.4.0 | v3.5.0 | ADR |
 |---|---|---|---|
 | Pendientes en Inicio | Después del total y del resumen | Arriba de todo, porque piden una acción | 0022 |
@@ -74,7 +88,7 @@
 | Saltar un pendiente | Sin confirmación | Con confirmación simple | 0022 |
 | Confirmar en dos dispositivos | Mismo ID, mismo `nextDate` | Además, el rechazo del segundo lote por las reglas no se muestra como error | 0004 |
 
-### 0.0.8 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
+### 0.0.9 Cambios de la versión 3.4.0 (Fase 4: estadísticas y buscador)
 | Tema | v3.3.0 | v3.4.0 | ADR |
 |---|---|---|---|
 | Gráficos de categorías | Tortas con porcentajes y leyenda | Donas con el total en el centro y una lista con ícono, monto y porcentaje; desde la sexta categoría, el resto se agrupa en "Otras" | 0021 |
@@ -82,7 +96,7 @@
 | Selector de moneda | ARS, USD y EUR | Solo las monedas que tienen alguna cuenta | 0021 |
 | Botón Atrás | Cierra los paneles | También cierra los diálogos y el panel de Filtros (capa en el hash) | 0018 |
 
-### 0.0.9 Cambios de la versión 3.3.0 (Fase 3: interfaz)
+### 0.0.10 Cambios de la versión 3.3.0 (Fase 3: interfaz)
 | Tema | v3.2.0 | v3.3.0 | ADR |
 |---|---|---|---|
 | Navegación | Sin especificar | Rutas propias por hash; el botón Atrás cierra los paneles | 0018 |
@@ -90,7 +104,7 @@
 | Sistema visual | Colores y tipografías (ADR 0001) | Tokens CSS, tema claro/oscuro/automático, fuentes locales, íconos SVG propios y listas fijas de íconos y colores de categoría | 0020 |
 | Cambio de moneda | Fase 5 | Fase 3 | 0020 |
 
-### 0.0.10 Cambios de la versión 3.2.0 (Fase 2: datos y login)
+### 0.0.11 Cambios de la versión 3.2.0 (Fase 2: datos y login)
 | Tema | v3.1.0 | v3.2.0 | ADR |
 |---|---|---|---|
 | Listeners | Caché + listener `updatedAt > cursor` que alimenta la UI | Dos listeners: uno al servidor que solo llena la caché y otro solo a la caché que alimenta la UI | 0016 |
@@ -190,6 +204,8 @@ Aplicación web progresiva (PWA) de finanzas personales, **multiusuario**: cada 
 | Tests | Vitest (lógica de dominio) + Firebase Emulator Suite (reglas de seguridad) | |
 | APK Android | Bubblewrap (Trusted Web Activity) | |
 | Exportación Sheets | Google Identity Services (token client) + Sheets API v4 | Scope `drive.file` únicamente |
+| Servidor | Cloudflare Workers + Workers AI (Llama 3.3 70B y Whisper) + Workers KV | Dictado con IA (Fase 10) y bot de WhatsApp (Fase 11), en `worker/` |
+| WhatsApp | WhatsApp Cloud API de Meta (Graph API v25.0) | Número de prueba, hasta 5 destinatarios verificados (ADR 0032) |
 
 ---
 
@@ -201,6 +217,8 @@ El código se organiza en tres capas con dependencias en una sola dirección (`u
 1. **`src/domain/`** — Lógica de negocio pura en TypeScript. **No importa React ni Firebase.** Contiene: tipos del modelo, cálculo de saldos, consolidación multi-moneda, validaciones, parseo y formateo de montos, fechas locales, cálculo de presupuestos, cálculo de ocurrencias recurrentes, búsqueda y filtros, agregaciones de estadísticas. Todo es testeable con Vitest sin emuladores.
 2. **`src/data/`** — Acceso a Firestore y Auth: inicialización, listeners (`onSnapshot`), escrituras, batches, exportaciones/importaciones, cliente de Bluelytics, cliente de Sheets.
 3. **`src/ui/`** — Componentes React, pantallas, modales, hooks de presentación.
+
+Aparte está **`worker/`**, un Cloudflare Worker con tres funciones: `/interpretar` (el dictado con IA, ADR 0031), `/whatsapp/codigo` y `/whatsapp/vinculo` (vincular el número desde Ajustes, ADR 0033) y `/whatsapp` (el webhook del bot, ADR 0032 a 0035). Importa `src/domain/` para validar y calcular con las mismas reglas que la app, y nunca importa React ni el SDK de Firebase: habla con Firestore por REST.
 
 ### 3.2 Flujo de datos (sincronización incremental, ADR 0003 y 0016)
 - Cada colección del usuario tiene **dos listeners**:
@@ -329,10 +347,38 @@ La transacción necesita conexión, y el primer inicio de sesión siempre la tie
 - **Preferencias de cada dispositivo** (ADR 0008), en `localStorage` con el `uid` en la clave: el tema (claro, oscuro o automático) y el orden manual de las cuentas (opcional; una lista de IDs, con orden por defecto por moneda y nombre).
 
 ### 4.9 Colecciones del servidor
-Ninguna. Los vínculos entre números de WhatsApp y usuarios (Fase 11) no están en Firestore: viven en el KV `WHATSAPP` del Worker, que es el único que los lee y escribe (ADR 0033).
+Ninguna en Firestore. Lo que necesita el bot de WhatsApp vive en el KV `WHATSAPP` del Worker, que es el único que lo lee y escribe (ADR 0033 a 0035). El cliente no tiene acceso.
+
+| Clave | Valor | Dura |
+|---|---|---|
+| `codigo:{código}` | uid | 10 minutos; se borra al usarse |
+| `tel:{número}` | uid (de quién es el número) | Hasta desvincular |
+| `uid:{uid}` | número (para mostrarlo en Ajustes) | Hasta desvincular |
+| `email:{uid}` | email de la cuenta, para controlar la lista de acceso (ADR 0034) | Hasta desvincular |
+| `fallos:{número}` | códigos equivocados; al quinto, el número no puede probar más | 1 hora |
+| `pendiente:{número}` | el movimiento que espera Guardar o Cancelar, con su ID `wa_…` | 10 minutos |
+| `borrador:{número}` | el movimiento incompleto: texto acumulado, lo entendido y cuántas preguntas se hicieron | 10 minutos |
+| `idtoken:{uid}` | ID token de Firebase de la persona (ADR 0034) | 50 minutos |
+| `msg:{id del mensaje}` | marca de mensaje ya procesado (Meta reintenta) | 24 horas |
+
+La cuota diaria (`uso:{uid}:{día}`, 100 por persona, compartida con el dictado) está en otro KV, `QUOTA`, y dura 48 horas. Los mensajes no se guardan: solo el texto de un borrador mientras dura.
+
+**Vincular un número:**
+1. Ajustes → WhatsApp → "Vincular WhatsApp" pide `POST /whatsapp/codigo` con el token de Firebase. El Worker controla la lista de emails, sortea un código de 6 cifras y guarda `codigo:` y `email:`.
+2. La app muestra el código y un botón que abre WhatsApp con "vincular 123456" ya escrito.
+3. La persona lo manda. El webhook verifica la firma de Meta y canjea el código: guarda `tel:` y `uid:`. Un número nuevo reemplaza al anterior, y un número que pasa a otra persona deja de ser de la primera.
+4. El bot confirma por WhatsApp, y Ajustes muestra el número con el medio oculto (`GET /whatsapp/vinculo`).
+5. "Desvincular" y "Borrar mi cuenta" llaman a `DELETE /whatsapp/vinculo`, que borra `tel:`, `uid:` y `email:`.
 
 ### 4.10 Índices
-No hay índices compuestos. La única consulta al servidor (`updatedAt > cursor`) usa un índice automático de un solo campo. Opcional: excluir `description` y `name` de la indexación (ADR 0012).
+La sincronización de la app (`updatedAt > cursor`) usa un índice automático de un solo campo. `description` y `name` se excluyen de la indexación (ADR 0012).
+
+El bot de WhatsApp calcula los saldos con consultas de agregación (`sum`) y necesita tres **índices compuestos** en `transactions` (ADR 0035), declarados en `firestore.indexes.json`:
+- `accountId`, `deletedAt`, `type`, `amount`
+- `toAccountId`, `deletedAt`, `type`, `amount`
+- `toAccountId`, `deletedAt`, `type`, `toAmount`
+
+Se publican con `npx firebase deploy --only firestore:indexes --project prod`. Sin ellos, las sumas fallan.
 
 ### 4.11 Migraciones de esquema
 Se prefieren los cambios aditivos. Un cambio incompatible sigue "expandir → migrar de a poco → contraer a los 60 días". Una app que lee un perfil con un `schemaVersion` mayor que el suyo deja de escribir y pide actualizarse (ADR 0011).
@@ -489,7 +535,9 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 3. **Presupuestos:** lista con categoría, moneda y límite. Crear, editar límite, eliminar. Al crear: elegir categoría de gasto activa y moneda; si ya existe esa combinación, se edita la existente.
 4. **Movimientos recurrentes:** lista con descripción, monto, frecuencia y próxima fecha. Crear, editar y eliminar (los movimientos ya generados quedan intactos).
 5. **Respaldo y exportación:** ver sección 8.
-6. **Cuenta de Google:** nombre, email, "Cerrar sesión".
+6. **WhatsApp** (ADR 0033): "Vincular WhatsApp" muestra un código de 6 cifras, que vence a los 10 minutos, y el botón "Abrir WhatsApp" con el mensaje ya escrito. Con el número vinculado, lo muestra con el medio oculto (`+54 ••• 6789`) y ofrece "Desvincular", con confirmación. Necesita conexión. Ver 4.9 y 6.8.
+7. **Privacidad:** ver 7.4.
+8. **Cuenta de Google:** nombre, email, "Cerrar sesión" y, al final, "Borrar mi cuenta" (7.2.1).
 
 ### 6.7 Modales
 
@@ -516,9 +564,27 @@ Mantener el aspecto y la navegación de la app actual: header superior y barra i
 
 **Dictar** (ADR 0023): al crear una transacción, si el navegador soporta la Web Speech API, un botón de micrófono en el encabezado del panel. La frase precarga el formulario (parser del ADR 0015), muestra lo que se escuchó y marca los campos que no se entendieron; nunca guarda sola. Lo guardado lleva `source: 'voice'`. La dirección `movimiento=nuevo&dictar=1` abre el panel escuchando.
 
-**Dictado con IA** (ADR 0031): con conexión, la frase la interpreta una IA (Llama 3.3 70B en Cloudflare Workers AI) a través de un Worker que verifica el token de Firebase, la lista de emails y un límite de 40 dictados por persona y por día. La app valida la respuesta en el dominio y precarga lo mismo que el parser; con la IA también se pueden dictar cambios de moneda. Sin conexión, o si la IA falla, usa el parser.
+**Dictado con IA** (ADR 0031): con conexión, la frase la interpreta una IA (Llama 3.3 70B en Cloudflare Workers AI) a través de un Worker que verifica el token de Firebase, la lista de emails y un límite diario por persona de 100 usos de la IA, compartido con el bot de WhatsApp (ADR 0035). La app valida la respuesta en el dominio y precarga lo mismo que el parser; con la IA también se pueden dictar cambios de moneda. Sin conexión, o si la IA falla, usa el parser.
 
 **Confirmaciones:** simple para eliminar transacciones; reforzada (escribir el nombre exacto) para archivar cuentas y categorías.
+
+### 6.8 Bot de WhatsApp (ADR 0032 a 0035)
+Un número vinculado (4.9) le puede escribir al bot para cargar movimientos y consultar sus datos. El bot solo responde: nunca escribe primero.
+
+**Qué entiende.** Una sola llamada a la IA (Llama 3.3 70B) decide qué es el mensaje: un movimiento, una consulta, un saludo, un agradecimiento, un pedido de ayuda u otra cosa. Recibe lo mismo que el dictado (la fecha y los nombres e IDs de cuentas y categorías), nunca saldos. La respuesta se valida en el dominio (`parseBotIntent`). Si no cierra, si la IA falla o si se terminó la cuota, se usa el parser de reglas (`rulesIntent`). Saludos, gracias y ayuda se reconocen antes, con textos fijos, sin gastar cuota ni leer Firestore.
+
+**Audios.** Se bajan de Meta (hasta 1 MB) y Whisper los pasa a texto. Sin cuota o si Whisper falla, el bot pide que el mensaje se mande escrito.
+
+**Cargar un movimiento.**
+1. Si falta un dato, el bot pregunta de a uno (tipo, monto, monto de destino, cuenta, cuenta destino, categoría), empezando por lo ya entendido. Si se puede elegir, ofrece botones (hasta 3) o una lista (hasta 10). Una respuesta escrita se interpreta junto con el mensaje anterior. A la tercera pregunta sin resolver, desiste y muestra un ejemplo.
+2. Con todo completo, se valida con `src/domain/` y el bot manda el resumen con **Guardar** y **Cancelar**. "sí" y "no" también confirman, pero solo si hay un movimiento esperando. "cancelá" descarta un borrador.
+3. Al guardar, el Worker escribe **como la persona** (ADR 0034), con las reglas de siempre: `source: 'whatsapp'`, `updatedAt` = hora del servidor e ID fijo `wa_` + hash del mensaje, así que tocar Guardar dos veces no duplica. La app lo recibe por su listener, como si viniera de otro dispositivo.
+
+**Consultas.** Las cuentas, los saldos (de una cuenta o de todas) y lo gastado o cobrado, el resumen o el gasto por categoría de hoy, ayer, esta semana, este mes, el mes pasado o este año. La IA solo dice *qué* se pregunta. Los números los calcula el dominio: los saldos con sumas de agregación de Firestore (4.10; con más de 6 cuentas, el total de cada moneda) y los períodos con `computeStats`. Se escriben con `formatAmount`.
+
+**Charla.** Solo de lo suyo. A cualquier otra cosa responde con una frase corta, sin cifras, sin datos de la persona y sin consejos de inversión. Si la frase que propone la IA no cumple, usa un texto fijo.
+
+**Seguridad.** El webhook verifica la firma HMAC de Meta, responde 200 enseguida, procesa con `waitUntil` y descarta los mensajes repetidos. Un número sin vincular, o cuyo email ya no está en la lista, no puede cargar ni consultar nada.
 
 ---
 
@@ -600,7 +666,8 @@ Por defecto, todo lo demás queda denegado. Las reglas no limitan *cuántos* doc
 - Sin analíticas ni telemetría de terceros.
 - Las claves de configuración de Firebase son públicas por diseño; la protección está en las reglas de seguridad.
 - El Client ID de OAuth para Sheets (el web que creó Firebase, ADR 0025) se restringe en Google Cloud Console a los orígenes de producción y `http://localhost:5173`. No es secreto.
-- En lugar de una política pública, Ajustes tiene una sección **"Privacidad"** en lenguaje simple: qué datos salen del dispositivo y a dónde (Firebase, Bluelytics, Google Sheets, el audio del dictado a Google y, desde las fases 10 y 11, Cloudflare y Meta). Fase 9b (ADR 0029). Incluye qué queda en el dispositivo y cómo irse con "Borrar mi cuenta".
+- En lugar de una política pública, Ajustes tiene una sección **"Privacidad"** en lenguaje simple: qué datos salen del dispositivo y a dónde (Firebase, Bluelytics, Google Sheets, el audio del dictado a Google, Cloudflare y Meta). Fase 9b (ADR 0029). Incluye qué queda en el dispositivo y cómo irse con "Borrar mi cuenta".
+- **WhatsApp (Fase 11f):** la sección dice que los mensajes y audios del bot, y sus respuestas (el movimiento por guardar, las cuentas y los saldos), pasan por los servidores de Meta, que puede verlos (ADR 0032 y 0035). También, qué guarda el Worker (4.9: el número y el email mientras estén vinculados, y por 10 minutos el movimiento en curso; nunca los mensajes) y que "Borrar mi cuenta" desvincula el número.
 
 ---
 
@@ -713,6 +780,13 @@ Según 7.3, con un grupo por colección:
 - Sincronización incremental: cursor con margen de solapamiento, lápidas que llegan al otro cliente y descarga completa sin caché.
 - Siembra con `runTransaction` desde dos clientes a la vez: queda una sola siembra y no se pisan las categorías renombradas.
 
+### 11.2.2 Tests del Worker (Vitest) — `worker/src/`
+Con Meta, Firestore, la IA y el KV reemplazados por versiones falsas:
+- Firma del webhook, desafío de verificación y mensajes repetidos.
+- Vincular: código válido, vencido, equivocado y el tope de intentos; número que cambia de dueño.
+- El bot de punta a punta: movimiento completo, preguntas de seguimiento, botones, Guardar doble, Cancelar, consultas, charla, cuota agotada e IA caída.
+- Saldos por agregación, verificados contra `computeBalances`.
+
 ### 11.3 Matriz de aceptación (pruebas manuales)
 
 | ID | Escenario | Resultado esperado |
@@ -750,7 +824,18 @@ Según 7.3, con un grupo por colección:
 | TC-31 | Borrar mi cuenta habiendo iniciado sesión hace más de 5 minutos | Pide confirmar la cuenta de Google antes de borrar; si se elige otra cuenta, avisa y no borra nada |
 | TC-32 | Con conexión, dictar "compré 100 dólares a 1300" (y "vendí…") | Precarga un cambio: salen $ 130.000 de la cuenta en pesos y entran US$ 100 en la de dólares (al vender, al revés); no guarda solo. Probado en el APK el 2026-10-06 (ADR 0031) |
 | TC-33 | Sin conexión (o con el Worker caído), dictar "gasté 5000 en el súper con efectivo" | Lo interpreta el parser de reglas y avisa "se interpretó sin IA" |
-| TC-34 | Dictar con IA más de 40 veces en el día | A partir del 41.°, avisa que se llegó al límite de hoy y usa el parser de reglas |
+| TC-34 | Usar la IA (dictado y bot juntos) más de 100 veces en el día | A partir del uso 101, el dictado avisa que se llegó al límite de hoy y usa el parser de reglas; el bot también usa las reglas y pide escribir los audios (ADR 0035) |
+| TC-35 | Ajustes → WhatsApp → "Vincular WhatsApp" y mandar "vincular NNNNNN" al bot | El bot confirma y Ajustes muestra el número con el medio oculto. Probado en producción el 2026-10-13 (ADR 0033) |
+| TC-36 | Mandar un código vencido o equivocado; repetirlo 5 veces | Responde que el código no es válido o ya venció; después de 5 equivocados, que espere una hora |
+| TC-37 | Desde un número sin vincular, mandar "gasté 500" | Responde que el número no está vinculado y cómo hacerlo; no escribe nada |
+| TC-38 | "gasté 18 mil en el súper con efectivo", por texto y por audio | Muestra el resumen con Guardar y Cancelar; al guardar, aparece en la app con origen WhatsApp. Probado en producción el 2026-10-24 (ADR 0034) |
+| TC-39 | Tocar Guardar dos veces (o tocar Guardar en un resumen viejo) | Queda un solo movimiento; el segundo toque responde "Ese movimiento venció o ya se resolvió" |
+| TC-40 | Tocar Cancelar, o contestar "no" | No se guarda nada |
+| TC-41 | Con dos cuentas en pesos, "gasté 18 mil en el súper" y después elegir la cuenta con un botón | Pregunta "¿De qué cuenta?" con botones y, al elegir, muestra el resumen. Probado en producción el 2026-10-29 (ADR 0035) |
+| TC-42 | Preguntar "cuánta plata tengo" y "cuánto gasté este mes" | Los montos coinciden con los de la app. Probado en producción el 2026-10-29 (ADR 0035) |
+| TC-43 | Preguntar algo fuera de tema ("quién ganó el partido", "me conviene comprar dólares") | Responde que solo ayuda con sus finanzas, sin cifras ni consejos |
+| TC-44 | "Borrar mi cuenta" con el número vinculado; después escribirle al bot | El bot responde que el número no está vinculado |
+| TC-45 | "cargué 20 lucas de nafta con efectivo" | Propone la categoría Transporte, no Comida (pistas por rubro, Fase 11f) |
 
 ---
 
@@ -769,7 +854,7 @@ Cada fase termina con: typecheck sin errores, tests pasando y una verificación 
 9. **Fase 8 — APK:** Bubblewrap, assetlinks, pruebas en el celular (ADR 0028).
 10. **Fase 9 — Familia y privacidad** (ADR 0029): 9a, "Borrar mi cuenta" (ADR 0006); 9b, sección Privacidad en Ajustes, guía para sumar un familiar y TC-19 con un familiar.
 11. **Fase 10 — Dictado con IA:** Cloudflare Worker que verifica el token de Firebase y la lista de emails, limita los pedidos por día y llama a un LLM de Workers AI con salida JSON restringida. Con conexión, la IA siempre; sin conexión, el parser de reglas.
-12. **Fase 11 — Carga por WhatsApp:** 11a, análisis de la API oficial contra Baileys y ADR; 11b, vincular el número, texto y audio, confirmación antes de guardar y escritura validada con el dominio.
+12. **Fase 11 — Carga por WhatsApp:** 11a, análisis de la API oficial contra Baileys (ADR 0032); 11b, prueba de Whisper con audios de WhatsApp; 11c, vincular el número (ADR 0033); 11d, cargar movimientos por texto y audio con confirmación, escribiendo como el usuario (ADR 0034); 11e, conversación y consultas (ADR 0035); 11f, Privacidad y este SRS.
 13. **Fase 12 — Cierre y v1.0.0:** corregir el parpadeo de la app privada, README para el portfolio, repaso del SRS y los ADRs, release v1.0.0.
 
 Para más adelante: evaluar la IA incluida en Chrome (Gemini Nano) cuando esté disponible en Android.
@@ -790,6 +875,14 @@ Claude Code no puede hacer estas tareas porque requieren cuentas y consolas web:
 8. Desde la Fase 7: en Google Cloud, sumar `https://finanzas-personales-jtg.web.app` a los orígenes autorizados y `https://finanzas-personales-jtg.web.app/__/auth/handler` a las URIs de redirección del Client ID web; poner `VITE_FIREBASE_AUTH_DOMAIN=finanzas-personales-jtg.web.app` en `.env.local` y publicar con `npm run deploy` (ADR 0027).
 9. Durante la fase 8: correr `bubblewrap init` y `bubblewrap build` en una PowerShell fuera de VS Code (responder las preguntas, crear la clave de firma en `C:\Users\joaco\claves\`), guardar las contraseñas en un gestor y una copia del keystore en un lugar seguro (ADR 0028).
 10. Pasar el `.apk` al celular (cable o Drive), habilitar "Instalar apps desconocidas" para la app con la que se abre e instalarlo.
+11. Desde la Fase 10: crear el KV `QUOTA` (`npx wrangler kv namespace create QUOTA`), poner su ID en `worker/wrangler.jsonc` y publicar el Worker con `npm run deploy:worker` (ADR 0031).
+12. Desde la Fase 11, en Meta for Developers (ADR 0032 y 0033):
+    - Crear una app de tipo Business con el producto WhatsApp y un portafolio comercial.
+    - Crear un usuario del sistema (rol Empleado) con un token que no venza y los permisos `whatsapp_business_messaging` y `whatsapp_business_management`. El token de la pantalla de inicio vence a las 24 horas.
+    - Configurar el webhook (`https://<worker>/whatsapp`, campo `messages`) con el verify token, y suscribir la cuenta de WhatsApp Business a la app: `POST /{id de la cuenta}/subscribed_apps`. Sin eso no llegan los mensajes reales.
+    - Verificar el número de cada familiar como destinatario del número de prueba (hasta 5).
+13. Desde la Fase 11, en Cloudflare: crear el KV `WHATSAPP` y poner su ID en `worker/wrangler.jsonc`; cargar los secretos `WHATSAPP_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` y `FIREBASE_SERVICE_ACCOUNT` con `npx wrangler secret put <NOMBRE> -c worker/wrangler.jsonc`; poner `VITE_WHATSAPP_NUMBER` en `.env.local`.
+14. Desde la Fase 11, en Google Cloud: crear la cuenta de servicio `whatsapp-bot` **sin ningún rol** (solo firma custom tokens, ADR 0034) y una clave JSON, que se guarda fuera del repo. Publicar los índices de 4.10.
 
 ---
 

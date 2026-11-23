@@ -110,6 +110,7 @@ Cuentas y categorías:
 - Usá SOLO los "id" de las listas que te paso. Si no está claro cuál es, null. Nunca inventes un id.
 - Si la frase no nombra la cuenta: usala solo si hay UNA sola posible (por ejemplo, la única en la moneda del monto). Si hay varias posibles, "accountId" es null: no elijas una al azar.
 - La categoría tiene que ser del mismo tipo que el movimiento. Las transferencias y los cambios no llevan categoría (null).
+- Elegí la categoría por lo que se pagó, no por la palabra más parecida. Pistas, si existe una categoría de ese rubro: nafta, combustible, SUBE, colectivo, tren, peaje, Uber, taxi y estacionamiento son transporte (no comida); súper, almacén, verdulería y delivery son comida; luz, gas, agua, internet y celular son servicios.
 - Si la frase podría ser de dos categorías distintas, null.
 
 Fecha:

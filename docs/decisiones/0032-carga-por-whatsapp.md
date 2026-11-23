@@ -95,3 +95,7 @@ El paso 1 del plan, la prueba de factibilidad de la 11b. Se usó un Worker de pr
 - **Los montos llegan como palabras y números** ("18 mil pesos", "100 dólares a 1300"). Es el mismo tipo de frase que interpreta la IA del dictado, así que la transcripción pasa sin cambios por `buildAiMessages` y `parseAiResult`. Se va a comprobar con el modelo real en la 11d.
 - **Costo:** unas 47 neuronas por minuto de audio. Una nota de 5 segundos gasta unas 4, mucho menos que las 40 de la interpretación con Llama.
 - **Demora:** entre 1 y 4 segundos, que se suman a los 3 a 5 de la interpretación. Como el webhook responde 200 enseguida y hace el trabajo con `ctx.waitUntil`, no hay riesgo de que Meta reintente. La respuesta del bot va a tardar entre 5 y 10 segundos.
+
+
+## Nota (cierre de la Fase 11, 2026-11-23)
+Lo que este ADR dejaba para la 11e (la sección Privacidad y el detalle del SRS 4.9) se hizo en la **11f**: Ajustes → Privacidad dice qué ve Meta y qué guarda el Worker, y el SRS v3.9.0 describe el KV `WHATSAPP` (4.9), los índices (4.10) y el bot (6.8).
