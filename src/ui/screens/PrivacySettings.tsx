@@ -1,6 +1,7 @@
 // Sección "Privacidad" de Ajustes (SRS 7.4, ADR 0029): en lugar de una política pública, qué
 // datos salen del dispositivo y a dónde, en lenguaje simple.
-// Cuando se sume un servicio nuevo hay que agregarlo acá: Meta con WhatsApp (Fase 11).
+// Cuando se sume un servicio nuevo hay que agregarlo acá. Lo del bot de WhatsApp (Meta y lo que
+// guarda el Worker) sale de los ADR 0032 a 0035: si cambia lo que guarda, cambia este texto.
 
 interface Destination {
   name: string;
@@ -37,11 +38,22 @@ const DESTINATIONS: readonly Destination[] = [
       'La app recibe solo el texto.',
   },
   {
-    name: 'Cloudflare (IA del dictado)',
+    name: 'Cloudflare (IA del dictado y del bot)',
     what:
       'Con conexión, el texto dictado se manda a una IA (Llama, en Cloudflare Workers AI) para ' +
-      'entenderlo, junto con los nombres de tus cuentas y categorías. Nunca montos ni saldos. ' +
-      'No se guarda, y Cloudflare no lo usa para entrenar modelos.',
+      'entenderlo, junto con los nombres de tus cuentas y categorías. Nunca tus saldos ni tus ' +
+      'otros movimientos. No se guarda, y Cloudflare no lo usa para entrenar modelos.',
+  },
+  {
+    name: 'WhatsApp (Meta)',
+    what:
+      'Solo si vinculás tu número. Los mensajes y audios que le mandás al bot, y lo que te ' +
+      'responde (el movimiento por guardar, tus cuentas y tus saldos), pasan por los servidores ' +
+      'de Meta, que puede verlos: no llevan el cifrado de punta a punta de los chats comunes. ' +
+      'Los audios se pasan a texto con otra IA de Cloudflare (Whisper). El servidor del bot ' +
+      'guarda tu número y tu email mientras sigan vinculados, y por 10 minutos el movimiento ' +
+      'que estás armando o confirmando; no guarda tus mensajes. Lee y escribe tus datos solo ' +
+      'cuando le escribís desde tu número.',
   },
 ];
 
@@ -72,8 +84,9 @@ export function PrivacySettings() {
         </p>
         <h3 className="section-label">Si querés irte</h3>
         <p className="field-hint">
-          &quot;Borrar mi cuenta&quot;, al final de Ajustes, borra todos tus datos de la app. No
-          toca tu cuenta de Google ni la hoja de Sheets que hayas exportado.
+          &quot;Borrar mi cuenta&quot;, al final de Ajustes, borra todos tus datos de la app y
+          desvincula tu WhatsApp. No toca tu cuenta de Google ni la hoja de Sheets que hayas
+          exportado. Para dejar de usar solo el bot, desvinculá el número en Ajustes → WhatsApp.
         </p>
       </details>
     </section>
