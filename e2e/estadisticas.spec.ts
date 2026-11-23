@@ -5,10 +5,15 @@ import { addExpense, createAccount, signIn } from './helpers';
 // Estadísticas y buscador (Fase 4) contra los emuladores: los datos cargados se ven en los
 // gráficos sin pedir nada más a Firestore.
 
-async function addIncome(page: Page, amount: string, category: string) {
+/**
+ * Carga un ingreso. Elige la cuenta a mano, como `addExpense`: si el panel se abre antes de que
+ * llegue la cuenta recién creada, no hay ninguna preseleccionada y no se puede guardar.
+ */
+async function addIncome(page: Page, account: string, amount: string, category: string) {
   await page.getByRole('button', { name: 'Nuevo movimiento' }).click();
   const sheet = page.getByRole('dialog', { name: 'Nuevo movimiento' });
   await sheet.getByRole('button', { name: 'Ingreso', exact: true }).click();
+  await sheet.getByLabel('Cuenta').selectOption({ label: `${account} · ARS` });
   for (const key of amount) {
     await sheet.getByRole('button', { name: key, exact: true }).click();
   }
@@ -20,7 +25,7 @@ async function addIncome(page: Page, amount: string, category: string) {
 test('los movimientos cargados aparecen en Estadísticas', async ({ page }) => {
   await signIn(page);
   await createAccount(page, 'Efectivo', '1000');
-  await addIncome(page, '2000', 'Salario');
+  await addIncome(page, 'Efectivo', '2000', 'Salario');
   await addExpense(page, 'Efectivo', '500', 'Comida');
 
   await page.getByRole('link', { name: 'Estadísticas' }).click();
